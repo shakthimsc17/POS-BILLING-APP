@@ -20,6 +20,7 @@ model Customer {
   city         String?  @db.VarChar(100)
   state        String?  @db.VarChar(100)
   pincode      String?  @db.VarChar(20)
+  isAdmin      Boolean  @default(false) @map("is_admin")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 

@@ -38,6 +38,7 @@ export interface Customer {
   city?: string;
   state?: string;
   pincode?: string;
+  isAdmin?: boolean;
   password_hash?: string; // For authentication (not returned to client)
   created_at: string;
   updated_at: string;

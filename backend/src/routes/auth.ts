@@ -59,16 +59,20 @@ router.post(
           city: true,
           state: true,
           pincode: true,
+          isAdmin: true,
           createdAt: true,
           updatedAt: true,
         },
       });
 
       // Generate JWT token
-      const token = generateToken(customer.id);
+      const token = generateToken(customer.id, false);
 
       res.status(201).json({
-        customer,
+        customer: {
+          ...customer,
+          isAdmin: false,
+        },
         token,
       });
     } catch (error: any) {
@@ -111,7 +115,7 @@ router.post(
       }
 
       // Generate JWT token
-      const token = generateToken(customer.id);
+      const token = generateToken(customer.id, customer.isAdmin);
 
       res.json({
         customer: {
@@ -123,6 +127,7 @@ router.post(
           city: customer.city,
           state: customer.state,
           pincode: customer.pincode,
+          isAdmin: customer.isAdmin,
           createdAt: customer.createdAt,
           updatedAt: customer.updatedAt,
         },

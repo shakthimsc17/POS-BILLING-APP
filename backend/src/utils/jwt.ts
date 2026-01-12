@@ -8,15 +8,15 @@ const getJwtSecret = (): string => {
   return secret;
 };
 
-export const generateToken = (customerId: string): string => {
-  return jwt.sign({ customerId }, getJwtSecret(), {
+export const generateToken = (customerId: string, isAdmin: boolean = false): string => {
+  return jwt.sign({ customerId, isAdmin }, getJwtSecret(), {
     expiresIn: '30d',
   });
 };
 
-export const verifyToken = (token: string): { customerId: string } => {
+export const verifyToken = (token: string): { customerId: string; isAdmin?: boolean } => {
   try {
-    return jwt.verify(token, getJwtSecret()) as { customerId: string };
+    return jwt.verify(token, getJwtSecret()) as { customerId: string; isAdmin?: boolean };
   } catch (error) {
     throw new Error('Invalid token');
   }

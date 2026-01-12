@@ -126,13 +126,15 @@ function App() {
             <span className="nav-icon">📥</span>
             <span className="nav-text">Import</span>
           </button>
-          <button
-            className={currentPage === 'reports' ? 'active' : ''}
-            onClick={() => setCurrentPage('reports')}
-          >
-            <span className="nav-icon">📊</span>
-            <span className="nav-text">Reports</span>
-          </button>
+          {customer?.isAdmin && (
+            <button
+              className={currentPage === 'reports' ? 'active' : ''}
+              onClick={() => setCurrentPage('reports')}
+            >
+              <span className="nav-icon">📊</span>
+              <span className="nav-text">Reports</span>
+            </button>
+          )}
           <button
             className={currentPage === 'calculators' ? 'active' : ''}
             onClick={() => setCurrentPage('calculators')}
@@ -195,7 +197,7 @@ function App() {
         {currentPage === 'sales' && <SalesOrders />}
         {currentPage === 'customers' && <Customers />}
         {currentPage === 'import' && <Import />}
-        {currentPage === 'reports' && <Reports />}
+        {currentPage === 'reports' && customer?.isAdmin && <Reports />}
         {currentPage === 'calculators' && <Calculators />}
         {currentPage === 'company' && <CompanySettings />}
       </main>

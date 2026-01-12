@@ -37,6 +37,7 @@ export const authenticate = async (
           city: true,
           state: true,
           pincode: true,
+          isAdmin: true,
           createdAt: true,
           updatedAt: true,
         },

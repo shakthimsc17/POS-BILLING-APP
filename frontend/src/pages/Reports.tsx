@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { storageService } from '../services/storage';
 import { useInventoryStore } from '../store/inventoryStore';
 import { useCompanyStore } from '../store/companyStore';
+import { useAuthStore } from '../store/authStore';
 import { Transaction, Item, Category } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import './Reports.css';
@@ -37,6 +38,8 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [showPrices, setShowPrices] = useState(false);
   const { items: storeItems, categories: storeCategories } = useInventoryStore();
+  const { customer } = useAuthStore();
+  const isAdmin = customer?.isAdmin || false;
 
   useEffect(() => {
     loadData();
@@ -407,6 +410,16 @@ export default function Reports() {
       }, 250);
     }
   };
+
+  if (!isAdmin) {
+    return (
+      <div className="reports-page">
+        <div className="loading-state">
+          <p>⛔ Access Denied: Reports are only available for administrators.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

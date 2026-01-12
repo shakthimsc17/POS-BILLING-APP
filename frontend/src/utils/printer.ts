@@ -15,7 +15,7 @@ export function printReceipt(options: PrintOptions) {
   const date = new Date(transaction.created_at);
   const total = items.reduce((sum, item) => sum + item.subtotal, 0);
 
-  // Create HTML for normal printer (3x4 inch receipt size)
+  // Create HTML for 3-inch (80mm) thermal printer
   const printHTML = `
     <!DOCTYPE html>
     <html>
@@ -24,12 +24,17 @@ export function printReceipt(options: PrintOptions) {
         <style>
           @media print {
             @page {
-              size: 3in 4in;
-              margin: 5mm 3mm;
+              size: 80mm auto;
+              margin: 0;
             }
             body {
               margin: 0;
               padding: 0;
+              width: 80mm;
+            }
+            * {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
             }
           }
           * {
@@ -38,110 +43,104 @@ export function printReceipt(options: PrintOptions) {
             box-sizing: border-box;
           }
           body {
-            font-family: 'Arial', 'Helvetica', sans-serif;
-            font-size: 9px;
-            line-height: 1.3;
+            font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
+            font-size: 11px;
+            line-height: 1.2;
             color: #000;
-            width: 3in;
+            width: 80mm;
+            max-width: 80mm;
             margin: 0 auto;
-            padding: 3mm;
+            padding: 4mm 3mm;
             background: white;
-            border: 1px solid #e0e0e0;
           }
           .receipt-header {
             text-align: center;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 6px;
-            margin-bottom: 8px;
-            position: relative;
-          }
-          .receipt-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-bottom: 1px dashed #000;
+            padding-bottom: 5px;
+            margin-bottom: 6px;
           }
           .company-name {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: bold;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             text-transform: uppercase;
             line-height: 1.2;
-            color: #667eea;
             letter-spacing: 0.5px;
           }
           .company-details {
-            font-size: 7px;
-            line-height: 1.5;
-            color: #555;
+            font-size: 9px;
+            line-height: 1.3;
+            text-transform: uppercase;
           }
           .company-details p {
-            margin: 2px 0;
+            margin: 1px 0;
+            text-transform: uppercase;
           }
           .receipt-info {
+            margin-bottom: 6px;
+            padding: 4px 0;
+            border-top: 1px dashed #000;
+            border-bottom: 1px dashed #000;
+            font-size: 9px;
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
-            padding: 6px;
-            background: #f8f9fa;
-            border-radius: 4px;
-            border-left: 3px solid #667eea;
-            font-size: 7px;
           }
           .receipt-info-left, .receipt-info-right {
-            flex: 1;
-          }
-          .receipt-info p {
             margin: 2px 0;
           }
+          .receipt-info-right {
+            text-align: right;
+            padding-left: 0;
+          }
+          .receipt-info-right p {
+            margin: 0;
+            padding-left: 0;
+            line-height: 1.3;
+          }
+          .receipt-info-right .date-time-line {
+            display: inline-block;
+            white-space: nowrap;
+          }
+          .receipt-info p {
+            margin: 1px 0;
+          }
           .receipt-info strong {
-            color: #667eea;
+            font-weight: bold;
           }
           .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 8px;
-            font-size: 8px;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            overflow: hidden;
+            margin-bottom: 6px;
+            font-size: 10px;
           }
           .items-table thead {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
           }
           .items-table th {
             text-align: left;
-            padding: 4px 3px;
+            padding: 3px 2px;
             font-weight: bold;
-            font-size: 7px;
+            font-size: 9px;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
           }
           .items-table tbody tr {
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px dotted #ccc;
           }
           .items-table tbody tr:last-child {
-            border-bottom: none;
-          }
-          .items-table tbody tr:nth-child(even) {
-            background: #fafafa;
+            border-bottom: 1px solid #000;
           }
           .items-table td {
-            padding: 4px 3px;
-            font-size: 8px;
-            line-height: 1.3;
+            padding: 2px;
+            font-size: 10px;
+            line-height: 1.2;
           }
           .items-table .item-name {
-            font-weight: 600;
-            color: #333;
+            font-weight: bold;
           }
           .items-table small {
-            color: #666;
-            font-size: 6px;
+            font-size: 8px;
+            display: block;
           }
           .items-table .text-right {
             text-align: right;
@@ -149,72 +148,67 @@ export function printReceipt(options: PrintOptions) {
           .items-table .text-center {
             text-align: center;
           }
+          .items-table th.price-col,
+          .items-table td.price-col {
+            padding-left: 0 !important;
+            padding-right: 2px;
+            text-align: right;
+          }
+          .items-table th.amt-col,
+          .items-table td.amt-col {
+            padding-left: 0 !important;
+            padding-right: 0;
+            text-align: right;
+          }
           .totals-section {
-            margin-top: 8px;
-            padding: 6px;
-            background: #f8f9fa;
-            border-radius: 4px;
-            border: 1px solid #e0e0e0;
+            margin-top: 6px;
+            padding: 4px 0;
           }
           .total-row {
             display: flex;
             justify-content: space-between;
-            padding: 3px 0;
-            font-size: 8px;
-            color: #555;
+            padding: 2px 0;
+            font-size: 10px;
           }
           .total-row.grand-total {
             font-weight: bold;
-            font-size: 11px;
-            padding: 6px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 4px;
-            margin-top: 4px;
-            border: none;
-          }
-          .total-row.grand-total span {
-            color: white;
+            font-size: 13px;
+            padding: 4px 0;
+            margin-top: 3px;
+            border-top: 2px solid #000;
+            border-bottom: 2px solid #000;
           }
           .payment-info {
-            margin-top: 8px;
-            padding: 5px 6px;
-            background: #fff9e6;
-            border-left: 3px solid #f39c12;
-            border-radius: 4px;
-            font-size: 7px;
+            margin-top: 6px;
+            padding: 4px 0;
+            border-top: 1px dashed #000;
+            font-size: 9px;
+            text-align: center;
           }
           .payment-info p {
             margin: 2px 0;
-            color: #555;
           }
           .payment-info strong {
-            color: #f39c12;
+            font-weight: bold;
           }
           .footer {
             text-align: center;
-            margin-top: 10px;
-            padding-top: 8px;
-            border-top: 2px dashed #ddd;
-            font-size: 7px;
-            color: #666;
+            margin-top: 8px;
+            padding-top: 6px;
+            border-top: 1px dashed #000;
+            font-size: 9px;
           }
           .footer p:first-child {
-            font-weight: 600;
-            color: #667eea;
-            margin-bottom: 3px;
+            font-weight: bold;
+            margin-bottom: 2px;
           }
           .barcode {
-            margin-top: 6px;
-            padding: 4px 8px;
-            background: #f5f5f5;
-            border-radius: 3px;
-            display: inline-block;
-            font-family: 'Courier New', monospace;
-            font-size: 8px;
+            margin-top: 4px;
+            padding: 3px 0;
+            font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
+            font-size: 10px;
             font-weight: bold;
-            letter-spacing: 1px;
-            color: #333;
+            letter-spacing: 2px;
           }
         </style>
       </head>
@@ -236,22 +230,21 @@ export function printReceipt(options: PrintOptions) {
         <div class="receipt-info">
           <div class="receipt-info-left">
             <p><strong>Receipt #:</strong> ${transaction.id.slice(0, 8).toUpperCase()}</p>
-            <p><strong>Date:</strong> ${date.toLocaleDateString()}</p>
-            <p><strong>Time:</strong> ${date.toLocaleTimeString()}</p>
+            ${transaction.transaction_customer_id ? '<p><strong>Customer:</strong> Yes</p>' : ''}
           </div>
           <div class="receipt-info-right" style="text-align: right;">
-            ${transaction.transaction_customer_id ? '<p><strong>Customer:</strong> Yes</p>' : ''}
+            <p class="date-time-line"><strong>Date:</strong> ${date.toLocaleDateString()} &nbsp; <strong>Time:</strong> ${date.toLocaleTimeString()}</p>
           </div>
         </div>
 
         <table class="items-table">
           <thead>
             <tr>
-              <th style="width: 8%;">#</th>
-              <th style="width: 45%;">Item</th>
-              <th style="width: 12%;" class="text-center">Qty</th>
-              <th style="width: 17%;" class="text-right">Price</th>
-              <th style="width: 18%;" class="text-right">Amt</th>
+              <th style="width: 10%;">#</th>
+              <th style="width: 43%;">Item</th>
+              <th style="width: 15%;" class="text-center">Qty</th>
+              <th style="width: 16%;" class="text-right price-col">Price</th>
+              <th style="width: 16%;" class="text-right amt-col">Amt</th>
             </tr>
           </thead>
           <tbody>
@@ -262,8 +255,8 @@ export function printReceipt(options: PrintOptions) {
                 <td>${index + 1}</td>
                 <td class="item-name">${cartItem.item.name}${cartItem.item.code ? `<br><small>${cartItem.item.code}</small>` : ''}</td>
                 <td class="text-center">${cartItem.quantity}</td>
-                <td class="text-right">${formatCurrency(cartItem.item.price)}</td>
-                <td class="text-right">${formatCurrency(cartItem.subtotal)}</td>
+                <td class="text-right price-col">${formatCurrency(cartItem.item.price)}</td>
+                <td class="text-right amt-col">${formatCurrency(cartItem.subtotal)}</td>
               </tr>
             `
               )
@@ -303,7 +296,7 @@ export function printReceipt(options: PrintOptions) {
         </div>
 
         <div class="footer">
-          <p><strong>Thank you for your business!</strong></p>
+          <p><strong>Your Style Matters to Us. Thank You!</strong></p>
           <p>Please visit again</p>
           <div class="barcode">
             ${transaction.id.slice(0, 8).toUpperCase()}

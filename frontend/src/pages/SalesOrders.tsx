@@ -4,6 +4,7 @@ import { Transaction, Customer } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { printReceipt } from '../utils/printer';
 import { useCompanyStore } from '../store/companyStore';
+import { useAuthStore } from '../store/authStore';
 import './SalesOrders.css';
 
 type FilterPeriod = 'today' | 'week' | 'month' | 'year' | 'all';
@@ -14,6 +15,8 @@ export default function SalesOrders() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filter, setFilter] = useState<FilterPeriod>('today');
   const [loading, setLoading] = useState(true);
+  const { customer } = useAuthStore();
+  const isAdmin = customer?.isAdmin || false;
 
   useEffect(() => {
     loadTransactions();
@@ -153,7 +156,9 @@ export default function SalesOrders() {
 
   const handleExportCSV = () => {
     const company = useCompanyStore.getState().getCompany();
-    const headers = ['Date', 'Time', 'Order ID', 'Customer', 'Items Count', 'Payment Method', 'Amount', 'Profit/Loss'];
+    const headers = isAdmin 
+      ? ['Date', 'Time', 'Order ID', 'Customer', 'Items Count', 'Payment Method', 'Amount', 'Profit/Loss']
+      : ['Date', 'Time', 'Order ID', 'Customer', 'Items Count', 'Payment Method', 'Amount'];
     
     const csvRows = [
       [company.name || 'Sales Report'],
@@ -169,10 +174,7 @@ export default function SalesOrders() {
       const customer = tx.transaction_customer_id 
         ? customers.find(c => c.id === tx.transaction_customer_id)?.name || 'Walk-in'
         : 'Walk-in';
-      const { profit, loss } = calculateTransactionProfitLoss(tx);
-      const netProfit = profit - loss;
-
-      csvRows.push([
+      const row = [
         date.toLocaleDateString(),
         date.toLocaleTimeString(),
         tx.id.slice(0, 8).toUpperCase(),
@@ -180,8 +182,15 @@ export default function SalesOrders() {
         items.length.toString(),
         tx.payment_method.toUpperCase(),
         formatCurrency(tx.total_amount),
-        formatCurrency(netProfit),
-      ]);
+      ];
+      
+      if (isAdmin) {
+        const { profit, loss } = calculateTransactionProfitLoss(tx);
+        const netProfit = profit - loss;
+        row.push(formatCurrency(netProfit));
+      }
+      
+      csvRows.push(row);
     });
 
     const csvContent = csvRows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
@@ -235,7 +244,7 @@ export default function SalesOrders() {
                 <th>Items</th>
                 <th>Payment</th>
                 <th>Amount</th>
-                <th>Profit/Loss</th>
+                {isAdmin && <th>Profit/Loss</th>}
               </tr>
             </thead>
             <tbody>
@@ -245,8 +254,12 @@ export default function SalesOrders() {
                 const customer = tx.transaction_customer_id 
                   ? customers.find(c => c.id === tx.transaction_customer_id)?.name || 'Walk-in'
                   : 'Walk-in';
-                const { profit, loss } = calculateTransactionProfitLoss(tx);
-                const netProfit = profit - loss;
+                let profitLossCell = '';
+                if (isAdmin) {
+                  const { profit, loss } = calculateTransactionProfitLoss(tx);
+                  const netProfit = profit - loss;
+                  profitLossCell = `<td>${formatCurrency(netProfit)}</td>`;
+                }
                 return `
                   <tr>
                     <td>${date.toLocaleDateString()}</td>
@@ -255,7 +268,7 @@ export default function SalesOrders() {
                     <td>${items.length}</td>
                     <td>${tx.payment_method.toUpperCase()}</td>
                     <td>${formatCurrency(tx.total_amount)}</td>
-                    <td>${formatCurrency(netProfit)}</td>
+                    ${profitLossCell}
                   </tr>
                 `;
               }).join('')}
@@ -264,7 +277,7 @@ export default function SalesOrders() {
           <div class="summary">
             <div class="summary-row"><strong>Total Orders:</strong> ${getTotalTransactions()}</div>
             <div class="summary-row"><strong>Total Sales:</strong> ${formatCurrency(getTotalSales())}</div>
-            <div class="summary-row"><strong>Total Profit:</strong> ${formatCurrency(getTotalProfitLoss().profit - getTotalProfitLoss().loss)}</div>
+            ${isAdmin ? `<div class="summary-row"><strong>Total Profit:</strong> ${formatCurrency(getTotalProfitLoss().profit - getTotalProfitLoss().loss)}</div>` : ''}
           </div>
         </body>
       </html>
@@ -386,33 +399,37 @@ export default function SalesOrders() {
             </p>
           </div>
         </div>
-        <div className="summary-card profit-card">
-          <div className="summary-icon">📊</div>
-          <div className="summary-content">
-            <h3>Total Profit</h3>
-            <p className="summary-value profit-value">
-              {formatCurrency(getTotalProfitLoss().profit)}
-            </p>
-          </div>
-        </div>
-        <div className="summary-card loss-card">
-          <div className="summary-icon">📉</div>
-          <div className="summary-content">
-            <h3>Total Loss</h3>
-            <p className="summary-value loss-value">
-              {formatCurrency(getTotalProfitLoss().loss)}
-            </p>
-          </div>
-        </div>
-        <div className="summary-card net-card">
-          <div className="summary-icon">💵</div>
-          <div className="summary-content">
-            <h3>Net Profit</h3>
-            <p className="summary-value net-value">
-              {formatCurrency(getTotalProfitLoss().profit - getTotalProfitLoss().loss)}
-            </p>
-          </div>
-        </div>
+        {isAdmin && (
+          <>
+            <div className="summary-card profit-card">
+              <div className="summary-icon">📊</div>
+              <div className="summary-content">
+                <h3>Total Profit</h3>
+                <p className="summary-value profit-value">
+                  {formatCurrency(getTotalProfitLoss().profit)}
+                </p>
+              </div>
+            </div>
+            <div className="summary-card loss-card">
+              <div className="summary-icon">📉</div>
+              <div className="summary-content">
+                <h3>Total Loss</h3>
+                <p className="summary-value loss-value">
+                  {formatCurrency(getTotalProfitLoss().loss)}
+                </p>
+              </div>
+            </div>
+            <div className="summary-card net-card">
+              <div className="summary-icon">💵</div>
+              <div className="summary-content">
+                <h3>Net Profit</h3>
+                <p className="summary-value net-value">
+                  {formatCurrency(getTotalProfitLoss().profit - getTotalProfitLoss().loss)}
+                </p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Transactions List */}
@@ -428,7 +445,7 @@ export default function SalesOrders() {
                   <th>Items</th>
                   <th>Payment</th>
                   <th>Amount</th>
-                  <th>Profit/Loss</th>
+                  {isAdmin && <th>Profit/Loss</th>}
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -467,30 +484,32 @@ export default function SalesOrders() {
                         </span>
                       </td>
                       <td className="amount">{formatCurrency(transaction.total_amount)}</td>
-                      <td>
-                        <div className="profit-loss-cell">
-                          {profit > 0 && (
-                            <div className="profit-badge">
-                              <span className="profit-label">Profit:</span>
-                              <span className="profit-amount">+{formatCurrency(profit)}</span>
-                            </div>
-                          )}
-                          {loss > 0 && (
-                            <div className="loss-badge">
-                              <span className="loss-label">Loss:</span>
-                              <span className="loss-amount">-{formatCurrency(loss)}</span>
-                            </div>
-                          )}
-                          {profit === 0 && loss === 0 && (
-                            <span className="no-profit-loss">-</span>
-                          )}
-                          {netProfit !== 0 && (
-                            <div className={`net-badge ${netProfit > 0 ? 'net-profit' : 'net-loss'}`}>
-                              Net: {formatCurrency(netProfit)}
-                            </div>
-                          )}
-                        </div>
-                      </td>
+                      {isAdmin && (
+                        <td>
+                          <div className="profit-loss-cell">
+                            {profit > 0 && (
+                              <div className="profit-badge">
+                                <span className="profit-label">Profit:</span>
+                                <span className="profit-amount">+{formatCurrency(profit)}</span>
+                              </div>
+                            )}
+                            {loss > 0 && (
+                              <div className="loss-badge">
+                                <span className="loss-label">Loss:</span>
+                                <span className="loss-amount">-{formatCurrency(loss)}</span>
+                              </div>
+                            )}
+                            {profit === 0 && loss === 0 && (
+                              <span className="no-profit-loss">-</span>
+                            )}
+                            {netProfit !== 0 && (
+                              <div className={`net-badge ${netProfit > 0 ? 'net-profit' : 'net-loss'}`}>
+                                Net: {formatCurrency(netProfit)}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      )}
                       <td>
                         <button
                           className="btn btn-secondary btn-sm"
