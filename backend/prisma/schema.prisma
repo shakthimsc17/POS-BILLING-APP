@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(255)
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.Text
+  phone        String?  @db.VarChar(20)
+  address      String?  @db.Text
+  city         String?  @db.VarChar(100)
+  state        String?  @db.VarChar(100)
+  pincode      String?  @db.VarChar(20)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  categories   Category[]
+  items        Item[]
+  transactions Transaction[] @relation("CustomerTransactions")
+  transactionCustomers Transaction[] @relation("TransactionCustomers")
+
+  @@map("customers")
+  @@index([email])
+  @@index([phone])
+}
+
+model Category {
+  id          String   @id @default(uuid()) @db.Uuid
+  customerId  String   @map("customer_id") @db.Uuid
+  name        String   @db.VarChar(255)
+  subcategory String?  @db.VarChar(255)
+  brand       String?  @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items    Item[]
+
+  @@map("categories")
+  @@index([customerId])
+}
+
+model Item {
+  id          String    @id @default(uuid()) @db.Uuid
+  customerId  String    @map("customer_id") @db.Uuid
+  name        String    @db.VarChar(255)
+  code        String    @db.VarChar(100)
+  barcode     String?   @db.VarChar(255)
+  categoryId  String?   @map("category_id") @db.Uuid
+  subcategory String?   @db.VarChar(255)
+  cost        Decimal   @db.Decimal(10, 2)
+  price       Decimal   @db.Decimal(10, 2)
+  mrp         Decimal?  @db.Decimal(10, 2)
+  stock       Int       @default(0)
+  imageUrl    String?   @map("image_url") @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  customer Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@map("items")
+  @@index([customerId])
+  @@index([categoryId])
+  @@index([barcode])
+  @@index([code])
+}
+
+model Transaction {
+  id                  String    @id @default(uuid()) @db.Uuid
+  customerId          String    @map("customer_id") @db.Uuid
+  transactionCustomerId String? @map("transaction_customer_id") @db.Uuid
+  totalAmount         Decimal   @map("total_amount") @db.Decimal(10, 2)
+  paymentMethod       String    @map("payment_method") @db.VarChar(20)
+  receivedAmount      Decimal?  @map("received_amount") @db.Decimal(10, 2)
+  changeAmount        Decimal?  @map("change_amount") @db.Decimal(10, 2)
+  itemsJson           String    @map("items_json") @db.Text
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  customer          Customer  @relation("CustomerTransactions", fields: [customerId], references: [id], onDelete: Cascade)
+  transactionCustomer Customer? @relation("TransactionCustomers", fields: [transactionCustomerId], references: [id], onDelete: SetNull)
+
+  @@map("transactions")
+  @@index([customerId])
+  @@index([createdAt])
+}

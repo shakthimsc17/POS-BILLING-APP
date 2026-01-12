@@ -1,0 +1,52 @@
+name,code,barcode,category_name,subcategory,cost,price,mrp,stock
+Nike Men's Classic T-Shirt,NIKE-TS-001,1234567890001,Clothing,Men's T-Shirts,300,450,600,50
+Adidas Men's Sport T-Shirt,ADID-TS-002,1234567890002,Clothing,Men's T-Shirts,350,525,700,45
+Puma Men's Cotton T-Shirt,PUMA-TS-003,1234567890003,Clothing,Men's T-Shirts,280,420,560,60
+Van Heusen Men's Formal Shirt,VH-SH-004,1234567890004,Clothing,Men's Shirts,800,1200,1600,30
+Arrow Men's Business Shirt,ARR-SH-005,1234567890005,Clothing,Men's Shirts,750,1125,1500,35
+Peter England Men's Casual Shirt,PE-SH-006,1234567890006,Clothing,Men's Shirts,600,900,1200,40
+Levi's Men's 501 Jeans,LEV-JN-007,1234567890007,Clothing,Men's Jeans,1200,1800,2400,25
+Wrangler Men's Slim Fit Jeans,WRG-JN-008,1234567890008,Clothing,Men's Jeans,1100,1650,2200,30
+Pepe Jeans Men's Regular Fit,PP-JN-009,1234567890009,Clothing,Men's Jeans,1000,1500,2000,35
+Allen Solly Men's Formal Trousers,AS-TR-010,1234567890010,Clothing,Men's Trousers,900,1350,1800,28
+Blackberrys Men's Chinos,BB-TR-011,1234567890011,Clothing,Men's Trousers,850,1275,1700,32
+Raymond Men's Suit,RAY-FW-012,1234567890012,Clothing,Men's Formal Wear,5000,7500,10000,15
+Blackberrys Men's Blazer,BB-FW-013,1234567890013,Clothing,Men's Formal Wear,4500,6750,9000,18
+Zara Women's Casual Top,ZARA-TOP-014,1234567890014,Clothing,Women's Tops,400,600,800,55
+H&M Women's Basic Tee,HM-TOP-015,1234567890015,Clothing,Women's Tops,350,525,700,60
+Forever 21 Women's Summer Dress,FF21-DR-016,1234567890016,Clothing,Women's Dresses,800,1200,1600,40
+Max Women's Party Dress,MAX-DR-017,1234567890017,Clothing,Women's Dresses,1200,1800,2400,30
+Levi's Women's Skinny Jeans,LEV-WJ-018,1234567890018,Clothing,Women's Jeans,1100,1650,2200,35
+Pepe Jeans Women's Bootcut,PP-WJ-019,1234567890019,Clothing,Women's Jeans,1000,1500,2000,38
+Zara Women's A-Line Skirt,ZARA-SK-020,1234567890020,Clothing,Women's Skirts,600,900,1200,42
+H&M Women's Mini Skirt,HM-SK-021,1234567890021,Clothing,Women's Skirts,500,750,1000,45
+Fabindia Women's Kurti,FAB-EW-022,1234567890022,Clothing,Women's Ethnic Wear,900,1350,1800,50
+Biba Women's Anarkali,BIB-EW-023,1234567890023,Clothing,Women's Ethnic Wear,1500,2250,3000,25
+Manyavar Women's Silk Saree,MAN-SR-024,1234567890024,Clothing,Women's Sarees,2500,3750,5000,20
+Biba Women's Designer Saree,BIB-SR-025,1234567890025,Clothing,Women's Sarees,2000,3000,4000,22
+Nike Men's Air Max Sneakers,NIKE-SN-026,1234567890026,Footwear,Men's Sneakers,2500,3750,5000,20
+Adidas Men's Running Shoes,ADID-SN-027,1234567890027,Footwear,Men's Sneakers,2200,3300,4400,25
+Puma Men's Sports Shoes,PUMA-SN-028,1234567890028,Footwear,Men's Sneakers,2000,3000,4000,30
+Bata Men's Leather Formal Shoes,BATA-FS-029,1234567890029,Footwear,Men's Formal Shoes,1500,2250,3000,35
+Red Tape Men's Oxford Shoes,RT-FS-030,1234567890030,Footwear,Men's Formal Shoes,1800,2700,3600,28
+Woodland Men's Casual Shoes,WD-CS-031,1234567890031,Footwear,Men's Casual Shoes,1600,2400,3200,32
+Paragon Men's Leather Sandals,PAR-SD-032,1234567890032,Footwear,Men's Sandals,800,1200,1600,40
+Nike Women's Air Force Sneakers,NIKE-WS-033,1234567890033,Footwear,Women's Sneakers,2400,3600,4800,22
+Adidas Women's Running Shoes,ADID-WS-034,1234567890034,Footwear,Women's Sneakers,2100,3150,4200,28
+Metro Women's High Heels,MET-HL-035,1234567890035,Footwear,Women's Heels,1200,1800,2400,35
+Red Tape Women's Stilettos,RT-HL-036,1234567890036,Footwear,Women's Heels,1400,2100,2800,30
+Bata Women's Comfort Flats,BATA-FL-037,1234567890037,Footwear,Women's Flats,900,1350,1800,45
+Paragon Women's Fashion Sandals,PAR-WS-038,1234567890038,Footwear,Women's Sandals,700,1050,1400,50
+Titan Men's Analog Watch,TIT-WT-039,1234567890039,Accessories,Men's Watches,2000,3000,4000,30
+Fastrack Men's Digital Watch,FT-WT-040,1234567890040,Accessories,Men's Watches,1500,2250,3000,40
+Allen Solly Men's Leather Belt,AS-BL-041,1234567890041,Accessories,Men's Belts,600,900,1200,55
+Van Heusen Men's Formal Belt,VH-BL-042,1234567890042,Accessories,Men's Belts,500,750,1000,60
+Wildcraft Men's Wallet,WC-WL-043,1234567890043,Accessories,Men's Wallets,800,1200,1600,45
+Caprese Women's Handbag,CAP-HB-044,1234567890044,Accessories,Women's Handbags,1500,2250,3000,35
+Allen Solly Women's Tote Bag,AS-HB-045,1234567890045,Accessories,Women's Handbags,1200,1800,2400,40
+Tanishq Women's Gold Necklace,TAN-JW-046,1234567890046,Accessories,Women's Jewelry,15000,22500,30000,10
+PC Jeweller Women's Earrings,PC-JW-047,1234567890047,Accessories,Women's Jewelry,5000,7500,10000,25
+Zara Women's Silk Scarf,ZARA-SC-048,1234567890048,Accessories,Women's Scarves,400,600,800,60
+Ray-Ban Women's Aviator Sunglasses,RB-SG-049,1234567890049,Accessories,Women's Sunglasses,2000,3000,4000,30
+Tom Ford Women's Designer Sunglasses,TF-SG-050,1234567890050,Accessories,Women's Sunglasses,3500,5250,7000,20
+

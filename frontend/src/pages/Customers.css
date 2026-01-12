@@ -1,0 +1,102 @@
+.customers {
+  animation: fadeIn 0.5s ease-in;
+}
+
+.customers-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  color: white;
+}
+
+.customers-header h1 {
+  font-size: 2.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.customers-table {
+  overflow-x: auto;
+}
+
+.customers-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.customers-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.customers-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.customers-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.customers-table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.customers-table tbody tr:hover {
+  background: #f5f5f5;
+}
+
+.customer-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.customer-address {
+  font-size: 0.9rem;
+  color: #666;
+  max-width: 300px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.form-row label {
+  margin-bottom: 0;
+}
+
+textarea.input {
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+  color: white;
+  font-size: 1.2rem;
+}
+
+@media (max-width: 768px) {
+  .customers-table {
+    font-size: 0.85rem;
+  }
+
+  .customers-table th,
+  .customers-table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+

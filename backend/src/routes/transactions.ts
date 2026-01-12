@@ -1,0 +1,147 @@
+import express from 'express';
+import prisma from '../db/prisma.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
+
+const router = express.Router();
+
+// All routes require authentication
+router.use(authenticate);
+
+// Get all transactions
+router.get('/', async (req: AuthRequest, res) => {
+  try {
+    const transactions = await prisma.transaction.findMany({
+      where: { customerId: req.customerId! },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Transform Prisma camelCase to snake_case for frontend compatibility
+    const transformedTransactions = transactions.map((tx) => ({
+      id: tx.id,
+      customer_id: tx.customerId,
+      transaction_customer_id: tx.transactionCustomerId,
+      total_amount: tx.totalAmount.toString(),
+      payment_method: tx.paymentMethod,
+      received_amount: tx.receivedAmount ? tx.receivedAmount.toString() : null,
+      change_amount: tx.changeAmount ? tx.changeAmount.toString() : null,
+      items_json: tx.itemsJson,
+      created_at: tx.createdAt.toISOString(),
+    }));
+
+    res.json(transformedTransactions);
+  } catch (error: any) {
+    console.error('Error fetching transactions:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch transactions' });
+  }
+});
+
+// Create transaction
+router.post(
+  '/',
+  async (req: AuthRequest, res) => {
+    try {
+      // Support both snake_case (from frontend) and camelCase
+      const totalAmount = req.body.totalAmount || req.body.total_amount;
+      const paymentMethod = req.body.paymentMethod || req.body.payment_method;
+      const itemsJson = req.body.itemsJson || req.body.items_json;
+      const transactionCustomerId = req.body.transactionCustomerId || req.body.transaction_customer_id;
+      const receivedAmount = req.body.receivedAmount || req.body.received_amount;
+      const changeAmount = req.body.changeAmount || req.body.change_amount;
+
+      // Validate required fields manually
+      const validationErrors: any[] = [];
+      
+      if (!totalAmount || isNaN(parseFloat(totalAmount)) || parseFloat(totalAmount) < 0) {
+        validationErrors.push({
+          type: 'field',
+          msg: 'Invalid value',
+          path: 'totalAmount',
+          location: 'body'
+        });
+      }
+      
+      if (!paymentMethod || !['cash', 'card', 'upi'].includes(paymentMethod)) {
+        validationErrors.push({
+          type: 'field',
+          msg: 'Invalid value',
+          path: 'paymentMethod',
+          location: 'body'
+        });
+      }
+      
+      if (!itemsJson || (typeof itemsJson === 'string' && itemsJson.trim() === '')) {
+        validationErrors.push({
+          type: 'field',
+          msg: 'Invalid value',
+          path: 'itemsJson',
+          location: 'body'
+        });
+      }
+
+      if (validationErrors.length > 0) {
+        return res.status(400).json({ errors: validationErrors });
+      }
+
+      // Create transaction
+      const transaction = await prisma.transaction.create({
+        data: {
+          customerId: req.customerId!,
+          transactionCustomerId,
+          totalAmount: parseFloat(totalAmount),
+          paymentMethod,
+          receivedAmount: receivedAmount ? parseFloat(receivedAmount) : null,
+          changeAmount: changeAmount ? parseFloat(changeAmount) : null,
+          itemsJson: typeof itemsJson === 'string' ? itemsJson : JSON.stringify(itemsJson),
+        },
+      });
+
+      // Update item stock
+      try {
+        const items = typeof itemsJson === 'string' ? JSON.parse(itemsJson) : itemsJson;
+        
+        for (const cartItem of items) {
+          const item = cartItem.item || cartItem;
+          const quantity = cartItem.quantity || 1;
+          const itemId = item.id;
+
+          if (itemId) {
+            // Verify item belongs to customer
+            const existingItem = await prisma.item.findFirst({
+              where: { id: itemId, customerId: req.customerId! },
+            });
+
+            if (existingItem && existingItem.stock >= quantity) {
+              await prisma.item.update({
+                where: { id: itemId },
+                data: { stock: existingItem.stock - quantity },
+              });
+            }
+          }
+        }
+      } catch (stockError) {
+        console.error('Error updating stock:', stockError);
+        // Don't fail transaction if stock update fails
+      }
+
+      // Transform response to snake_case for frontend compatibility
+      const transformedTransaction = {
+        id: transaction.id,
+        customer_id: transaction.customerId,
+        transaction_customer_id: transaction.transactionCustomerId,
+        total_amount: transaction.totalAmount.toString(),
+        payment_method: transaction.paymentMethod,
+        received_amount: transaction.receivedAmount ? transaction.receivedAmount.toString() : null,
+        change_amount: transaction.changeAmount ? transaction.changeAmount.toString() : null,
+        items_json: transaction.itemsJson,
+        created_at: transaction.createdAt.toISOString(),
+      };
+
+      res.status(201).json(transformedTransaction);
+    } catch (error: any) {
+      console.error('Error creating transaction:', error);
+      res.status(500).json({ error: error.message || 'Failed to create transaction' });
+    }
+  }
+);
+
+export default router;
