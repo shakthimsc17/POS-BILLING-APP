@@ -473,8 +473,25 @@ export default function SalesOrders() {
                         )}
                       </td>
                       <td>
-                        <div className="items-count">
-                          {items.length} item{items.length !== 1 ? 's' : ''}
+                        <div className="items-details">
+                          <div className="items-count">
+                            {items.length} item{items.length !== 1 ? 's' : ''}
+                          </div>
+                          <div className="items-list">
+                            {items.slice(0, 3).map((cartItem: any, idx: number) => {
+                              const item = cartItem.item || cartItem;
+                              return (
+                                <div key={idx} className="item-detail">
+                                  <span className="item-name">{item.name}</span>
+                                  {item.code && <span className="item-code">({item.code})</span>}
+                                  <span className="item-qty">x{cartItem.quantity || 1}</span>
+                                </div>
+                              );
+                            })}
+                            {items.length > 3 && (
+                              <div className="item-more">+{items.length - 3} more</div>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td>

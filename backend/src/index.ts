@@ -9,6 +9,7 @@ import categoriesRoutes from './routes/categories.js';
 import itemsRoutes from './routes/items.js';
 import transactionsRoutes from './routes/transactions.js';
 import customersRoutes from './routes/customers.js';
+import companyRoutes from './routes/company.js';
 
 dotenv.config();
 
@@ -65,6 +66,7 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/items', itemsRoutes);
 app.use('/api/transactions', transactionsRoutes);
 app.use('/api/customers', customersRoutes);
+app.use('/api/company', companyRoutes);
 
 // Error handling
 app.use(errorHandler);

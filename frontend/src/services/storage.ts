@@ -1,4 +1,4 @@
-import { Category, Item, Transaction, Customer } from '../types';
+import { Category, Item, Transaction, Customer, Company } from '../types';
 import apiClient from '../lib/apiClient';
 
 export const storageService = {
@@ -75,5 +75,14 @@ export const storageService = {
 
   deleteCustomer: async (id: string): Promise<void> => {
     await apiClient.delete(`/customers/${id}`);
+  },
+
+  // Company
+  getCompany: async (): Promise<Company> => {
+    return apiClient.get<Company>('/company');
+  },
+
+  saveCompany: async (company: Partial<Company>): Promise<Company> => {
+    return apiClient.post<Company>('/company', company);
   },
 };

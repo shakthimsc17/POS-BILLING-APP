@@ -56,3 +56,20 @@ export interface Transaction {
   created_at: string;
 }
 
+export interface Company {
+  id?: string | null;
+  customer_id: string;
+  name: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  phone?: string;
+  email?: string;
+  gstin?: string;
+  website?: string;
+  logo?: string;
+  created_at: string;
+  updated_at: string;
+}
+

@@ -43,7 +43,7 @@ export function printReceipt(options: PrintOptions) {
             box-sizing: border-box;
           }
           body {
-            font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             font-size: 11px;
             line-height: 1.2;
             color: #000;
@@ -58,6 +58,19 @@ export function printReceipt(options: PrintOptions) {
             border-bottom: 1px dashed #000;
             padding-bottom: 5px;
             margin-bottom: 6px;
+          }
+          .company-logo-container {
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+          .company-logo {
+            max-width: 50mm;
+            max-height: 30mm;
+            width: auto;
+            height: auto;
+            object-fit: contain;
           }
           .company-name {
             font-size: 14px;
@@ -205,7 +218,7 @@ export function printReceipt(options: PrintOptions) {
           .barcode {
             margin-top: 4px;
             padding: 3px 0;
-            font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             font-size: 10px;
             font-weight: bold;
             letter-spacing: 2px;
@@ -214,6 +227,7 @@ export function printReceipt(options: PrintOptions) {
       </head>
       <body>
         <div class="receipt-header">
+          ${company.logo ? `<div class="company-logo-container"><img src="${company.logo}" alt="Logo" class="company-logo" /></div>` : ''}
           <div class="company-name">${company.name || 'My Store'}</div>
           <div class="company-details">
             ${company.address ? `<p>${company.address}</p>` : ''}
@@ -275,7 +289,7 @@ export function printReceipt(options: PrintOptions) {
               <span>Cash Received:</span>
               <span>${formatCurrency(transaction.received_amount)}</span>
             </div>
-            ${transaction.change_amount && transaction.change_amount > 0
+            ${transaction.change_amount && Number(transaction.change_amount) > 0
               ? `
               <div class="total-row">
                 <span>Change:</span>

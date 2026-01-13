@@ -212,6 +212,54 @@
   font-size: 0.9rem;
 }
 
+.items-details {
+  min-width: 200px;
+}
+
+.items-count {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.items-list {
+  margin-top: 6px;
+  font-size: 0.85rem;
+}
+
+.item-detail {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+  padding: 2px 0;
+  flex-wrap: wrap;
+}
+
+.item-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.item-code {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.item-qty {
+  color: #667eea;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.item-more {
+  color: #999;
+  font-style: italic;
+  font-size: 0.8rem;
+  margin-top: 2px;
+}
+
 .amount {
   font-weight: 700;
   font-size: 1.1rem;

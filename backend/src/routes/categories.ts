@@ -8,11 +8,10 @@ const router = express.Router();
 // All routes require authentication
 router.use(authenticate);
 
-// Get all categories
+// Get all categories - show all categories to all authenticated users (shared inventory)
 router.get('/', async (req: AuthRequest, res) => {
   try {
     const categories = await prisma.category.findMany({
-      where: { customerId: req.customerId! },
       orderBy: { createdAt: 'desc' },
     });
 

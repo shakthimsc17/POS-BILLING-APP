@@ -8,11 +8,10 @@ const router = express.Router();
 // All routes require authentication
 router.use(authenticate);
 
-// Get all items
+// Get all items - show all items to all authenticated users (shared inventory)
 router.get('/', async (req: AuthRequest, res) => {
   try {
     const items = await prisma.item.findMany({
-      where: { customerId: req.customerId! },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -36,12 +35,11 @@ router.get('/search', [query('q').notEmpty()], async (req: AuthRequest, res) => 
 
     const items = await prisma.$queryRaw`
       SELECT * FROM items
-      WHERE customer_id = ${req.customerId}
-        AND (
-          name ILIKE ${searchTerm}
-          OR code ILIKE ${searchTerm}
-          OR barcode ILIKE ${searchTerm}
-        )
+      WHERE (
+        name ILIKE ${searchTerm}
+        OR code ILIKE ${searchTerm}
+        OR barcode ILIKE ${searchTerm}
+      )
       ORDER BY created_at DESC
     `;
 
@@ -60,7 +58,6 @@ router.get('/barcode/:barcode', async (req: AuthRequest, res) => {
     const item = await prisma.item.findFirst({
       where: {
         barcode,
-        customerId: req.customerId!,
       },
     });
 
@@ -160,13 +157,32 @@ router.put(
         imageUrl,
       } = req.body;
 
-      // Verify ownership
-      const existing = await prisma.item.findFirst({
-        where: { id, customerId: req.customerId! },
+      // Check if item exists (shared inventory - no customerId check)
+      const existing = await prisma.item.findUnique({
+        where: { id },
       });
 
       if (!existing) {
         return res.status(404).json({ error: 'Item not found' });
+      }
+
+      // Check if user is admin or owner for non-stock updates
+      const isAdmin = req.customer?.isAdmin || false;
+      const isOwner = existing.customerId === req.customerId;
+      const isStockOnlyUpdate = stock !== undefined && 
+        name === undefined && 
+        code === undefined && 
+        barcode === undefined && 
+        categoryId === undefined && 
+        subcategory === undefined && 
+        cost === undefined && 
+        price === undefined && 
+        mrp === undefined && 
+        imageUrl === undefined;
+
+      // Allow stock updates for all users, but other fields require ownership or admin
+      if (!isStockOnlyUpdate && !isOwner && !isAdmin) {
+        return res.status(403).json({ error: 'You can only update items you created, or you must be an admin' });
       }
 
       const updateData: any = {};

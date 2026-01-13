@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useInventoryStore } from '../store/inventoryStore';
+import { useAuthStore } from '../store/authStore';
 import { Item, Category } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import './Items.css';
@@ -25,6 +26,8 @@ export default function Items() {
 
   const { items, categories, loadItems, loadCategories, addItem, updateItem, deleteItem } =
     useInventoryStore();
+  const { customer } = useAuthStore();
+  const isAdmin = customer?.isAdmin || false;
 
   useEffect(() => {
     loadItems();
@@ -293,10 +296,10 @@ export default function Items() {
                   <th>Name</th>
                   <th>Code</th>
                   <th>Category</th>
-                  <th>Cost</th>
+                  {isAdmin && <th>Cost</th>}
                   <th>Sale Price</th>
                   <th>MRP</th>
-                  <th>GM %</th>
+                  {isAdmin && <th>GM %</th>}
                   <th>Stock</th>
                   <th>Actions</th>
                 </tr>
@@ -318,20 +321,24 @@ export default function Items() {
                       <td className="item-name">{item.name}</td>
                       <td className="item-code">{item.code}</td>
                       <td className="item-category">{categoryName}</td>
-                      <td className="item-cost">
-                        {item.cost ? formatCurrency(item.cost) : '-'}
-                      </td>
+                      {isAdmin && (
+                        <td className="item-cost">
+                          {item.cost ? formatCurrency(item.cost) : '-'}
+                        </td>
+                      )}
                       <td className="item-price">{formatCurrency(item.price)}</td>
                       <td className="item-mrp">
                         {item.mrp ? formatCurrency(item.mrp) : '-'}
                       </td>
-                      <td className="item-gm">
-                        {gmPercentage > 0 ? (
-                          <span className={gmPercentage >= 30 ? 'gm-high' : gmPercentage >= 15 ? 'gm-medium' : 'gm-low'}>
-                            {gmPercentage.toFixed(1)}%
-                          </span>
-                        ) : '-'}
-                      </td>
+                      {isAdmin && (
+                        <td className="item-gm">
+                          {gmPercentage > 0 ? (
+                            <span className={gmPercentage >= 30 ? 'gm-high' : gmPercentage >= 15 ? 'gm-medium' : 'gm-low'}>
+                              {gmPercentage.toFixed(1)}%
+                            </span>
+                          ) : '-'}
+                        </td>
+                      )}
                       <td>
                         <span className={item.stock > 0 ? 'stock-ok' : 'stock-out'}>
                           {item.stock}

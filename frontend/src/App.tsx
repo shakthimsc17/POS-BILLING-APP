@@ -112,13 +112,15 @@ function App() {
             <span className="nav-icon">📊</span>
             <span className="nav-text">Sales</span>
           </button>
-          <button
-            className={currentPage === 'customers' ? 'active' : ''}
-            onClick={() => setCurrentPage('customers')}
-          >
-            <span className="nav-icon">👥</span>
-            <span className="nav-text">Customers</span>
-          </button>
+          {customer?.isAdmin && (
+            <button
+              className={currentPage === 'customers' ? 'active' : ''}
+              onClick={() => setCurrentPage('customers')}
+            >
+              <span className="nav-icon">👥</span>
+              <span className="nav-text">Customers</span>
+            </button>
+          )}
           <button
             className={currentPage === 'import' ? 'active' : ''}
             onClick={() => setCurrentPage('import')}
@@ -150,33 +152,6 @@ function App() {
             <span className="nav-text">Company</span>
           </button>
         </nav>
-        
-        {/* Quick Actions Section */}
-        <div className="sidebar-quick-actions">
-          <h3>Quick Actions</h3>
-          <div className="quick-actions-buttons">
-            <button 
-              className="btn btn-secondary btn-sm btn-block" 
-              onClick={() => setCurrentPage('categories')}
-            >
-              📁 Manage Categories
-            </button>
-            <button 
-              className="btn btn-secondary btn-sm btn-block" 
-              onClick={() => setCurrentPage('items')}
-            >
-              📦 Manage Items
-            </button>
-            {cartItems.length > 0 && (
-              <button 
-                className="btn btn-primary btn-sm btn-block" 
-                onClick={() => setCurrentPage('cart')}
-              >
-                🛒 Go to Cart
-              </button>
-            )}
-          </div>
-        </div>
 
         <div className="sidebar-footer">
           <div className="user-info">
@@ -195,7 +170,7 @@ function App() {
         {currentPage === 'items' && <Items />}
         {currentPage === 'payment' && <Payment onNavigate={setCurrentPage} />}
         {currentPage === 'sales' && <SalesOrders />}
-        {currentPage === 'customers' && <Customers />}
+        {currentPage === 'customers' && customer?.isAdmin && <Customers />}
         {currentPage === 'import' && <Import />}
         {currentPage === 'reports' && customer?.isAdmin && <Reports />}
         {currentPage === 'calculators' && <Calculators />}

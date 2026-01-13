@@ -95,7 +95,7 @@ router.post(
         },
       });
 
-      // Update item stock
+      // Update item stock (items are shared, so no ownership check needed)
       try {
         const items = typeof itemsJson === 'string' ? JSON.parse(itemsJson) : itemsJson;
         
@@ -105,9 +105,9 @@ router.post(
           const itemId = item.id;
 
           if (itemId) {
-            // Verify item belongs to customer
-            const existingItem = await prisma.item.findFirst({
-              where: { id: itemId, customerId: req.customerId! },
+            // Find item (shared inventory - no customerId check)
+            const existingItem = await prisma.item.findUnique({
+              where: { id: itemId },
             });
 
             if (existingItem && existingItem.stock >= quantity) {
