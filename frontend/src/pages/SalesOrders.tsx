@@ -16,12 +16,18 @@ export default function SalesOrders() {
   const [filter, setFilter] = useState<FilterPeriod>('today');
   const [loading, setLoading] = useState(true);
   const { customer } = useAuthStore();
+  const { company, loadCompany } = useCompanyStore();
   const isAdmin = customer?.isAdmin || false;
 
   useEffect(() => {
     loadTransactions();
     loadCustomers();
   }, []);
+
+  useEffect(() => {
+    // Load company data from database
+    loadCompany();
+  }, [loadCompany]);
 
   const loadCustomers = async () => {
     try {
@@ -141,10 +147,10 @@ export default function SalesOrders() {
     return totals;
   };
 
-  const handlePrintReceipt = (transaction: Transaction) => {
+  const handlePrintReceipt = async (transaction: Transaction) => {
     try {
       const items = JSON.parse(transaction.items_json);
-      printReceipt({
+      await printReceipt({
         items,
         transaction,
       });
@@ -154,8 +160,13 @@ export default function SalesOrders() {
     }
   };
 
-  const handleExportCSV = () => {
-    const company = useCompanyStore.getState().getCompany();
+  const handleExportCSV = async () => {
+    const companyStore = useCompanyStore.getState();
+    // Ensure company data is loaded from database
+    if (!companyStore.company.id && companyStore.company.name === 'My Store') {
+      await companyStore.loadCompany();
+    }
+    const company = companyStore.getCompany();
     const headers = isAdmin 
       ? ['Date', 'Time', 'Order ID', 'Customer', 'Items Count', 'Payment Method', 'Amount', 'Profit/Loss']
       : ['Date', 'Time', 'Order ID', 'Customer', 'Items Count', 'Payment Method', 'Amount'];
@@ -205,8 +216,13 @@ export default function SalesOrders() {
     document.body.removeChild(link);
   };
 
-  const handleExportPDF = () => {
-    const company = useCompanyStore.getState().getCompany();
+  const handleExportPDF = async () => {
+    const companyStore = useCompanyStore.getState();
+    // Ensure company data is loaded from database
+    if (!companyStore.company.id && companyStore.company.name === 'My Store') {
+      await companyStore.loadCompany();
+    }
+    const company = companyStore.getCompany();
     const printHTML = `
       <!DOCTYPE html>
       <html>
@@ -325,7 +341,18 @@ export default function SalesOrders() {
   return (
     <div className="sales-orders">
       <div className="sales-orders-header">
-        <h1>📊 Sales Orders</h1>
+        {company.logo && (
+          <div className="page-logo-container">
+            <img 
+              src={company.logo} 
+              alt={company.name || 'Company Logo'} 
+              className="page-logo"
+            />
+          </div>
+        )}
+        <div className="header-content">
+          <h1>{company.logo ? '' : '📊 '}Sales Orders</h1>
+        </div>
         <div className="export-buttons">
           <button className="btn btn-secondary" onClick={handleExportCSV} title="Export to CSV">
             📥 CSV

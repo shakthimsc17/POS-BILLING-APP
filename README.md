@@ -2,6 +2,23 @@
 
 This is a fully local version of the POS Billing application that runs entirely on your machine without any external dependencies like Supabase.
 
+## 🚀 Quick Start (For New Users)
+
+**Just want to get started quickly?** See [QUICK_START.md](./QUICK_START.md)
+
+**Need detailed installation instructions?** See [INSTALLATION_GUIDE.md](./INSTALLATION_GUIDE.md)
+
+### One-Click Start
+
+- **Windows**: Double-click `START_APP.bat`
+- **Mac/Linux**: Run `./start.sh` in terminal
+
+That's it! The app will open at http://localhost:5173
+
+**Default Admin Login:**
+- Email: `admin@posbilling.com`
+- Password: `admin123`
+
 ## Architecture
 
 ```

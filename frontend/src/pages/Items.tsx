@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useInventoryStore } from '../store/inventoryStore';
 import { useAuthStore } from '../store/authStore';
+import { useCompanyStore } from '../store/companyStore';
 import { Item, Category } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import './Items.css';
@@ -27,12 +28,18 @@ export default function Items() {
   const { items, categories, loadItems, loadCategories, addItem, updateItem, deleteItem } =
     useInventoryStore();
   const { customer } = useAuthStore();
+  const { company, loadCompany } = useCompanyStore();
   const isAdmin = customer?.isAdmin || false;
 
   useEffect(() => {
     loadItems();
     loadCategories();
   }, [loadItems, loadCategories]);
+
+  useEffect(() => {
+    // Load company data from database
+    loadCompany();
+  }, [loadCompany]);
 
   const handleAdd = () => {
     setEditingItem(null);
@@ -202,7 +209,18 @@ export default function Items() {
   return (
     <div className="items">
       <div className="items-header">
-        <h1>📦 Items</h1>
+        {company.logo && (
+          <div className="page-logo-container">
+            <img 
+              src={company.logo} 
+              alt={company.name || 'Company Logo'} 
+              className="page-logo"
+            />
+          </div>
+        )}
+        <div className="header-content">
+          <h1>{company.logo ? '' : '📦 '}Items</h1>
+        </div>
         <button className="btn btn-primary" onClick={handleAdd}>
           + Add Item
         </button>

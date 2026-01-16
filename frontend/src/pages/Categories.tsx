@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useInventoryStore } from '../store/inventoryStore';
+import { useCompanyStore } from '../store/companyStore';
 import { Category } from '../types';
 import './Categories.css';
 
@@ -17,10 +18,16 @@ export default function Categories() {
 
   const { categories, loadCategories, addCategory, updateCategory, deleteCategory } =
     useInventoryStore();
+  const { company, loadCompany } = useCompanyStore();
 
   useEffect(() => {
     loadCategories();
   }, [loadCategories]);
+
+  useEffect(() => {
+    // Load company data when component mounts
+    loadCompany();
+  }, [loadCompany]);
 
   const handleAdd = () => {
     setEditingCategory(null);
@@ -94,9 +101,16 @@ export default function Categories() {
     }
   };
 
-  const handleDelete = (category: Category) => {
+  const handleDelete = async (category: Category) => {
     if (confirm(`Are you sure you want to delete "${category.name}${category.subcategory ? ` / ${category.subcategory}` : ''}"?`)) {
-      deleteCategory(category.id);
+      try {
+        await deleteCategory(category.id);
+        // Reload categories after deletion
+        loadCategories();
+      } catch (error) {
+        console.error('Error deleting category:', error);
+        alert('Failed to delete category');
+      }
     }
   };
 
@@ -147,7 +161,18 @@ export default function Categories() {
   return (
     <div className="categories">
       <div className="categories-header">
-        <h1>📁 Categories</h1>
+        {company.logo && (
+          <div className="page-logo-container">
+            <img 
+              src={company.logo} 
+              alt={company.name || 'Company Logo'} 
+              className="page-logo"
+            />
+          </div>
+        )}
+        <div className="header-content">
+          <h1>{company.logo ? '' : '📁 '}Categories</h1>
+        </div>
         <button className="btn btn-primary" onClick={handleAdd}>
           + Add Category
         </button>

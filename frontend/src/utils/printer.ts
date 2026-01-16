@@ -8,9 +8,17 @@ interface PrintOptions {
   transaction: Transaction;
 }
 
-export function printReceipt(options: PrintOptions) {
+export async function printReceipt(options: PrintOptions) {
   const { items, transaction } = options;
-  const company = useCompanyStore.getState().getCompany();
+  
+  // Ensure company data is loaded from database (not localStorage)
+  const companyStore = useCompanyStore.getState();
+  // Check if company is default (not loaded) or has no id (not saved to DB yet)
+  if (!companyStore.company.id && companyStore.company.name === 'My Store') {
+    // Company not loaded yet, load it from database
+    await companyStore.loadCompany();
+  }
+  const company = companyStore.getCompany();
 
   const date = new Date(transaction.created_at);
   const total = items.reduce((sum, item) => sum + item.subtotal, 0);
@@ -60,14 +68,14 @@ export function printReceipt(options: PrintOptions) {
             margin-bottom: 6px;
           }
           .company-logo-container {
-            margin-bottom: 4px;
+            margin-bottom: 2px;
             display: flex;
             justify-content: center;
             align-items: center;
           }
           .company-logo {
-            max-width: 50mm;
-            max-height: 30mm;
+            max-width: 30mm;
+            max-height: 15mm;
             width: auto;
             height: auto;
             object-fit: contain;

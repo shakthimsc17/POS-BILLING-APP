@@ -4,19 +4,53 @@ import './CompanySettings.css';
 
 export default function CompanySettings() {
   const { company, loading, error, loadCompany, saveCompany } = useCompanyStore();
-  const [formData, setFormData] = useState(company);
+  const [formData, setFormData] = useState({
+    name: 'My Store',
+    address: '',
+    city: '',
+    state: '',
+    pincode: '',
+    phone: '',
+    email: '',
+    gstin: '',
+    website: '',
+    logo: '',
+  });
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    // Load company data from database on mount
     loadCompany();
   }, [loadCompany]);
 
   useEffect(() => {
-    if (company) {
-      setFormData(company);
+    // Update form data when company data is loaded from database
+    if (company && !loading) {
+      console.log('Company data updated in form:', {
+        id: company.id,
+        customer_id: company.customer_id,
+        name: company.name,
+        address: company.address,
+        phone: company.phone,
+        email: company.email,
+        hasLogo: !!company.logo,
+        logoLength: company.logo ? company.logo.length : 0,
+      });
+      setFormData({
+        name: company.name || 'My Store',
+        address: company.address || '',
+        city: company.city || '',
+        state: company.state || '',
+        pincode: company.pincode || '',
+        phone: company.phone || '',
+        email: company.email || '',
+        gstin: company.gstin || '',
+        website: company.website || '',
+        logo: company.logo || '',
+      });
     }
-  }, [company]);
+  }, [company, loading]);
 
   const handleChange = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -26,19 +60,47 @@ export default function CompanySettings() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await saveCompany(formData);
+      // Prepare data to save - exclude id, customer_id, created_at, updated_at
+      const dataToSave = {
+        name: formData.name || 'My Store',
+        address: formData.address || '',
+        city: formData.city || '',
+        state: formData.state || '',
+        pincode: formData.pincode || '',
+        phone: formData.phone || '',
+        email: formData.email || '',
+        gstin: formData.gstin || '',
+        website: formData.website || '',
+        logo: formData.logo || '',
+      };
+      console.log('Saving company data:', dataToSave);
+      const saved = await saveCompany(dataToSave);
+      console.log('Company saved successfully:', saved);
+      // Reload company data after save
+      await loadCompany();
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (error) {
       console.error('Error saving company:', error);
-      alert('Failed to save company details. Please try again.');
+      alert(`Failed to save company details: ${(error as Error).message}`);
     } finally {
       setSaving(false);
     }
   };
 
   const handleReset = () => {
-    setFormData(company);
+    setFormData({
+      name: company.name || 'My Store',
+      address: company.address || '',
+      city: company.city || '',
+      state: company.state || '',
+      pincode: company.pincode || '',
+      phone: company.phone || '',
+      email: company.email || '',
+      gstin: company.gstin || '',
+      website: company.website || '',
+      logo: company.logo || '',
+    });
     setSaved(false);
   };
 
@@ -75,7 +137,7 @@ export default function CompanySettings() {
     setSaved(false);
   };
 
-  if (loading && !company.name) {
+  if (loading && (!company.name || company.name === 'My Store')) {
     return (
       <div className="company-settings">
         <div className="loading-state">

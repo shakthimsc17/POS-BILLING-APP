@@ -8,18 +8,15 @@ const router = express.Router();
 // All routes require authentication
 router.use(authenticate);
 
-// Get company details for current customer
+// Get company details
 router.get('/', async (req: AuthRequest, res) => {
   try {
-    const company = await prisma.company.findUnique({
-      where: { customerId: req.customerId! },
-    });
+    const company = await prisma.company.findFirst();
 
     if (!company) {
-      // Return default company if not found
       return res.json({
         id: null,
-        customer_id: req.customerId,
+        customer_id: '',
         name: 'My Store',
         address: '',
         city: '',
@@ -35,20 +32,19 @@ router.get('/', async (req: AuthRequest, res) => {
       });
     }
 
-    // Transform to snake_case for frontend
     res.json({
       id: company.id,
       customer_id: company.customerId,
       name: company.name,
-      address: company.address,
-      city: company.city,
-      state: company.state,
-      pincode: company.pincode,
-      phone: company.phone,
-      email: company.email,
-      gstin: company.gstin,
-      website: company.website,
-      logo: company.logo,
+      address: company.address || '',
+      city: company.city || '',
+      state: company.state || '',
+      pincode: company.pincode || '',
+      phone: company.phone || '',
+      email: company.email || '',
+      gstin: company.gstin || '',
+      website: company.website || '',
+      logo: company.logo || '',
       created_at: company.createdAt.toISOString(),
       updated_at: company.updatedAt.toISOString(),
     });
@@ -93,16 +89,12 @@ router.post(
         logo,
       } = req.body;
 
-      // Check if company already exists
-      const existing = await prisma.company.findUnique({
-        where: { customerId: req.customerId! },
-      });
+      const existing = await prisma.company.findFirst();
 
       let company;
       if (existing) {
-        // Update existing company
         company = await prisma.company.update({
-          where: { customerId: req.customerId! },
+          where: { id: existing.id },
           data: {
             name,
             address,
@@ -117,7 +109,6 @@ router.post(
           },
         });
       } else {
-        // Create new company
         company = await prisma.company.create({
           data: {
             customerId: req.customerId!,

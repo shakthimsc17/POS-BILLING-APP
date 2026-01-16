@@ -80,7 +80,7 @@ export default function Payment({ onNavigate }: PaymentProps) {
 
       // Print receipt
       try {
-        printReceipt({
+        await printReceipt({
           items,
           transaction: savedTransaction,
         });
@@ -105,7 +105,7 @@ export default function Payment({ onNavigate }: PaymentProps) {
           const receiptItems = typeof savedTransaction.items_json === 'string' 
             ? JSON.parse(savedTransaction.items_json) 
             : savedTransaction.items_json;
-          printReceipt({
+          await printReceipt({
             items: receiptItems,
             transaction: savedTransaction,
           });

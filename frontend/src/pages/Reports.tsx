@@ -39,11 +39,14 @@ export default function Reports() {
   const [showPrices, setShowPrices] = useState(false);
   const { items: storeItems, categories: storeCategories } = useInventoryStore();
   const { customer } = useAuthStore();
+  const { company, loadCompany } = useCompanyStore();
   const isAdmin = customer?.isAdmin || false;
 
   useEffect(() => {
     loadData();
-  }, []);
+    // Load company data from database
+    loadCompany();
+  }, [loadCompany]);
 
   useEffect(() => {
     setItems(storeItems);
@@ -323,8 +326,13 @@ export default function Reports() {
     return Array.from(categoryMap.values()).sort((a, b) => b.value - a.value);
   };
 
-  const handleExportPDF = () => {
-    const company = useCompanyStore.getState().getCompany();
+  const handleExportPDF = async () => {
+    const companyStore = useCompanyStore.getState();
+    // Ensure company data is loaded from database
+    if (!companyStore.company.id && companyStore.company.name === 'My Store') {
+      await companyStore.loadCompany();
+    }
+    const company = companyStore.getCompany();
     const investment = calculateInvestment();
     const sales = calculateSales();
     
@@ -442,7 +450,18 @@ export default function Reports() {
   return (
     <div className="reports-page">
       <div className="reports-header">
-        <h1>📊 Business Reports</h1>
+        {company.logo && (
+          <div className="page-logo-container">
+            <img 
+              src={company.logo} 
+              alt={company.name || 'Company Logo'} 
+              className="page-logo"
+            />
+          </div>
+        )}
+        <div className="header-content">
+          <h1>{company.logo ? '' : '📊 '}Business Reports</h1>
+        </div>
         <div className="header-actions">
           <button
             className="btn btn-icon"

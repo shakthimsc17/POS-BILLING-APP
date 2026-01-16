@@ -1,0 +1,18 @@
+{
+  "name": "pos-billing-app",
+  "version": "1.0.0",
+  "description": "POS Billing Application - Complete Setup",
+  "scripts": {
+    "start": "./start.sh",
+    "start:windows": "START_APP.bat",
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "setup": "npm run install:all && cd backend && npm run prisma:generate && npm run prisma:push && npm run seed:admin",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd backend && npm run build && cd ../frontend && npm run build"
+  },
+  "keywords": ["pos", "billing", "point-of-sale"],
+  "author": "",
+  "license": "ISC"
+}
+
