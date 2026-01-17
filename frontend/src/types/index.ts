@@ -29,6 +29,14 @@ export interface CartItem {
   subtotal: number;
 }
 
+export interface ItemCodePrefix {
+  id: string;
+  prefix: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Customer {
   id: string;
   name: string;

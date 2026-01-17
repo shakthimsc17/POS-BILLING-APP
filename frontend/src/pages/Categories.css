@@ -35,6 +35,12 @@
   flex: 1;
 }
 
+.categories-header .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .filters-card {
   margin-bottom: 1.5rem;
 }

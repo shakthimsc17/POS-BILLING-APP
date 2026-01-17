@@ -120,3 +120,14 @@ model Company {
   @@map("companies")
   @@index([customerId])
 }
+
+model ItemCodePrefix {
+  id          String   @id @default(uuid()) @db.Uuid
+  prefix      String   @unique @db.VarChar(255)
+  description String?  @db.VarChar(500)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("item_code_prefixes")
+  @@index([prefix])
+}

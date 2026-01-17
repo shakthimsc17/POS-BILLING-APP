@@ -35,6 +35,12 @@
   flex: 1;
 }
 
+.items-header .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .items-header h1 {
   font-size: 2.5rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
