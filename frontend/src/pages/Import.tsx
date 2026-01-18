@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useInventoryStore } from '../store/inventoryStore';
 import { Category, Item, ItemCodePrefix } from '../types';
 import { storageService } from '../services/storage';
+import { receiptSettings, ReceiptHeaderOption } from '../utils/receiptSettings';
 import './Import.css';
 
 interface CSVRow {
@@ -29,12 +30,18 @@ export default function Import() {
   const [editingPrefix, setEditingPrefix] = useState<ItemCodePrefix | null>(null);
   const [loadingPrefixes, setLoadingPrefixes] = useState(false);
 
+  // Receipt settings state
+  const [receiptHeaderOption, setReceiptHeaderOption] = useState<ReceiptHeaderOption>('both');
+
   const { categories, loadCategories, addCategory, addItem } = useInventoryStore();
 
   useEffect(() => {
     // Load categories when component mounts (needed for item import)
     loadCategories();
     loadPrefixes();
+    // Load receipt settings
+    const settings = receiptSettings.get();
+    setReceiptHeaderOption(settings.headerOption);
   }, [loadCategories]);
 
   const loadPrefixes = async () => {
@@ -93,6 +100,11 @@ export default function Import() {
     } catch (error: any) {
       alert(`Failed to delete prefix: ${error.message || 'Unknown error'}`);
     }
+  };
+
+  const handleReceiptHeaderOptionChange = (option: ReceiptHeaderOption) => {
+    setReceiptHeaderOption(option);
+    receiptSettings.setHeaderOption(option);
   };
 
   // Helper to find category ID by name (and optionally subcategory)
@@ -598,6 +610,53 @@ export default function Import() {
                 <li>mrp is optional and used for display purposes</li>
               </ul>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Receipt Settings */}
+      <div className="card" style={{ marginTop: '20px' }}>
+        <div className="import-section">
+          <h2>🧾 Receipt Settings</h2>
+          <div className="receipt-settings-section">
+            <div className="form-group">
+              <label className="receipt-settings-label">Receipt Header Display:</label>
+              <div className="radio-group">
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="receiptHeaderOption"
+                    value="logo"
+                    checked={receiptHeaderOption === 'logo'}
+                    onChange={() => handleReceiptHeaderOptionChange('logo')}
+                  />
+                  <span>Logo Only</span>
+                </label>
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="receiptHeaderOption"
+                    value="company_name"
+                    checked={receiptHeaderOption === 'company_name'}
+                    onChange={() => handleReceiptHeaderOptionChange('company_name')}
+                  />
+                  <span>Company Name Only</span>
+                </label>
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="receiptHeaderOption"
+                    value="both"
+                    checked={receiptHeaderOption === 'both'}
+                    onChange={() => handleReceiptHeaderOptionChange('both')}
+                  />
+                  <span>Both (Logo & Company Name)</span>
+                </label>
+              </div>
+            </div>
+            <div className="receipt-settings-note">
+              <p>This setting controls how your company information appears at the top of receipts.</p>
+            </div>
           </div>
         </div>
       </div>

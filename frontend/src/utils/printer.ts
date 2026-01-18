@@ -2,6 +2,7 @@ import { Transaction } from '../types';
 import { CartItem } from '../types';
 import { formatCurrency } from './formatters';
 import { useCompanyStore } from '../store/companyStore';
+import { receiptSettings } from './receiptSettings';
 
 interface PrintOptions {
   items: CartItem[];
@@ -19,6 +20,9 @@ export async function printReceipt(options: PrintOptions) {
     await companyStore.loadCompany();
   }
   const company = companyStore.getCompany();
+
+  // Get receipt settings
+  const receiptHeaderOption = receiptSettings.getHeaderOption();
 
   const date = new Date(transaction.created_at);
   const total = items.reduce((sum, item) => sum + item.subtotal, 0);
@@ -280,8 +284,24 @@ export async function printReceipt(options: PrintOptions) {
       </head>
       <body>
         <div class="receipt-header">
-          ${company.logo ? `<div class="company-logo-container"><img src="${company.logo}" alt="Logo" class="company-logo" /></div>` : ''}
-          <div class="company-name">${company.name || 'My Store'}</div>
+          ${(() => {
+            const showLogo = (receiptHeaderOption === 'logo' || receiptHeaderOption === 'both') && company.logo;
+            const showName = receiptHeaderOption === 'company_name' || receiptHeaderOption === 'both';
+            
+            // If logo only is selected but no logo exists, fallback to company name
+            if (receiptHeaderOption === 'logo' && !company.logo) {
+              return `<div class="company-name">${company.name || 'My Store'}</div>`;
+            }
+            
+            let headerContent = '';
+            if (showLogo) {
+              headerContent += `<div class="company-logo-container"><img src="${company.logo}" alt="Logo" class="company-logo" /></div>`;
+            }
+            if (showName) {
+              headerContent += `<div class="company-name">${company.name || 'My Store'}</div>`;
+            }
+            return headerContent;
+          })()}
           <div class="company-details">
             ${company.address ? `<p>${company.address}</p>` : ''}
             ${company.city || company.state || company.pincode
