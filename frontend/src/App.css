@@ -19,7 +19,7 @@
 /* Sidebar Styles */
 .sidebar {
   width: 260px;
-  min-height: 100vh;
+  height: 100vh;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
@@ -30,6 +30,7 @@
   top: 0;
   z-index: 1000;
   transition: left 0.3s ease;
+  overflow: hidden;
 }
 
 .sidebar.open {
@@ -39,6 +40,26 @@
 .sidebar-header {
   padding: 1.5rem;
   border-bottom: 1px solid #e0e0e0;
+  text-align: center;
+}
+
+.sidebar-logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.sidebar-logo {
+  max-width: 120px;
+  max-height: 80px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 4px;
 }
 
 .sidebar-header h1 {
@@ -70,6 +91,7 @@
   border-bottom: 1px solid #e0e0e0;
   flex: 1;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .sidebar-quick-actions h3 {
@@ -129,6 +151,8 @@
 .sidebar-footer {
   padding: 1.5rem;
   border-top: 1px solid #e0e0e0;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.95);
 }
 
 .user-info {

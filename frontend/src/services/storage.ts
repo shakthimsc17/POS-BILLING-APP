@@ -1,4 +1,4 @@
-import { Category, Item, Transaction, Customer } from '../types';
+import { Category, Item, Transaction, Customer, Company, ItemCodePrefix } from '../types';
 import apiClient from '../lib/apiClient';
 
 export const storageService = {
@@ -19,6 +19,10 @@ export const storageService = {
     await apiClient.delete(`/categories/${id}`);
   },
 
+  deleteAllCategories: async (): Promise<{ message: string; count: number }> => {
+    return apiClient.delete<{ message: string; count: number }>('/categories');
+  },
+
   // Items
   getItems: async (): Promise<Item[]> => {
     return apiClient.get<Item[]>('/items');
@@ -34,6 +38,10 @@ export const storageService = {
 
   deleteItem: async (id: string): Promise<void> => {
     await apiClient.delete(`/items/${id}`);
+  },
+
+  deleteAllItems: async (): Promise<{ message: string; count: number }> => {
+    return apiClient.delete<{ message: string; count: number }>('/items');
   },
 
   searchItems: async (query: string): Promise<Item[]> => {
@@ -75,5 +83,31 @@ export const storageService = {
 
   deleteCustomer: async (id: string): Promise<void> => {
     await apiClient.delete(`/customers/${id}`);
+  },
+
+  // Company
+  getCompany: async (): Promise<Company> => {
+    return apiClient.get<Company>('/company');
+  },
+
+  saveCompany: async (company: Partial<Company>): Promise<Company> => {
+    return apiClient.post<Company>('/company', company);
+  },
+
+  // Item Code Prefixes
+  getItemCodePrefixes: async (): Promise<ItemCodePrefix[]> => {
+    return apiClient.get<ItemCodePrefix[]>('/item-code-prefixes');
+  },
+
+  addItemCodePrefix: async (prefix: Omit<ItemCodePrefix, 'id' | 'created_at' | 'updated_at'>): Promise<ItemCodePrefix> => {
+    return apiClient.post<ItemCodePrefix>('/item-code-prefixes', prefix);
+  },
+
+  updateItemCodePrefix: async (id: string, updates: Partial<ItemCodePrefix>): Promise<void> => {
+    await apiClient.put(`/item-code-prefixes/${id}`, updates);
+  },
+
+  deleteItemCodePrefix: async (id: string): Promise<void> => {
+    await apiClient.delete(`/item-code-prefixes/${id}`);
   },
 };

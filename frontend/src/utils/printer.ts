@@ -2,15 +2,27 @@ import { Transaction } from '../types';
 import { CartItem } from '../types';
 import { formatCurrency } from './formatters';
 import { useCompanyStore } from '../store/companyStore';
+import { receiptSettings } from './receiptSettings';
 
 interface PrintOptions {
   items: CartItem[];
   transaction: Transaction;
 }
 
-export function printReceipt(options: PrintOptions) {
+export async function printReceipt(options: PrintOptions) {
   const { items, transaction } = options;
-  const company = useCompanyStore.getState().getCompany();
+  
+  // Ensure company data is loaded from database (not localStorage)
+  const companyStore = useCompanyStore.getState();
+  // Check if company is default (not loaded) or has no id (not saved to DB yet)
+  if (!companyStore.company.id && companyStore.company.name === 'My Store') {
+    // Company not loaded yet, load it from database
+    await companyStore.loadCompany();
+  }
+  const company = companyStore.getCompany();
+
+  // Get receipt settings
+  const receiptHeaderOption = receiptSettings.getHeaderOption();
 
   const date = new Date(transaction.created_at);
   const total = items.reduce((sum, item) => sum + item.subtotal, 0);
@@ -43,14 +55,14 @@ export function printReceipt(options: PrintOptions) {
             box-sizing: border-box;
           }
           body {
-            font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
-            font-size: 11px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
             line-height: 1.2;
             color: #000;
             width: 80mm;
             max-width: 80mm;
             margin: 0 auto;
-            padding: 4mm 3mm;
+            padding: 3mm 2mm;
             background: white;
           }
           .receipt-header {
@@ -59,16 +71,29 @@ export function printReceipt(options: PrintOptions) {
             padding-bottom: 5px;
             margin-bottom: 6px;
           }
+          .company-logo-container {
+            margin-bottom: 2px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+          .company-logo {
+            max-width: 30mm;
+            max-height: 15mm;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+          }
           .company-name {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
             text-transform: uppercase;
             line-height: 1.2;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
           }
           .company-details {
-            font-size: 9px;
+            font-size: 8px;
             line-height: 1.3;
             text-transform: uppercase;
           }
@@ -77,11 +102,11 @@ export function printReceipt(options: PrintOptions) {
             text-transform: uppercase;
           }
           .receipt-info {
-            margin-bottom: 6px;
-            padding: 4px 0;
+            margin-bottom: 5px;
+            padding: 3px 0;
             border-top: 1px dashed #000;
             border-bottom: 1px dashed #000;
-            font-size: 9px;
+            font-size: 8px;
             display: flex;
             justify-content: space-between;
           }
@@ -111,7 +136,7 @@ export function printReceipt(options: PrintOptions) {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 6px;
-            font-size: 10px;
+            font-size: 9px;
           }
           .items-table thead {
             border-top: 1px solid #000;
@@ -119,10 +144,16 @@ export function printReceipt(options: PrintOptions) {
           }
           .items-table th {
             text-align: left;
-            padding: 3px 2px;
+            padding: 2px 1px;
             font-weight: bold;
-            font-size: 9px;
+            font-size: 8px;
             text-transform: uppercase;
+          }
+          .items-table th.col-mrp {
+            padding-right: 4px;
+          }
+          .items-table th.col-rate {
+            padding-left: 4px;
           }
           .items-table tbody tr {
             border-bottom: 1px dotted #ccc;
@@ -131,16 +162,33 @@ export function printReceipt(options: PrintOptions) {
             border-bottom: 1px solid #000;
           }
           .items-table td {
-            padding: 2px;
-            font-size: 10px;
-            line-height: 1.2;
+            padding: 2px 1px;
+            font-size: 9px;
+            line-height: 1.3;
+            vertical-align: top;
           }
           .items-table .item-name {
             font-weight: bold;
+            font-size: 8px;
+          }
+          .items-table .item-details {
+            font-size: 8px;
+            line-height: 1.4;
+            margin-top: 2px;
+          }
+          .items-table .item-details-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1px;
+          }
+          .items-table .item-details-label {
+            font-weight: normal;
+            color: #333;
           }
           .items-table small {
-            font-size: 8px;
+            font-size: 7px;
             display: block;
+            color: #666;
           }
           .items-table .text-right {
             text-align: right;
@@ -148,17 +196,39 @@ export function printReceipt(options: PrintOptions) {
           .items-table .text-center {
             text-align: center;
           }
-          .items-table th.price-col,
-          .items-table td.price-col {
-            padding-left: 0 !important;
-            padding-right: 2px;
-            text-align: right;
+          .items-table .col-number {
+            width: 8%;
+            text-align: center;
+            font-size: 8px;
           }
-          .items-table th.amt-col,
-          .items-table td.amt-col {
-            padding-left: 0 !important;
-            padding-right: 0;
+          .items-table .col-item {
+            width: 40%;
+            font-size: 8px;
+          }
+          .items-table .col-mrp {
+            width: 12%;
             text-align: right;
+            font-size: 8px;
+            padding-right: 4px;
+          }
+          .items-table .col-rate {
+            width: 12%;
+            text-align: right;
+            font-size: 8px;
+            padding-left: 4px;
+          }
+          .items-table .col-qty {
+            width: 10%;
+            text-align: center;
+            font-size: 8px;
+            padding-left: 2px;
+            padding-right: 2px;
+          }
+          .items-table .col-amt {
+            width: 16%;
+            text-align: right;
+            font-size: 8px;
+            font-weight: bold;
           }
           .totals-section {
             margin-top: 6px;
@@ -168,21 +238,21 @@ export function printReceipt(options: PrintOptions) {
             display: flex;
             justify-content: space-between;
             padding: 2px 0;
-            font-size: 10px;
+            font-size: 9px;
           }
           .total-row.grand-total {
             font-weight: bold;
-            font-size: 13px;
-            padding: 4px 0;
-            margin-top: 3px;
+            font-size: 11px;
+            padding: 3px 0;
+            margin-top: 2px;
             border-top: 2px solid #000;
             border-bottom: 2px solid #000;
           }
           .payment-info {
-            margin-top: 6px;
-            padding: 4px 0;
+            margin-top: 5px;
+            padding: 3px 0;
             border-top: 1px dashed #000;
-            font-size: 9px;
+            font-size: 8px;
             text-align: center;
           }
           .payment-info p {
@@ -193,10 +263,10 @@ export function printReceipt(options: PrintOptions) {
           }
           .footer {
             text-align: center;
-            margin-top: 8px;
-            padding-top: 6px;
+            margin-top: 6px;
+            padding-top: 4px;
             border-top: 1px dashed #000;
-            font-size: 9px;
+            font-size: 8px;
           }
           .footer p:first-child {
             font-weight: bold;
@@ -205,7 +275,7 @@ export function printReceipt(options: PrintOptions) {
           .barcode {
             margin-top: 4px;
             padding: 3px 0;
-            font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             font-size: 10px;
             font-weight: bold;
             letter-spacing: 2px;
@@ -214,7 +284,24 @@ export function printReceipt(options: PrintOptions) {
       </head>
       <body>
         <div class="receipt-header">
-          <div class="company-name">${company.name || 'My Store'}</div>
+          ${(() => {
+            const showLogo = (receiptHeaderOption === 'logo' || receiptHeaderOption === 'both') && company.logo;
+            const showName = receiptHeaderOption === 'company_name' || receiptHeaderOption === 'both';
+            
+            // If logo only is selected but no logo exists, fallback to company name
+            if (receiptHeaderOption === 'logo' && !company.logo) {
+              return `<div class="company-name">${company.name || 'My Store'}</div>`;
+            }
+            
+            let headerContent = '';
+            if (showLogo) {
+              headerContent += `<div class="company-logo-container"><img src="${company.logo}" alt="Logo" class="company-logo" /></div>`;
+            }
+            if (showName) {
+              headerContent += `<div class="company-name">${company.name || 'My Store'}</div>`;
+            }
+            return headerContent;
+          })()}
           <div class="company-details">
             ${company.address ? `<p>${company.address}</p>` : ''}
             ${company.city || company.state || company.pincode
@@ -240,25 +327,34 @@ export function printReceipt(options: PrintOptions) {
         <table class="items-table">
           <thead>
             <tr>
-              <th style="width: 10%;">#</th>
-              <th style="width: 43%;">Item</th>
-              <th style="width: 15%;" class="text-center">Qty</th>
-              <th style="width: 16%;" class="text-right price-col">Price</th>
-              <th style="width: 16%;" class="text-right amt-col">Amt</th>
+              <th class="col-number">#</th>
+              <th class="col-item">Item</th>
+              <th class="col-mrp">MRP</th>
+              <th class="col-qty">Qty</th>
+              <th class="col-rate">Rate</th>
+              <th class="col-amt">Amt</th>
             </tr>
           </thead>
           <tbody>
             ${items
               .map(
-                (cartItem, index) => `
+                (cartItem, index) => {
+                  const mrp = cartItem.item.mrp ? (typeof cartItem.item.mrp === 'string' ? parseFloat(cartItem.item.mrp) : cartItem.item.mrp) : null;
+                  const price = typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price;
+                  return `
               <tr>
-                <td>${index + 1}</td>
-                <td class="item-name">${cartItem.item.name}${cartItem.item.code ? `<br><small>${cartItem.item.code}</small>` : ''}</td>
-                <td class="text-center">${cartItem.quantity}</td>
-                <td class="text-right price-col">${formatCurrency(cartItem.item.price)}</td>
-                <td class="text-right amt-col">${formatCurrency(cartItem.subtotal)}</td>
+                <td class="col-number">${index + 1}</td>
+                <td class="col-item item-name">
+                  ${cartItem.item.name}
+                  ${cartItem.item.code ? `<br><small>Code: ${cartItem.item.code}</small>` : ''}
+                </td>
+                <td class="col-mrp">${mrp ? formatCurrency(mrp) : '-'}</td>
+                <td class="col-qty">${cartItem.quantity}</td>
+                <td class="col-rate">${formatCurrency(price)}</td>
+                <td class="col-amt">${formatCurrency(cartItem.subtotal)}</td>
               </tr>
-            `
+            `;
+                }
               )
               .join('')}
           </tbody>
@@ -275,7 +371,7 @@ export function printReceipt(options: PrintOptions) {
               <span>Cash Received:</span>
               <span>${formatCurrency(transaction.received_amount)}</span>
             </div>
-            ${transaction.change_amount && transaction.change_amount > 0
+            ${transaction.change_amount && Number(transaction.change_amount) > 0
               ? `
               <div class="total-row">
                 <span>Change:</span>

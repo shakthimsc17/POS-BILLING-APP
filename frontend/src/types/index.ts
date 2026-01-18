@@ -29,6 +29,14 @@ export interface CartItem {
   subtotal: number;
 }
 
+export interface ItemCodePrefix {
+  id: string;
+  prefix: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -54,5 +62,22 @@ export interface Transaction {
   change_amount?: number | string; // Prisma Decimal returns as string
   items_json: string;
   created_at: string;
+}
+
+export interface Company {
+  id?: string | null;
+  customer_id: string;
+  name: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  phone?: string;
+  email?: string;
+  gstin?: string;
+  website?: string;
+  logo?: string;
+  created_at: string;
+  updated_at: string;
 }
 

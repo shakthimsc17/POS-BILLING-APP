@@ -9,6 +9,8 @@ import categoriesRoutes from './routes/categories.js';
 import itemsRoutes from './routes/items.js';
 import transactionsRoutes from './routes/transactions.js';
 import customersRoutes from './routes/customers.js';
+import companyRoutes from './routes/company.js';
+import itemCodePrefixesRoutes from './routes/itemCodePrefixes.js';
 
 dotenv.config();
 
@@ -51,8 +53,9 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Increase body size limit to handle base64 images (50MB should be enough)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -65,6 +68,8 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/items', itemsRoutes);
 app.use('/api/transactions', transactionsRoutes);
 app.use('/api/customers', customersRoutes);
+app.use('/api/company', companyRoutes);
+app.use('/api/item-code-prefixes', itemCodePrefixesRoutes);
 
 // Error handling
 app.use(errorHandler);

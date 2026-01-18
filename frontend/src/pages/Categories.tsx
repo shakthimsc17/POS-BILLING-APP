@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useInventoryStore } from '../store/inventoryStore';
+import { useCompanyStore } from '../store/companyStore';
 import { Category } from '../types';
 import './Categories.css';
 
 export default function Categories() {
   const [modalVisible, setModalVisible] = useState(false);
+  const [deleteAllModalVisible, setDeleteAllModalVisible] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isAddingSubcategory, setIsAddingSubcategory] = useState(false);
   const [name, setName] = useState('');
@@ -15,12 +18,18 @@ export default function Categories() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBrand, setFilterBrand] = useState('');
 
-  const { categories, loadCategories, addCategory, updateCategory, deleteCategory } =
+  const { categories, loadCategories, addCategory, updateCategory, deleteCategory, deleteAllCategories } =
     useInventoryStore();
+  const { company, loadCompany } = useCompanyStore();
 
   useEffect(() => {
     loadCategories();
   }, [loadCategories]);
+
+  useEffect(() => {
+    // Load company data when component mounts
+    loadCompany();
+  }, [loadCompany]);
 
   const handleAdd = () => {
     setEditingCategory(null);
@@ -94,9 +103,31 @@ export default function Categories() {
     }
   };
 
-  const handleDelete = (category: Category) => {
+  const handleDelete = async (category: Category) => {
     if (confirm(`Are you sure you want to delete "${category.name}${category.subcategory ? ` / ${category.subcategory}` : ''}"?`)) {
-      deleteCategory(category.id);
+      try {
+        await deleteCategory(category.id);
+        // Reload categories after deletion
+        loadCategories();
+      } catch (error) {
+        console.error('Error deleting category:', error);
+        alert('Failed to delete category');
+      }
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    setDeletingAll(true);
+    try {
+      const result = await deleteAllCategories();
+      alert(`Successfully deleted ${result.count} categor${result.count === 1 ? 'y' : 'ies'}`);
+      setDeleteAllModalVisible(false);
+      loadCategories();
+    } catch (error) {
+      console.error('Error deleting all categories:', error);
+      alert('Failed to delete all categories');
+    } finally {
+      setDeletingAll(false);
     }
   };
 
@@ -147,10 +178,32 @@ export default function Categories() {
   return (
     <div className="categories">
       <div className="categories-header">
-        <h1>📁 Categories</h1>
-        <button className="btn btn-primary" onClick={handleAdd}>
-          + Add Category
-        </button>
+        {company.logo && (
+          <div className="page-logo-container">
+            <img 
+              src={company.logo} 
+              alt={company.name || 'Company Logo'} 
+              className="page-logo"
+            />
+          </div>
+        )}
+        <div className="header-content">
+          <h1>{company.logo ? '' : '📁 '}Categories</h1>
+        </div>
+        <div className="header-actions">
+          {categories.length > 0 && (
+            <button 
+              className="btn btn-danger" 
+              onClick={() => setDeleteAllModalVisible(true)}
+              style={{ marginRight: '10px' }}
+            >
+              🗑️ Delete All
+            </button>
+          )}
+          <button className="btn btn-primary" onClick={handleAdd}>
+            + Add Category
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -358,6 +411,35 @@ export default function Categories() {
               </button>
               <button className="btn btn-primary" onClick={handleSave}>
                 Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete All Confirmation Modal */}
+      {deleteAllModalVisible && (
+        <div className="modal-overlay" onClick={() => setDeleteAllModalVisible(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Delete All Categories</h2>
+            <p>
+              Are you sure you want to delete <strong>all {categories.length} categor{categories.length === 1 ? 'y' : 'ies'}</strong>?
+              This action cannot be undone.
+            </p>
+            <div className="modal-actions">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setDeleteAllModalVisible(false)}
+                disabled={deletingAll}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={handleDeleteAll}
+                disabled={deletingAll}
+              >
+                {deletingAll ? 'Deleting...' : 'Delete All'}
               </button>
             </div>
           </div>

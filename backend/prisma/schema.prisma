@@ -29,6 +29,7 @@ model Customer {
   items        Item[]
   transactions Transaction[] @relation("CustomerTransactions")
   transactionCustomers Transaction[] @relation("TransactionCustomers")
+  company      Company?
 
   @@map("customers")
   @@index([email])
@@ -95,4 +96,38 @@ model Transaction {
   @@map("transactions")
   @@index([customerId])
   @@index([createdAt])
+}
+
+model Company {
+  id          String   @id @default(uuid()) @db.Uuid
+  customerId  String   @unique @map("customer_id") @db.Uuid
+  name        String   @db.VarChar(255)
+  address     String?  @db.Text
+  city        String?  @db.VarChar(100)
+  state       String?  @db.VarChar(100)
+  pincode     String?  @db.VarChar(20)
+  phone       String?  @db.VarChar(20)
+  email       String?  @db.VarChar(255)
+  gstin       String?  @db.VarChar(50)
+  website     String?  @db.VarChar(255)
+  logo        String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("companies")
+  @@index([customerId])
+}
+
+model ItemCodePrefix {
+  id          String   @id @default(uuid()) @db.Uuid
+  prefix      String   @unique @db.VarChar(255)
+  description String?  @db.VarChar(500)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("item_code_prefixes")
+  @@index([prefix])
 }

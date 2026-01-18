@@ -28,7 +28,7 @@ function App() {
   const { loadCategories, loadItems } = useInventoryStore();
   const { customer, initialized, initialize, signOut } = useAuthStore();
   const { items: cartItems } = useCartStore();
-  const { company } = useCompanyStore();
+  const { company, loadCompany } = useCompanyStore();
 
   useEffect(() => {
     initialize();
@@ -36,10 +36,12 @@ function App() {
 
   useEffect(() => {
     if (initialized && customer) {
-    loadCategories();
-    loadItems();
+      loadCategories();
+      loadItems();
+      // Load company data from database
+      loadCompany();
     }
-  }, [initialized, customer, loadCategories, loadItems]);
+  }, [initialized, customer, loadCategories, loadItems, loadCompany]);
 
   // Show auth pages if not signed in
   if (!initialized) {
@@ -73,7 +75,16 @@ function App() {
         onMouseEnter={() => setSidebarOpen(true)}
       >
         <div className="sidebar-header">
-          <h1>🛒 {company.name || 'POS System'}</h1>
+          {company.logo && (
+            <div className="sidebar-logo-container">
+              <img 
+                src={company.logo} 
+                alt={company.name || 'Company Logo'} 
+                className="sidebar-logo"
+              />
+            </div>
+          )}
+          <h1>{company.logo ? '' : '🛒 '}{company.name || 'POS System'}</h1>
           {company.phone && <p className="company-phone">{company.phone}</p>}
         </div>
         <nav className="sidebar-nav">
@@ -112,13 +123,15 @@ function App() {
             <span className="nav-icon">📊</span>
             <span className="nav-text">Sales</span>
           </button>
-          <button
-            className={currentPage === 'customers' ? 'active' : ''}
-            onClick={() => setCurrentPage('customers')}
-          >
-            <span className="nav-icon">👥</span>
-            <span className="nav-text">Customers</span>
-          </button>
+          {customer?.isAdmin && (
+            <button
+              className={currentPage === 'customers' ? 'active' : ''}
+              onClick={() => setCurrentPage('customers')}
+            >
+              <span className="nav-icon">👥</span>
+              <span className="nav-text">Customers</span>
+            </button>
+          )}
           <button
             className={currentPage === 'import' ? 'active' : ''}
             onClick={() => setCurrentPage('import')}
@@ -150,33 +163,6 @@ function App() {
             <span className="nav-text">Company</span>
           </button>
         </nav>
-        
-        {/* Quick Actions Section */}
-        <div className="sidebar-quick-actions">
-          <h3>Quick Actions</h3>
-          <div className="quick-actions-buttons">
-            <button 
-              className="btn btn-secondary btn-sm btn-block" 
-              onClick={() => setCurrentPage('categories')}
-            >
-              📁 Manage Categories
-            </button>
-            <button 
-              className="btn btn-secondary btn-sm btn-block" 
-              onClick={() => setCurrentPage('items')}
-            >
-              📦 Manage Items
-            </button>
-            {cartItems.length > 0 && (
-              <button 
-                className="btn btn-primary btn-sm btn-block" 
-                onClick={() => setCurrentPage('cart')}
-              >
-                🛒 Go to Cart
-              </button>
-            )}
-          </div>
-        </div>
 
         <div className="sidebar-footer">
           <div className="user-info">
@@ -195,7 +181,7 @@ function App() {
         {currentPage === 'items' && <Items />}
         {currentPage === 'payment' && <Payment onNavigate={setCurrentPage} />}
         {currentPage === 'sales' && <SalesOrders />}
-        {currentPage === 'customers' && <Customers />}
+        {currentPage === 'customers' && customer?.isAdmin && <Customers />}
         {currentPage === 'import' && <Import />}
         {currentPage === 'reports' && customer?.isAdmin && <Reports />}
         {currentPage === 'calculators' && <Calculators />}
