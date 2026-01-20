@@ -1,4 +1,4 @@
-import { Category, Item, Transaction, Customer, Company, ItemCodePrefix } from '../types';
+import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog } from '../types';
 import apiClient from '../lib/apiClient';
 
 export const storageService = {
@@ -68,6 +68,10 @@ export const storageService = {
     return apiClient.post<Transaction>('/transactions', transaction);
   },
 
+  deleteTransaction: async (id: string): Promise<void> => {
+    await apiClient.delete(`/transactions/${id}`);
+  },
+
   // Customers
   getCustomers: async (): Promise<Customer[]> => {
     return apiClient.get<Customer[]>('/customers');
@@ -109,5 +113,24 @@ export const storageService = {
 
   deleteItemCodePrefix: async (id: string): Promise<void> => {
     await apiClient.delete(`/item-code-prefixes/${id}`);
+  },
+
+  // Activity Logs
+  getActivityLogs: async (params?: {
+    entityType?: string;
+    entityId?: string;
+    changedBy?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<ActivityLog[]> => {
+    const queryParams = new URLSearchParams();
+    if (params?.entityType) queryParams.append('entityType', params.entityType);
+    if (params?.entityId) queryParams.append('entityId', params.entityId);
+    if (params?.changedBy) queryParams.append('changedBy', params.changedBy);
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.offset) queryParams.append('offset', params.offset.toString());
+    
+    const queryString = queryParams.toString();
+    return apiClient.get<ActivityLog[]>(`/activity-logs${queryString ? `?${queryString}` : ''}`);
   },
 };

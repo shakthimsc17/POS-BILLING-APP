@@ -15,9 +15,9 @@ export default function SalesOrders() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filter, setFilter] = useState<FilterPeriod>('today');
   const [loading, setLoading] = useState(true);
-  const { customer } = useAuthStore();
+  const { customer: currentUser } = useAuthStore();
   const { company, loadCompany } = useCompanyStore();
-  const isAdmin = customer?.isAdmin || false;
+  const isAdmin = currentUser?.isAdmin || false;
 
   useEffect(() => {
     loadTransactions();
@@ -54,6 +54,22 @@ export default function SalesOrders() {
       setTransactions([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteTransaction = async (transaction: Transaction) => {
+    if (!confirm(`Are you sure you want to delete this order (ID: ${transaction.id.substring(0, 8)}...)?\n\nThis will restore the stock for all items in this order.`)) {
+      return;
+    }
+
+    try {
+      await storageService.deleteTransaction(transaction.id);
+      alert('Order deleted successfully. Stock has been restored.');
+      // Reload transactions to refresh the list
+      loadTransactions();
+    } catch (error: any) {
+      console.error('Error deleting transaction:', error);
+      alert(`Failed to delete order: ${error?.message || 'Unknown error'}`);
     }
   };
 
@@ -555,13 +571,24 @@ export default function SalesOrders() {
                         </td>
                       )}
                       <td>
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => handlePrintReceipt(transaction)}
-                          title="Print Receipt"
-                        >
-                          🖨️ Print
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => handlePrintReceipt(transaction)}
+                            title="Print Receipt"
+                          >
+                            🖨️ Print
+                          </button>
+                          {(isAdmin || transaction.customer_id === currentUser?.id) && (
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleDeleteTransaction(transaction)}
+                              title="Delete Order"
+                            >
+                              🗑️
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

@@ -30,6 +30,7 @@ model Customer {
   transactions Transaction[] @relation("CustomerTransactions")
   transactionCustomers Transaction[] @relation("TransactionCustomers")
   company      Company?
+  activityLogs ActivityLog[]
 
   @@map("customers")
   @@index([email])
@@ -56,6 +57,7 @@ model Item {
   id          String    @id @default(uuid()) @db.Uuid
   customerId  String    @map("customer_id") @db.Uuid
   name        String    @db.VarChar(255)
+  displayName String?   @map("display_name") @db.VarChar(255)
   code        String    @db.VarChar(100)
   barcode     String?   @db.VarChar(255)
   categoryId  String?   @map("category_id") @db.Uuid
@@ -130,4 +132,23 @@ model ItemCodePrefix {
 
   @@map("item_code_prefixes")
   @@index([prefix])
+}
+
+model ActivityLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  entityType String   @map("entity_type") @db.VarChar(50)
+  entityId   String   @map("entity_id") @db.Uuid
+  action     String   @db.VarChar(20)
+  changedBy  String   @map("changed_by") @db.Uuid
+  changes    Json?    @db.JsonB
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  changedByCustomer Customer @relation(fields: [changedBy], references: [id], onDelete: Cascade)
+
+  @@map("activity_logs")
+  @@index([entityType])
+  @@index([entityId])
+  @@index([changedBy])
+  @@index([createdAt])
 }

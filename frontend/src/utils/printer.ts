@@ -350,11 +350,13 @@ export async function printReceipt(options: PrintOptions) {
                 (cartItem, index) => {
                   const mrp = cartItem.item.mrp ? (typeof cartItem.item.mrp === 'string' ? parseFloat(cartItem.item.mrp) : cartItem.item.mrp) : null;
                   const price = typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price;
+                  // Use display_name if available, otherwise use name, and convert to uppercase
+                  const itemDisplayName = (cartItem.item.display_name || cartItem.item.name).toUpperCase();
                   return `
               <tr>
                 <td class="col-number">${index + 1}</td>
                 <td class="col-item item-name">
-                  ${cartItem.item.name}
+                  ${itemDisplayName}
                   ${mrp ? `<br><small>MRP: ${formatCurrency(mrp)}</small>` : ''}
                 </td>
                 <td class="col-rate">${formatCurrency(price)}</td>

@@ -1,6 +1,7 @@
 import express from 'express';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { logActivity } from '../utils/activityLogger.js';
 
 const router = express.Router();
 
@@ -10,8 +11,13 @@ router.use(authenticate);
 // Get all transactions
 router.get('/', async (req: AuthRequest, res) => {
   try {
+    const isAdmin = req.customer?.isAdmin || false;
+    
+    // If admin, return all transactions; otherwise filter by customerId
+    const whereClause = isAdmin ? {} : { customerId: req.customerId! };
+    
     const transactions = await prisma.transaction.findMany({
-      where: { customerId: req.customerId! },
+      where: whereClause,
       orderBy: { createdAt: 'desc' },
     });
 
@@ -95,10 +101,11 @@ router.post(
         },
       });
 
+      // Parse items for stock update and activity logging
+      const items = typeof itemsJson === 'string' ? JSON.parse(itemsJson) : itemsJson;
+
       // Update item stock (items are shared, so no ownership check needed)
       try {
-        const items = typeof itemsJson === 'string' ? JSON.parse(itemsJson) : itemsJson;
-        
         for (const cartItem of items) {
           const item = cartItem.item || cartItem;
           const quantity = cartItem.quantity || 1;
@@ -136,6 +143,19 @@ router.post(
         created_at: transaction.createdAt.toISOString(),
       };
 
+      // Log activity
+      await logActivity({
+        entityType: 'transaction',
+        entityId: transaction.id,
+        action: 'create',
+        changedBy: req.customerId!,
+        changes: {
+          totalAmount: transaction.totalAmount.toString(),
+          paymentMethod: transaction.paymentMethod,
+          itemsCount: items.length,
+        },
+      });
+
       res.status(201).json(transformedTransaction);
     } catch (error: any) {
       console.error('Error creating transaction:', error);
@@ -143,5 +163,78 @@ router.post(
     }
   }
 );
+
+// Delete transaction
+router.delete('/:id', async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const isAdmin = req.customer?.isAdmin || false;
+
+    // Find transaction
+    const transaction = await prisma.transaction.findUnique({
+      where: { id },
+    });
+
+    if (!transaction) {
+      return res.status(404).json({ error: 'Transaction not found' });
+    }
+
+    // Check if user is admin or owner
+    if (!isAdmin && transaction.customerId !== req.customerId) {
+      return res.status(403).json({ error: 'You can only delete your own transactions, or you must be an admin' });
+    }
+
+    // Parse items to restore stock
+    try {
+      const items = JSON.parse(transaction.itemsJson);
+      
+      for (const cartItem of items) {
+        const item = cartItem.item || cartItem;
+        const quantity = cartItem.quantity || 1;
+        const itemId = item.id;
+
+        if (itemId) {
+          // Find item and restore stock
+          const existingItem = await prisma.item.findUnique({
+            where: { id: itemId },
+          });
+
+          if (existingItem) {
+            await prisma.item.update({
+              where: { id: itemId },
+              data: { stock: existingItem.stock + quantity },
+            });
+          }
+        }
+      }
+    } catch (stockError) {
+      console.error('Error restoring stock:', stockError);
+      // Continue with deletion even if stock restoration fails
+    }
+
+    // Log activity before deletion
+    await logActivity({
+      entityType: 'transaction',
+      entityId: transaction.id,
+      action: 'delete',
+      changedBy: req.customerId!,
+      changes: {
+        totalAmount: transaction.totalAmount.toString(),
+        paymentMethod: transaction.paymentMethod,
+        deletedAt: new Date().toISOString(),
+      },
+    });
+
+    // Delete transaction
+    await prisma.transaction.delete({
+      where: { id },
+    });
+
+    res.json({ message: 'Transaction deleted successfully' });
+  } catch (error: any) {
+    console.error('Error deleting transaction:', error);
+    res.status(500).json({ error: error.message || 'Failed to delete transaction' });
+  }
+});
 
 export default router;

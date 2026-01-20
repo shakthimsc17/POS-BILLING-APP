@@ -2,6 +2,7 @@ import express from 'express';
 import { body, query, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { logActivity } from '../utils/activityLogger.js';
 
 const router = express.Router();
 
@@ -20,6 +21,7 @@ router.get('/', async (req: AuthRequest, res) => {
       id: item.id,
       customer_id: item.customerId,
       name: item.name,
+      display_name: item.displayName,
       code: item.code,
       barcode: item.barcode,
       category_id: item.categoryId,
@@ -65,6 +67,7 @@ router.get('/search', [query('q').notEmpty()], async (req: AuthRequest, res) => 
       id: item.id,
       customer_id: item.customer_id,
       name: item.name,
+      display_name: item.display_name,
       code: item.code,
       barcode: item.barcode,
       category_id: item.category_id,
@@ -104,6 +107,7 @@ router.get('/barcode/:barcode', async (req: AuthRequest, res) => {
       id: item.id,
       customer_id: item.customerId,
       name: item.name,
+      display_name: item.displayName,
       code: item.code,
       barcode: item.barcode,
       category_id: item.categoryId,
@@ -168,6 +172,7 @@ router.post(
         data: {
           customerId: req.customerId!,
           name,
+          displayName: finalDisplayName || null,
           code,
           barcode,
           categoryId: finalCategoryId || null,
@@ -186,11 +191,25 @@ router.post(
         categoryId: item.categoryId
       });
 
+      // Log activity
+      await logActivity({
+        entityType: 'item',
+        entityId: item.id,
+        action: 'create',
+        changedBy: req.customerId!,
+        changes: {
+          name: item.name,
+          code: item.code,
+          price: item.price.toString(),
+        },
+      });
+
       // Transform to snake_case for frontend
       res.status(201).json({
         id: item.id,
         customer_id: item.customerId,
         name: item.name,
+        display_name: item.displayName,
         code: item.code,
         barcode: item.barcode,
         category_id: item.categoryId,
@@ -229,6 +248,8 @@ router.put(
       const { id } = req.params;
       const {
         name,
+        displayName,
+        display_name, // Accept snake_case from frontend
         code,
         barcode,
         categoryId,
@@ -243,6 +264,8 @@ router.put(
 
       // Use categoryId (camelCase) or category_id (snake_case), whichever is provided
       const finalCategoryId = categoryId !== undefined ? categoryId : category_id;
+      // Use displayName (camelCase) or display_name (snake_case), whichever is provided
+      const finalDisplayName = displayName !== undefined ? displayName : display_name;
 
       // Check if item exists (shared inventory - no customerId check)
       const existing = await prisma.item.findUnique({
@@ -272,8 +295,17 @@ router.put(
         return res.status(403).json({ error: 'You can only update items you created, or you must be an admin' });
       }
 
+      // Prepare old values for activity log
+      const oldValues = {
+        name: existing.name,
+        code: existing.code,
+        price: existing.price.toString(),
+        stock: existing.stock,
+      };
+
       const updateData: any = {};
       if (name) updateData.name = name;
+      if (finalDisplayName !== undefined) updateData.displayName = finalDisplayName || null;
       if (code) updateData.code = code;
       if (barcode !== undefined) updateData.barcode = barcode;
       if (finalCategoryId !== undefined) updateData.categoryId = finalCategoryId || null;
@@ -289,11 +321,29 @@ router.put(
         data: updateData,
       });
 
+      // Log activity
+      await logActivity({
+        entityType: 'item',
+        entityId: item.id,
+        action: 'update',
+        changedBy: req.customerId!,
+        changes: {
+          old: oldValues,
+          new: {
+            name: item.name,
+            code: item.code,
+            price: item.price.toString(),
+            stock: item.stock,
+          },
+        },
+      });
+
       // Transform to snake_case for frontend
       res.json({
         id: item.id,
         customer_id: item.customerId,
         name: item.name,
+        display_name: item.displayName,
         code: item.code,
         barcode: item.barcode,
         category_id: item.categoryId,
@@ -333,15 +383,29 @@ router.delete('/', async (req: AuthRequest, res) => {
 router.delete('/:id', async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
+    const isAdmin = req.customer?.isAdmin || false;
 
-    // Verify ownership
+    // Verify ownership or admin
     const existing = await prisma.item.findFirst({
-      where: { id, customerId: req.customerId! },
+      where: isAdmin ? { id } : { id, customerId: req.customerId! },
     });
 
     if (!existing) {
       return res.status(404).json({ error: 'Item not found' });
     }
+
+    // Log activity before deletion
+    await logActivity({
+      entityType: 'item',
+      entityId: existing.id,
+      action: 'delete',
+      changedBy: req.customerId!,
+      changes: {
+        name: existing.name,
+        code: existing.code,
+        deletedAt: new Date().toISOString(),
+      },
+    });
 
     await prisma.item.delete({
       where: { id },
