@@ -55,9 +55,10 @@ export async function printReceipt(options: PrintOptions) {
             box-sizing: border-box;
           }
           body {
-            font-family: 'Courier New', monospace;
-            font-size: 10px;
-            line-height: 1.2;
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1.5;
             color: #000;
             width: 80mm;
             max-width: 80mm;
@@ -72,33 +73,35 @@ export async function printReceipt(options: PrintOptions) {
             margin-bottom: 6px;
           }
           .company-logo-container {
-            margin-bottom: 2px;
+            margin-bottom: 4px;
             display: flex;
             justify-content: center;
             align-items: center;
           }
           .company-logo {
-            max-width: 30mm;
-            max-height: 15mm;
+            max-width: 50mm;
+            max-height: 25mm;
             width: auto;
             height: auto;
             object-fit: contain;
           }
           .company-name {
-            font-size: 12px;
+            font-size: 20px;
             font-weight: bold;
             margin-bottom: 2px;
             text-transform: uppercase;
-            line-height: 1.2;
-            letter-spacing: 0.3px;
+            line-height: 1.3;
+            letter-spacing: 0.5px;
           }
           .company-details {
-            font-size: 8px;
-            line-height: 1.3;
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 1.4;
             text-transform: uppercase;
           }
           .company-details p {
             margin: 1px 0;
+            font-weight: bold;
             text-transform: uppercase;
           }
           .receipt-info {
@@ -106,28 +109,21 @@ export async function printReceipt(options: PrintOptions) {
             padding: 3px 0;
             border-top: 1px dashed #000;
             border-bottom: 1px dashed #000;
-            font-size: 8px;
+            font-size: 11px;
+            font-weight: bold;
+          }
+          .receipt-info-row {
             display: flex;
             justify-content: space-between;
-          }
-          .receipt-info-left, .receipt-info-right {
             margin: 2px 0;
           }
-          .receipt-info-right {
-            text-align: right;
-            padding-left: 0;
-          }
-          .receipt-info-right p {
-            margin: 0;
-            padding-left: 0;
-            line-height: 1.3;
-          }
-          .receipt-info-right .date-time-line {
-            display: inline-block;
-            white-space: nowrap;
-          }
           .receipt-info p {
-            margin: 1px 0;
+            margin: 2px 0;
+            font-weight: bold;
+            line-height: 1.4;
+          }
+          .receipt-date-time {
+            white-space: nowrap;
           }
           .receipt-info strong {
             font-weight: bold;
@@ -136,7 +132,9 @@ export async function printReceipt(options: PrintOptions) {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 6px;
-            font-size: 9px;
+            font-size: 11px;
+            font-weight: bold;
+            table-layout: fixed;
           }
           .items-table thead {
             border-top: 1px solid #000;
@@ -146,11 +144,8 @@ export async function printReceipt(options: PrintOptions) {
             text-align: left;
             padding: 2px 1px;
             font-weight: bold;
-            font-size: 8px;
+            font-size: 10px;
             text-transform: uppercase;
-          }
-          .items-table th.col-mrp {
-            padding-right: 4px;
           }
           .items-table th.col-rate {
             padding-left: 4px;
@@ -163,16 +158,22 @@ export async function printReceipt(options: PrintOptions) {
           }
           .items-table td {
             padding: 2px 1px;
-            font-size: 9px;
+            font-size: 11px;
+            font-weight: bold;
             line-height: 1.3;
             vertical-align: top;
+            word-wrap: break-word;
+            overflow: hidden;
           }
           .items-table .item-name {
             font-weight: bold;
-            font-size: 8px;
+            font-size: 10px;
+            max-width: 100%;
+            word-wrap: break-word;
           }
           .items-table .item-details {
-            font-size: 8px;
+            font-size: 11px;
+            font-weight: bold;
             line-height: 1.4;
             margin-top: 2px;
           }
@@ -182,13 +183,15 @@ export async function printReceipt(options: PrintOptions) {
             margin-top: 1px;
           }
           .items-table .item-details-label {
-            font-weight: normal;
+            font-weight: bold;
             color: #333;
           }
           .items-table small {
-            font-size: 7px;
+            font-size: 9px;
+            font-weight: bold;
             display: block;
-            color: #666;
+            color: #000;
+            line-height: 1.2;
           }
           .items-table .text-right {
             text-align: right;
@@ -199,36 +202,38 @@ export async function printReceipt(options: PrintOptions) {
           .items-table .col-number {
             width: 8%;
             text-align: center;
-            font-size: 8px;
+            font-size: 11px;
+            font-weight: bold;
           }
           .items-table .col-item {
-            width: 40%;
-            font-size: 8px;
-          }
-          .items-table .col-mrp {
-            width: 12%;
-            text-align: right;
-            font-size: 8px;
-            padding-right: 4px;
+            width: 38%;
+            font-size: 11px;
+            font-weight: bold;
+            overflow: hidden;
           }
           .items-table .col-rate {
-            width: 12%;
+            width: 18%;
             text-align: right;
-            font-size: 8px;
-            padding-left: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            padding-left: 1px;
+            padding-right: 1px;
+            white-space: nowrap;
           }
           .items-table .col-qty {
-            width: 10%;
+            width: 12%;
             text-align: center;
-            font-size: 8px;
-            padding-left: 2px;
-            padding-right: 2px;
+            font-size: 11px;
+            font-weight: bold;
+            padding-left: 1px;
+            padding-right: 1px;
           }
           .items-table .col-amt {
-            width: 16%;
+            width: 24%;
             text-align: right;
-            font-size: 8px;
+            font-size: 11px;
             font-weight: bold;
+            white-space: nowrap;
           }
           .totals-section {
             margin-top: 6px;
@@ -238,13 +243,14 @@ export async function printReceipt(options: PrintOptions) {
             display: flex;
             justify-content: space-between;
             padding: 2px 0;
-            font-size: 9px;
+            font-size: 14px;
+            font-weight: bold;
           }
           .total-row.grand-total {
             font-weight: bold;
-            font-size: 11px;
-            padding: 3px 0;
-            margin-top: 2px;
+            font-size: 18px;
+            padding: 4px 0;
+            margin-top: 3px;
             border-top: 2px solid #000;
             border-bottom: 2px solid #000;
           }
@@ -252,11 +258,13 @@ export async function printReceipt(options: PrintOptions) {
             margin-top: 5px;
             padding: 3px 0;
             border-top: 1px dashed #000;
-            font-size: 8px;
+            font-size: 12px;
+            font-weight: bold;
             text-align: center;
           }
           .payment-info p {
             margin: 2px 0;
+            font-weight: bold;
           }
           .payment-info strong {
             font-weight: bold;
@@ -266,7 +274,11 @@ export async function printReceipt(options: PrintOptions) {
             margin-top: 6px;
             padding-top: 4px;
             border-top: 1px dashed #000;
-            font-size: 8px;
+            font-size: 12px;
+            font-weight: bold;
+          }
+          .footer p {
+            font-weight: bold;
           }
           .footer p:first-child {
             font-weight: bold;
@@ -276,7 +288,7 @@ export async function printReceipt(options: PrintOptions) {
             margin-top: 4px;
             padding: 3px 0;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            font-size: 10px;
+            font-size: 14px;
             font-weight: bold;
             letter-spacing: 2px;
           }
@@ -315,13 +327,11 @@ export async function printReceipt(options: PrintOptions) {
         </div>
 
         <div class="receipt-info">
-          <div class="receipt-info-left">
+          <div class="receipt-info-row">
             <p><strong>Receipt #:</strong> ${transaction.id.slice(0, 8).toUpperCase()}</p>
-            ${transaction.transaction_customer_id ? '<p><strong>Customer:</strong> Yes</p>' : ''}
+            <p class="receipt-date-time"><strong>Date:</strong> ${date.toLocaleDateString()} &nbsp; <strong>Time:</strong> ${date.toLocaleTimeString()}</p>
           </div>
-          <div class="receipt-info-right" style="text-align: right;">
-            <p class="date-time-line"><strong>Date:</strong> ${date.toLocaleDateString()} &nbsp; <strong>Time:</strong> ${date.toLocaleTimeString()}</p>
-          </div>
+          ${transaction.transaction_customer_id ? '<p><strong>Customer:</strong> Yes</p>' : ''}
         </div>
 
         <table class="items-table">
@@ -329,9 +339,8 @@ export async function printReceipt(options: PrintOptions) {
             <tr>
               <th class="col-number">#</th>
               <th class="col-item">Item</th>
-              <th class="col-mrp">MRP</th>
-              <th class="col-qty">Qty</th>
               <th class="col-rate">Rate</th>
+              <th class="col-qty">Qty</th>
               <th class="col-amt">Amt</th>
             </tr>
           </thead>
@@ -346,11 +355,10 @@ export async function printReceipt(options: PrintOptions) {
                 <td class="col-number">${index + 1}</td>
                 <td class="col-item item-name">
                   ${cartItem.item.name}
-                  ${cartItem.item.code ? `<br><small>Code: ${cartItem.item.code}</small>` : ''}
+                  ${mrp ? `<br><small>MRP: ${formatCurrency(mrp)}</small>` : ''}
                 </td>
-                <td class="col-mrp">${mrp ? formatCurrency(mrp) : '-'}</td>
-                <td class="col-qty">${cartItem.quantity}</td>
                 <td class="col-rate">${formatCurrency(price)}</td>
+                <td class="col-qty">${cartItem.quantity}</td>
                 <td class="col-amt">${formatCurrency(cartItem.subtotal)}</td>
               </tr>
             `;
