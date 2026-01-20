@@ -33,6 +33,9 @@ export async function printReceipt(options: PrintOptions) {
     <html>
       <head>
         <title>Receipt - ${transaction.id.slice(0, 8)}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
           @media print {
             @page {
@@ -55,7 +58,7 @@ export async function printReceipt(options: PrintOptions) {
             box-sizing: border-box;
           }
           body {
-            font-family: 'Arial', 'Helvetica', sans-serif;
+            font-family: 'Montserrat', sans-serif;
             font-size: 14px;
             font-weight: bold;
             line-height: 1.5;
@@ -287,7 +290,7 @@ export async function printReceipt(options: PrintOptions) {
           .barcode {
             margin-top: 4px;
             padding: 3px 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: 'Montserrat', sans-serif;
             font-size: 14px;
             font-weight: bold;
             letter-spacing: 2px;

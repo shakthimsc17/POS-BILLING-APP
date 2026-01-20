@@ -7,7 +7,11 @@ import { formatCurrency } from '../utils/formatters';
 import { storageService } from '../services/storage';
 import './Items.css';
 
-export default function Items() {
+interface ItemsProps {
+  onNavigate?: (page: string) => void;
+}
+
+export default function Items({ onNavigate }: ItemsProps = {}) {
   const [modalVisible, setModalVisible] = useState(false);
   const [deleteAllModalVisible, setDeleteAllModalVisible] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
@@ -380,9 +384,20 @@ export default function Items() {
               🗑️ Delete All
             </button>
           )}
-          <button className="btn btn-primary" onClick={handleAdd}>
-            + Add Item
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button className="btn btn-primary" onClick={handleAdd}>
+              + Add Item
+            </button>
+            {onNavigate && (
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => onNavigate('bulk-operations')}
+                title="Bulk Create Items"
+              >
+                ⚡ Bulk Create
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

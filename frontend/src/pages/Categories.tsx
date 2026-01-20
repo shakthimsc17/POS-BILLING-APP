@@ -4,7 +4,11 @@ import { useCompanyStore } from '../store/companyStore';
 import { Category } from '../types';
 import './Categories.css';
 
-export default function Categories() {
+interface CategoriesProps {
+  onNavigate?: (page: string) => void;
+}
+
+export default function Categories({ onNavigate }: CategoriesProps = {}) {
   const [modalVisible, setModalVisible] = useState(false);
   const [deleteAllModalVisible, setDeleteAllModalVisible] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
@@ -200,9 +204,20 @@ export default function Categories() {
               🗑️ Delete All
             </button>
           )}
-          <button className="btn btn-primary" onClick={handleAdd}>
-            + Add Category
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button className="btn btn-primary" onClick={handleAdd}>
+              + Add Category
+            </button>
+            {onNavigate && (
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => onNavigate('bulk-operations')}
+                title="Bulk Create Categories"
+              >
+                ⚡ Bulk Create
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

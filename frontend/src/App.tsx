@@ -14,12 +14,13 @@ import Reports from './pages/Reports';
 import Calculators from './pages/Calculators';
 import CompanySettings from './pages/CompanySettings';
 import ActivityLogs from './pages/ActivityLogs';
+import BulkOperations from './pages/BulkOperations';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import { useCompanyStore } from './store/companyStore';
 import './App.css';
 
-type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'payment' | 'sales' | 'customers' | 'import' | 'reports' | 'calculators' | 'company' | 'activity-logs';
+type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'payment' | 'sales' | 'customers' | 'import' | 'reports' | 'calculators' | 'company' | 'activity-logs' | 'bulk-operations';
 type AuthPage = 'signin' | 'signup';
 
 function App() {
@@ -169,6 +170,13 @@ function App() {
           <div className="nav-section">
             <div className="nav-section-label">Tools</div>
             <button
+              className={currentPage === 'bulk-operations' ? 'active' : ''}
+              onClick={() => setCurrentPage('bulk-operations')}
+            >
+              <span className="nav-icon">⚡</span>
+              <span className="nav-text">Bulk Operations</span>
+            </button>
+            <button
               className={currentPage === 'calculators' ? 'active' : ''}
               onClick={() => setCurrentPage('calculators')}
             >
@@ -198,14 +206,15 @@ function App() {
       <main className={`main-content ${sidebarOpen ? 'sidebar-open' : ''}`}>
         {currentPage === 'dashboard' && <Dashboard onNavigate={setCurrentPage} />}
         {currentPage === 'cart' && <Cart onNavigate={setCurrentPage} />}
-        {currentPage === 'categories' && <Categories />}
-        {currentPage === 'items' && <Items />}
+        {currentPage === 'categories' && <Categories onNavigate={setCurrentPage} />}
+        {currentPage === 'items' && <Items onNavigate={setCurrentPage} />}
         {currentPage === 'payment' && <Payment onNavigate={setCurrentPage} />}
         {currentPage === 'sales' && <SalesOrders />}
         {currentPage === 'customers' && customer?.isAdmin && <Customers />}
         {currentPage === 'import' && <Import />}
         {currentPage === 'reports' && customer?.isAdmin && <Reports />}
         {currentPage === 'activity-logs' && customer?.isAdmin && <ActivityLogs />}
+        {currentPage === 'bulk-operations' && <BulkOperations />}
         {currentPage === 'calculators' && <Calculators />}
         {currentPage === 'company' && <CompanySettings />}
       </main>

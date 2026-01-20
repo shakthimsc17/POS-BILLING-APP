@@ -154,10 +154,15 @@ router.post(
         mrp,
         stock,
         imageUrl,
+        displayName,
+        display_name, // Accept snake_case from frontend
       } = req.body;
 
       // Use categoryId (camelCase) or category_id (snake_case), whichever is provided
       const finalCategoryId = categoryId || category_id;
+      
+      // Use displayName (camelCase) or display_name (snake_case), whichever is provided
+      const finalDisplayName = displayName !== undefined ? displayName : display_name;
       
       console.log('Creating item:', {
         name,
@@ -165,6 +170,9 @@ router.post(
         categoryId_from_body: categoryId,
         category_id_from_body: category_id,
         finalCategoryId,
+        displayName_from_body: displayName,
+        display_name_from_body: display_name,
+        finalDisplayName,
         customerId: req.customerId
       });
 
