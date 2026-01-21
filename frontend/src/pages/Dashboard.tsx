@@ -8,7 +8,7 @@ import { formatCurrency } from '../utils/formatters';
 import './Dashboard.css';
 
 interface DashboardProps {
-  onNavigate: (page: 'cart' | 'categories' | 'items' | 'payment') => void;
+  onNavigate: (page: 'cart' | 'categories' | 'items') => void;
 }
 
 export default function Dashboard({ onNavigate }: DashboardProps) {

@@ -15,6 +15,7 @@ export default function CompanySettings() {
     gstin: '',
     website: '',
     logo: '',
+    business_type: '' as 'clothing' | 'cafe' | 'electrical' | '',
   });
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -48,6 +49,7 @@ export default function CompanySettings() {
         gstin: company.gstin || '',
         website: company.website || '',
         logo: company.logo || '',
+        business_type: (company.business_type as 'clothing' | 'cafe' | 'electrical') || '',
       });
     }
   }, [company, loading]);
@@ -72,6 +74,7 @@ export default function CompanySettings() {
         gstin: formData.gstin || '',
         website: formData.website || '',
         logo: formData.logo || '',
+        business_type: formData.business_type || null,
       };
       console.log('Saving company data:', dataToSave);
       const saved = await saveCompany(dataToSave);
@@ -89,18 +92,19 @@ export default function CompanySettings() {
   };
 
   const handleReset = () => {
-    setFormData({
-      name: company.name || 'My Store',
-      address: company.address || '',
-      city: company.city || '',
-      state: company.state || '',
-      pincode: company.pincode || '',
-      phone: company.phone || '',
-      email: company.email || '',
-      gstin: company.gstin || '',
-      website: company.website || '',
-      logo: company.logo || '',
-    });
+      setFormData({
+        name: company.name || 'My Store',
+        address: company.address || '',
+        city: company.city || '',
+        state: company.state || '',
+        pincode: company.pincode || '',
+        phone: company.phone || '',
+        email: company.email || '',
+        gstin: company.gstin || '',
+        website: company.website || '',
+        logo: company.logo || '',
+        business_type: (company.business_type as 'clothing' | 'cafe' | 'electrical') || '',
+      });
     setSaved(false);
   };
 
@@ -294,6 +298,22 @@ export default function CompanySettings() {
                   onChange={(e) => handleChange('gstin', e.target.value)}
                   placeholder="GSTIN number"
                 />
+              </label>
+            </div>
+
+            <div className="form-group">
+              <label>
+                Business Type
+                <select
+                  className="input"
+                  value={formData.business_type}
+                  onChange={(e) => handleChange('business_type', e.target.value)}
+                >
+                  <option value="">Select Business Type</option>
+                  <option value="clothing">Clothing</option>
+                  <option value="cafe">Cafe</option>
+                  <option value="electrical">Electrical</option>
+                </select>
               </label>
             </div>
 

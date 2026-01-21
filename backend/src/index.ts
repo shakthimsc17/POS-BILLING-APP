@@ -10,6 +10,7 @@ import itemsRoutes from './routes/items.js';
 import transactionsRoutes from './routes/transactions.js';
 import customersRoutes from './routes/customers.js';
 import companyRoutes from './routes/company.js';
+import settingsRoutes from './routes/settings.js';
 import itemCodePrefixesRoutes from './routes/itemCodePrefixes.js';
 import activityLogsRoutes from './routes/activityLogs.js';
 
@@ -70,6 +71,7 @@ app.use('/api/items', itemsRoutes);
 app.use('/api/transactions', transactionsRoutes);
 app.use('/api/customers', customersRoutes);
 app.use('/api/company', companyRoutes);
+app.use('/api/settings', settingsRoutes);
 app.use('/api/item-code-prefixes', itemCodePrefixesRoutes);
 app.use('/api/activity-logs', activityLogsRoutes);
 

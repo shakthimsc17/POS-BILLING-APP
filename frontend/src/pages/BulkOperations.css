@@ -8,7 +8,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-  color: white;
+  color: #1a1a1a;
   gap: 1rem;
   flex-wrap: wrap;
 }
@@ -18,9 +18,9 @@
   align-items: center;
   justify-content: center;
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e0e6ed;
 }
 
 .bulk-operations-header .page-logo {
@@ -37,13 +37,14 @@
 }
 
 .bulk-operations-header h1 {
-  font-size: 2.5rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a1a1a;
   margin: 0 0 0.5rem 0;
 }
 
 .bulk-operations-header .subtitle {
-  color: rgba(255, 255, 255, 0.8);
+  color: #6c757d;
   margin: 0;
   font-size: 1rem;
 }
@@ -75,9 +76,9 @@
 }
 
 .tab-button.active {
-  color: #f9f9f9;
-  border-bottom-color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
+  color: #3498db;
+  border-bottom-color: #3498db;
+  background: rgba(52, 152, 219, 0.1);
 }
 
 .bulk-section {
@@ -114,6 +115,12 @@
   overflow-x: auto;
   margin-bottom: 1.5rem;
   width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bulk-table-wrapper {
+  width: 100%;
+  overflow-x: visible;
 }
 
 .bulk-table table {
@@ -122,11 +129,10 @@
   background: white;
   border-radius: 8px;
   overflow: hidden;
-  min-width: 1400px; /* Increased for better horizontal view */
 }
 
 .bulk-table thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #2c3e50;
   color: white;
 }
 
@@ -154,26 +160,27 @@
 
 .bulk-table .input {
   margin: 0;
-  padding: 0.5rem;
-  font-size: 0.9rem;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.85rem;
   width: 100%;
-  min-width: 140px; /* Increased from 120px */
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .bulk-table td {
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem;
   border-bottom: 1px solid #e0e0e0;
   vertical-align: middle;
-  min-width: 120px; /* Ensure columns have minimum width */
+  max-width: 200px;
 }
 
 .bulk-table th {
-  padding: 1rem;
+  padding: 0.75rem;
   text-align: left;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   white-space: nowrap;
-  min-width: 120px; /* Ensure headers have minimum width */
+  max-width: 200px;
 }
 
 .bulk-table select.input {
@@ -198,19 +205,20 @@
 
 .auto-code-display {
   display: inline-block;
-  padding: 0.5rem;
+  padding: 0.4rem 0.5rem;
   background: #e8f4f8;
   border: 1px solid #b3d9e6;
   border-radius: 4px;
   color: #0066cc;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 500;
   font-family: 'Courier New', monospace;
   width: 100%;
-  min-width: 140px;
+  max-width: 100%;
   text-align: center;
   word-break: break-all;
   overflow-wrap: break-word;
+  box-sizing: border-box;
 }
 
 .bulk-actions {

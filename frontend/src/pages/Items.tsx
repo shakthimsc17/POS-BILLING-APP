@@ -39,6 +39,10 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
   const [filterSubcategory, setFilterSubcategory] = useState('');
   const [filterStock, setFilterStock] = useState<'all' | 'in-stock' | 'out-of-stock'>('all');
 
+  // Lazy loading states
+  const [displayedItemsCount, setDisplayedItemsCount] = useState(20);
+  const ITEMS_PER_PAGE = 20;
+
   const { items, categories, loadItems, loadCategories, addItem, updateItem, deleteItem, deleteAllItems } =
     useInventoryStore();
   const { customer } = useAuthStore();
@@ -334,6 +338,33 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
     return true;
   });
 
+  // Reset displayed items count when filters change
+  useEffect(() => {
+    setDisplayedItemsCount(ITEMS_PER_PAGE);
+  }, [searchQuery, filterCategory, filterSubcategory, filterStock]);
+
+  // Items to display (lazy loaded)
+  const displayedItems = filteredItems.slice(0, displayedItemsCount);
+  const hasMoreItems = displayedItemsCount < filteredItems.length;
+
+  // Scroll handler for lazy loading
+  useEffect(() => {
+    const handleScroll = () => {
+      // Check if user scrolled near the bottom (within 200px)
+      if (
+        window.innerHeight + document.documentElement.scrollTop >=
+        document.documentElement.offsetHeight - 200
+      ) {
+        if (hasMoreItems) {
+          setDisplayedItemsCount(prev => prev + ITEMS_PER_PAGE);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasMoreItems]);
+
   // Get unique main category names (for filter dropdown)
   const getUniqueMainCategories = () => {
     if (!categories || categories.length === 0) {
@@ -481,7 +512,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
         {filteredItems.length > 0 ? (
           <div className="items-table">
             <div className="items-count">
-              Showing {filteredItems.length} of {items.length} items
+              Showing {displayedItems.length} of {filteredItems.length} filtered items ({items.length} total)
             </div>
             <table>
               <thead>
@@ -498,7 +529,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.map((item) => {
+                {displayedItems.map((item) => {
                   // Find category by matching category_id - always show category name
                   let categoryName = '-';
                   
@@ -580,6 +611,11 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                 })}
               </tbody>
             </table>
+            {hasMoreItems && (
+              <div className="load-more-indicator">
+                <p>Scroll down to load more items...</p>
+              </div>
+            )}
           </div>
         ) : items.length > 0 ? (
           <div className="empty-state">

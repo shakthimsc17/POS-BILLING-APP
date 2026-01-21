@@ -28,6 +28,7 @@ router.get('/', async (req: AuthRequest, res) => {
         gstin: '',
         website: '',
         logo: '',
+        business_type: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
@@ -46,6 +47,7 @@ router.get('/', async (req: AuthRequest, res) => {
       gstin: company.gstin || '',
       website: company.website || '',
       logo: company.logo || '',
+      business_type: company.businessType || null,
       created_at: company.createdAt.toISOString(),
       updated_at: company.updatedAt.toISOString(),
     });
@@ -69,6 +71,7 @@ router.post(
     body('gstin').optional().isString(),
     body('website').optional().isString(),
     body('logo').optional().isString(),
+    body('business_type').optional().isIn(['clothing', 'cafe', 'electrical']),
   ],
   async (req: AuthRequest, res) => {
     try {
@@ -88,6 +91,7 @@ router.post(
         gstin,
         website,
         logo,
+        business_type,
       } = req.body;
 
       const existing = await prisma.company.findFirst();
@@ -117,6 +121,7 @@ router.post(
             gstin,
             website,
             logo,
+            businessType: business_type || null,
           },
         });
 
@@ -150,6 +155,7 @@ router.post(
             gstin,
             website,
             logo,
+            businessType: business_type || null,
           },
         });
 
@@ -180,6 +186,7 @@ router.post(
         gstin: company.gstin,
         website: company.website,
         logo: company.logo,
+        business_type: company.businessType || null,
         created_at: company.createdAt.toISOString(),
         updated_at: company.updatedAt.toISOString(),
       });

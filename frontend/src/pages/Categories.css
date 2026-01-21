@@ -7,7 +7,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-  color: white;
+  color: #1a1a1a;
   gap: 1rem;
   flex-wrap: wrap;
 }
@@ -17,9 +17,9 @@
   align-items: center;
   justify-content: center;
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e0e6ed;
 }
 
 .categories-header .page-logo {
@@ -67,8 +67,9 @@
 }
 
 .categories-header h1 {
-  font-size: 2.5rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a1a1a;
   margin: 0;
 }
 
@@ -101,6 +102,33 @@
   flex: 1;
 }
 
+.collapse-toggle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #666;
+  padding: 0.25rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  min-width: 24px;
+}
+
+.collapse-toggle:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+
+.subcategory-count {
+  font-size: 0.75rem;
+  color: #666;
+  font-weight: normal;
+  font-style: italic;
+}
+
 .category-name {
   margin: 0;
   font-size: 1.1rem;
@@ -110,7 +138,7 @@
 
 .category-brand-badge {
   padding: 0.2rem 0.6rem;
-  background: #667eea;
+  background: #3498db;
   color: white;
   border-radius: 12px;
   font-size: 0.7rem;
