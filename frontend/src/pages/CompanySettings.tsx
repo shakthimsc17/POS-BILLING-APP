@@ -3,29 +3,153 @@ import { useCompanyStore } from '../store/companyStore';
 import './CompanySettings.css';
 
 export default function CompanySettings() {
-  const { company, setCompany } = useCompanyStore();
-  const [formData, setFormData] = useState(company);
+  const { company, loading, error, loadCompany, saveCompany } = useCompanyStore();
+  const [formData, setFormData] = useState({
+    name: 'My Store',
+    address: '',
+    city: '',
+    state: '',
+    pincode: '',
+    phone: '',
+    email: '',
+    gstin: '',
+    website: '',
+    logo: '',
+    business_type: '' as 'clothing' | 'cafe' | 'electrical' | '',
+  });
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setFormData(company);
-  }, [company]);
+    // Load company data from database on mount
+    loadCompany();
+  }, [loadCompany]);
+
+  useEffect(() => {
+    // Update form data when company data is loaded from database
+    if (company && !loading) {
+      console.log('Company data updated in form:', {
+        id: company.id,
+        customer_id: company.customer_id,
+        name: company.name,
+        address: company.address,
+        phone: company.phone,
+        email: company.email,
+        hasLogo: !!company.logo,
+        logoLength: company.logo ? company.logo.length : 0,
+      });
+      setFormData({
+        name: company.name || 'My Store',
+        address: company.address || '',
+        city: company.city || '',
+        state: company.state || '',
+        pincode: company.pincode || '',
+        phone: company.phone || '',
+        email: company.email || '',
+        gstin: company.gstin || '',
+        website: company.website || '',
+        logo: company.logo || '',
+        business_type: (company.business_type as 'clothing' | 'cafe' | 'electrical') || '',
+      });
+    }
+  }, [company, loading]);
 
   const handleChange = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setSaved(false);
   };
 
-  const handleSave = () => {
-    setCompany(formData);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      // Prepare data to save - exclude id, customer_id, created_at, updated_at
+      const dataToSave = {
+        name: formData.name || 'My Store',
+        address: formData.address || '',
+        city: formData.city || '',
+        state: formData.state || '',
+        pincode: formData.pincode || '',
+        phone: formData.phone || '',
+        email: formData.email || '',
+        gstin: formData.gstin || '',
+        website: formData.website || '',
+        logo: formData.logo || '',
+        business_type: formData.business_type || null,
+      };
+      console.log('Saving company data:', dataToSave);
+      const saved = await saveCompany(dataToSave);
+      console.log('Company saved successfully:', saved);
+      // Reload company data after save
+      await loadCompany();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      console.error('Error saving company:', error);
+      alert(`Failed to save company details: ${(error as Error).message}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleReset = () => {
-    setFormData(company);
+      setFormData({
+        name: company.name || 'My Store',
+        address: company.address || '',
+        city: company.city || '',
+        state: company.state || '',
+        pincode: company.pincode || '',
+        phone: company.phone || '',
+        email: company.email || '',
+        gstin: company.gstin || '',
+        website: company.website || '',
+        logo: company.logo || '',
+        business_type: (company.business_type as 'clothing' | 'cafe' | 'electrical') || '',
+      });
     setSaved(false);
   };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Image size should be less than 2MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64String = event.target?.result as string;
+      setFormData((prev) => ({ ...prev, logo: base64String }));
+      setSaved(false);
+    };
+    reader.onerror = () => {
+      alert('Error reading image file');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveLogo = () => {
+    setFormData((prev) => ({ ...prev, logo: '' }));
+    setSaved(false);
+  };
+
+  if (loading && (!company.name || company.name === 'My Store')) {
+    return (
+      <div className="company-settings">
+        <div className="loading-state">
+          <p>Loading company details...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="company-settings">
@@ -34,11 +158,19 @@ export default function CompanySettings() {
         <p>Manage your company information that appears on bills and reports</p>
       </div>
 
-      <div className="card">
-        <div className="form-section">
-          <h2>Basic Information</h2>
-          <div className="form-grid">
-            <div className="form-group full-width">
+      {error && (
+        <div className="card error-message">
+          <p>❌ Error: {error}</p>
+        </div>
+      )}
+
+      <div className="company-settings-content">
+        <div className="company-form-cards">
+          {/* Card 1: Company Information */}
+          <div className="card form-card">
+          <h2>Company Information</h2>
+          <div className="form-fields">
+            <div className="form-group">
               <label>
                 Company Name *
                 <input
@@ -46,13 +178,13 @@ export default function CompanySettings() {
                   className="input"
                   value={formData.name}
                   onChange={(e) => handleChange('name', e.target.value)}
-                  placeholder="Enter company name"
+                  placeholder="Company name"
                   required
                 />
               </label>
             </div>
 
-            <div className="form-group full-width">
+            <div className="form-group">
               <label>
                 Address
                 <input
@@ -106,9 +238,10 @@ export default function CompanySettings() {
           </div>
         </div>
 
-        <div className="form-section">
+        {/* Card 2: Contact Information */}
+        <div className="card form-card">
           <h2>Contact Information</h2>
-          <div className="form-grid">
+          <div className="form-fields">
             <div className="form-group">
               <label>
                 Phone *
@@ -151,9 +284,10 @@ export default function CompanySettings() {
           </div>
         </div>
 
-        <div className="form-section">
-          <h2>Tax Information</h2>
-          <div className="form-grid">
+        {/* Card 3: Tax Information & Logo */}
+        <div className="card form-card">
+          <h2>Tax Information & Logo</h2>
+          <div className="form-fields">
             <div className="form-group">
               <label>
                 GSTIN
@@ -166,41 +300,116 @@ export default function CompanySettings() {
                 />
               </label>
             </div>
+
+            <div className="form-group">
+              <label>
+                Business Type
+                <select
+                  className="input"
+                  value={formData.business_type}
+                  onChange={(e) => handleChange('business_type', e.target.value)}
+                >
+                  <option value="">Select Business Type</option>
+                  <option value="clothing">Clothing</option>
+                  <option value="cafe">Cafe</option>
+                  <option value="electrical">Electrical</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="form-group">
+              <label>
+                Logo Image
+                <div className="logo-upload-section">
+                  {formData.logo ? (
+                    <div className="logo-preview-container">
+                      <img 
+                        src={formData.logo} 
+                        alt="Company Logo" 
+                        className="logo-preview"
+                      />
+                      <div className="logo-actions">
+                        <label className="btn btn-secondary btn-sm">
+                          Change Logo
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                            style={{ display: 'none' }}
+                          />
+                        </label>
+                        <button 
+                          className="btn btn-secondary btn-sm"
+                          onClick={handleRemoveLogo}
+                        >
+                          Remove Logo
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="logo-upload-placeholder">
+                      <label className="logo-upload-button">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          style={{ display: 'none' }}
+                        />
+                        <span>📷 Upload Logo</span>
+                        <small>Recommended: Square image, max 2MB</small>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </label>
+            </div>
           </div>
         </div>
+        </div>
 
-        <div className="form-actions">
+        {/* Form Actions */}
+        <div className="card form-actions-card">
           {saved && (
             <div className="success-message">
               ✅ Company details saved successfully!
             </div>
           )}
           <div className="action-buttons">
-            <button className="btn btn-secondary" onClick={handleReset}>
+            <button className="btn btn-secondary" onClick={handleReset} disabled={saving}>
               Reset
             </button>
-            <button className="btn btn-primary" onClick={handleSave}>
-              Save Changes
+            <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </div>
-      </div>
 
-      <div className="card preview-section">
-        <h2>Preview</h2>
-        <div className="company-preview">
-          <div className="preview-header">
-            <h3>{formData.name || 'Company Name'}</h3>
-            {formData.address && <p>{formData.address}</p>}
-            <p>
-              {[formData.city, formData.state, formData.pincode]
-                .filter(Boolean)
-                .join(', ')}
-            </p>
-            {formData.phone && <p>Phone: {formData.phone}</p>}
-            {formData.email && <p>Email: {formData.email}</p>}
-            {formData.website && <p>Website: {formData.website}</p>}
-            {formData.gstin && <p>GSTIN: {formData.gstin}</p>}
+        {/* Preview Section */}
+        <div className="card preview-section">
+          <h2>Preview</h2>
+          <div className="company-preview">
+            <div className="preview-header">
+              {formData.logo && (
+                <div className="preview-logo-container">
+                  <img 
+                    src={formData.logo} 
+                    alt="Company Logo" 
+                    className="preview-logo"
+                  />
+                </div>
+              )}
+              <h3>{formData.name || 'Company Name'}</h3>
+              {formData.address && <p>{formData.address}</p>}
+              <p>
+                {[formData.city, formData.state, formData.pincode]
+                  .filter(Boolean)
+                  .join(', ')}
+              </p>
+              {formData.phone && <p>Phone: {formData.phone}</p>}
+              {formData.email && <p>Email: {formData.email}</p>}
+              {formData.website && <p>Website: {formData.website}</p>}
+              {formData.gstin && <p>GSTIN: {formData.gstin}</p>}
+            </div>
           </div>
         </div>
       </div>

@@ -29,6 +29,9 @@ model Customer {
   items        Item[]
   transactions Transaction[] @relation("CustomerTransactions")
   transactionCustomers Transaction[] @relation("TransactionCustomers")
+  company      Company?
+  settings     Settings?
+  activityLogs ActivityLog[]
 
   @@map("customers")
   @@index([email])
@@ -55,6 +58,7 @@ model Item {
   id          String    @id @default(uuid()) @db.Uuid
   customerId  String    @map("customer_id") @db.Uuid
   name        String    @db.VarChar(255)
+  displayName String?   @map("display_name") @db.VarChar(255)
   code        String    @db.VarChar(100)
   barcode     String?   @db.VarChar(255)
   categoryId  String?   @map("category_id") @db.Uuid
@@ -94,5 +98,75 @@ model Transaction {
 
   @@map("transactions")
   @@index([customerId])
+  @@index([createdAt])
+}
+
+model Company {
+  id           String   @id @default(uuid()) @db.Uuid
+  customerId   String   @unique @map("customer_id") @db.Uuid
+  name         String   @db.VarChar(255)
+  address      String?  @db.Text
+  city         String?  @db.VarChar(100)
+  state        String?  @db.VarChar(100)
+  pincode      String?  @db.VarChar(20)
+  phone        String?  @db.VarChar(20)
+  email        String?  @db.VarChar(255)
+  gstin        String?  @db.VarChar(50)
+  website      String?  @db.VarChar(255)
+  logo         String?  @db.Text
+  businessType String?  @map("business_type") @db.VarChar(50)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("companies")
+  @@index([customerId])
+}
+
+model Settings {
+  id                    String   @id @default(uuid()) @db.Uuid
+  customerId            String   @unique @map("customer_id") @db.Uuid
+  activityLogEnabled    Boolean  @default(true) @map("activity_log_enabled")
+  itemLogActions        String   @default("update_delete") @map("item_log_actions") @db.VarChar(20)
+  receiptHeaderOption   String   @default("both") @map("receipt_header_option") @db.VarChar(20)
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("settings")
+  @@index([customerId])
+}
+
+model ItemCodePrefix {
+  id          String   @id @default(uuid()) @db.Uuid
+  prefix      String   @unique @db.VarChar(255)
+  description String?  @db.VarChar(500)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("item_code_prefixes")
+  @@index([prefix])
+}
+
+model ActivityLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  entityType String   @map("entity_type") @db.VarChar(50)
+  entityId   String   @map("entity_id") @db.Uuid
+  action     String   @db.VarChar(20)
+  changedBy  String   @map("changed_by") @db.Uuid
+  changes    Json?    @db.JsonB
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  changedByCustomer Customer @relation(fields: [changedBy], references: [id], onDelete: Cascade)
+
+  @@map("activity_logs")
+  @@index([entityType])
+  @@index([entityId])
+  @@index([changedBy])
   @@index([createdAt])
 }

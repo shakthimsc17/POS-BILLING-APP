@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useCartStore } from '../store/cartStore';
 import { useInventoryStore } from '../store/inventoryStore';
+import { useCompanyStore } from '../store/companyStore';
 import ItemCard from '../components/ItemCard';
 import { Item } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import './Dashboard.css';
 
 interface DashboardProps {
-  onNavigate: (page: 'cart' | 'categories' | 'items' | 'payment') => void;
+  onNavigate: (page: 'cart' | 'categories' | 'items') => void;
 }
 
 export default function Dashboard({ onNavigate }: DashboardProps) {
@@ -16,10 +17,16 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
 
   const { items: cartItems, addItem, getTotal, getItemCount } = useCartStore();
   const { items, loadItems, searchItems } = useInventoryStore();
+  const { company, loadCompany } = useCompanyStore();
 
   useEffect(() => {
     loadItems();
   }, [loadItems]);
+
+  useEffect(() => {
+    // Load company data from database
+    loadCompany();
+  }, [loadCompany]);
 
   useEffect(() => {
     if (searchQuery.trim() === '') {
@@ -63,8 +70,19 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
   return (
     <div className="dashboard">
       <div className="dashboard-header">
-        <h1>🛒 Point of Sale Dashboard</h1>
-        <p>Search and add items to cart</p>
+        {company.logo && (
+          <div className="page-logo-container">
+            <img 
+              src={company.logo} 
+              alt={company.name || 'Company Logo'} 
+              className="page-logo"
+            />
+          </div>
+        )}
+        <div className="header-content">
+          <h1>{company.logo ? '' : '🛒 '}Point of Sale Dashboard</h1>
+          <p>Search and add items to cart</p>
+        </div>
       </div>
 
       {/* Search Bar */}

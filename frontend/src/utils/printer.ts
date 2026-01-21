@@ -2,15 +2,28 @@ import { Transaction } from '../types';
 import { CartItem } from '../types';
 import { formatCurrency } from './formatters';
 import { useCompanyStore } from '../store/companyStore';
+import { receiptSettings } from './receiptSettings';
 
 interface PrintOptions {
   items: CartItem[];
   transaction: Transaction;
 }
 
-export function printReceipt(options: PrintOptions) {
+export async function printReceipt(options: PrintOptions) {
   const { items, transaction } = options;
-  const company = useCompanyStore.getState().getCompany();
+  
+  // Ensure company data is loaded from database (not localStorage)
+  const companyStore = useCompanyStore.getState();
+  // Check if company is default (not loaded) or has no id (not saved to DB yet)
+  if (!companyStore.company.id && companyStore.company.name === 'My Store') {
+    // Company not loaded yet, load it from database
+    await companyStore.loadCompany();
+  }
+  const company = companyStore.getCompany();
+  const businessType = company.business_type || null;
+
+  // Get receipt settings
+  const receiptHeaderOption = await receiptSettings.getHeaderOption();
 
   const date = new Date(transaction.created_at);
   const total = items.reduce((sum, item) => sum + item.subtotal, 0);
@@ -21,6 +34,9 @@ export function printReceipt(options: PrintOptions) {
     <html>
       <head>
         <title>Receipt - ${transaction.id.slice(0, 8)}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
           @media print {
             @page {
@@ -43,14 +59,15 @@ export function printReceipt(options: PrintOptions) {
             box-sizing: border-box;
           }
           body {
-            font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
-            font-size: 11px;
-            line-height: 1.2;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1.5;
             color: #000;
             width: 80mm;
             max-width: 80mm;
             margin: 0 auto;
-            padding: 4mm 3mm;
+            padding: 3mm 2mm;
             background: white;
           }
           .receipt-header {
@@ -59,50 +76,58 @@ export function printReceipt(options: PrintOptions) {
             padding-bottom: 5px;
             margin-bottom: 6px;
           }
+          .company-logo-container {
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+          .company-logo {
+            max-width: 50mm;
+            max-height: 25mm;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+          }
           .company-name {
-            font-size: 14px;
+            font-size: 20px;
             font-weight: bold;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
             text-transform: uppercase;
-            line-height: 1.2;
+            line-height: 1.3;
             letter-spacing: 0.5px;
           }
           .company-details {
-            font-size: 9px;
-            line-height: 1.3;
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 1.4;
             text-transform: uppercase;
           }
           .company-details p {
             margin: 1px 0;
+            font-weight: bold;
             text-transform: uppercase;
           }
           .receipt-info {
-            margin-bottom: 6px;
-            padding: 4px 0;
+            margin-bottom: 5px;
+            padding: 3px 0;
             border-top: 1px dashed #000;
             border-bottom: 1px dashed #000;
-            font-size: 9px;
+            font-size: 11px;
+            font-weight: bold;
+          }
+          .receipt-info-row {
             display: flex;
             justify-content: space-between;
-          }
-          .receipt-info-left, .receipt-info-right {
             margin: 2px 0;
           }
-          .receipt-info-right {
-            text-align: right;
-            padding-left: 0;
-          }
-          .receipt-info-right p {
-            margin: 0;
-            padding-left: 0;
-            line-height: 1.3;
-          }
-          .receipt-info-right .date-time-line {
-            display: inline-block;
-            white-space: nowrap;
-          }
           .receipt-info p {
-            margin: 1px 0;
+            margin: 2px 0;
+            font-weight: bold;
+            line-height: 1.4;
+          }
+          .receipt-date-time {
+            white-space: nowrap;
           }
           .receipt-info strong {
             font-weight: bold;
@@ -111,7 +136,9 @@ export function printReceipt(options: PrintOptions) {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 6px;
-            font-size: 10px;
+            font-size: 11px;
+            font-weight: bold;
+            table-layout: fixed;
           }
           .items-table thead {
             border-top: 1px solid #000;
@@ -119,10 +146,13 @@ export function printReceipt(options: PrintOptions) {
           }
           .items-table th {
             text-align: left;
-            padding: 3px 2px;
+            padding: 2px 1px;
             font-weight: bold;
-            font-size: 9px;
+            font-size: 10px;
             text-transform: uppercase;
+          }
+          .items-table th.col-rate {
+            padding-left: 4px;
           }
           .items-table tbody tr {
             border-bottom: 1px dotted #ccc;
@@ -131,16 +161,41 @@ export function printReceipt(options: PrintOptions) {
             border-bottom: 1px solid #000;
           }
           .items-table td {
-            padding: 2px;
-            font-size: 10px;
-            line-height: 1.2;
+            padding: 2px 1px;
+            font-size: 11px;
+            font-weight: bold;
+            line-height: 1.3;
+            vertical-align: top;
+            word-wrap: break-word;
+            overflow: hidden;
           }
           .items-table .item-name {
             font-weight: bold;
+            font-size: 10px;
+            max-width: 100%;
+            word-wrap: break-word;
+          }
+          .items-table .item-details {
+            font-size: 11px;
+            font-weight: bold;
+            line-height: 1.4;
+            margin-top: 2px;
+          }
+          .items-table .item-details-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1px;
+          }
+          .items-table .item-details-label {
+            font-weight: bold;
+            color: #333;
           }
           .items-table small {
-            font-size: 8px;
+            font-size: 9px;
+            font-weight: bold;
             display: block;
+            color: #000;
+            line-height: 1.2;
           }
           .items-table .text-right {
             text-align: right;
@@ -148,17 +203,41 @@ export function printReceipt(options: PrintOptions) {
           .items-table .text-center {
             text-align: center;
           }
-          .items-table th.price-col,
-          .items-table td.price-col {
-            padding-left: 0 !important;
-            padding-right: 2px;
-            text-align: right;
+          .items-table .col-number {
+            width: 8%;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
           }
-          .items-table th.amt-col,
-          .items-table td.amt-col {
-            padding-left: 0 !important;
-            padding-right: 0;
+          .items-table .col-item {
+            width: 38%;
+            font-size: 11px;
+            font-weight: bold;
+            overflow: hidden;
+          }
+          .items-table .col-rate {
+            width: 18%;
             text-align: right;
+            font-size: 11px;
+            font-weight: bold;
+            padding-left: 1px;
+            padding-right: 1px;
+            white-space: nowrap;
+          }
+          .items-table .col-qty {
+            width: 12%;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+            padding-left: 1px;
+            padding-right: 1px;
+          }
+          .items-table .col-amt {
+            width: 24%;
+            text-align: right;
+            font-size: 11px;
+            font-weight: bold;
+            white-space: nowrap;
           }
           .totals-section {
             margin-top: 6px;
@@ -168,35 +247,42 @@ export function printReceipt(options: PrintOptions) {
             display: flex;
             justify-content: space-between;
             padding: 2px 0;
-            font-size: 10px;
+            font-size: 14px;
+            font-weight: bold;
           }
           .total-row.grand-total {
             font-weight: bold;
-            font-size: 13px;
+            font-size: 18px;
             padding: 4px 0;
             margin-top: 3px;
             border-top: 2px solid #000;
             border-bottom: 2px solid #000;
           }
           .payment-info {
-            margin-top: 6px;
-            padding: 4px 0;
+            margin-top: 5px;
+            padding: 3px 0;
             border-top: 1px dashed #000;
-            font-size: 9px;
+            font-size: 12px;
+            font-weight: bold;
             text-align: center;
           }
           .payment-info p {
             margin: 2px 0;
+            font-weight: bold;
           }
           .payment-info strong {
             font-weight: bold;
           }
           .footer {
             text-align: center;
-            margin-top: 8px;
-            padding-top: 6px;
+            margin-top: 6px;
+            padding-top: 4px;
             border-top: 1px dashed #000;
-            font-size: 9px;
+            font-size: 12px;
+            font-weight: bold;
+          }
+          .footer p {
+            font-weight: bold;
           }
           .footer p:first-child {
             font-weight: bold;
@@ -205,8 +291,8 @@ export function printReceipt(options: PrintOptions) {
           .barcode {
             margin-top: 4px;
             padding: 3px 0;
-            font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
-            font-size: 10px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
             font-weight: bold;
             letter-spacing: 2px;
           }
@@ -214,7 +300,24 @@ export function printReceipt(options: PrintOptions) {
       </head>
       <body>
         <div class="receipt-header">
-          <div class="company-name">${company.name || 'My Store'}</div>
+          ${(() => {
+            const showLogo = (receiptHeaderOption === 'logo' || receiptHeaderOption === 'both') && company.logo;
+            const showName = receiptHeaderOption === 'company_name' || receiptHeaderOption === 'both';
+            
+            // If logo only is selected but no logo exists, fallback to company name
+            if (receiptHeaderOption === 'logo' && !company.logo) {
+              return `<div class="company-name">${company.name || 'My Store'}</div>`;
+            }
+            
+            let headerContent = '';
+            if (showLogo) {
+              headerContent += `<div class="company-logo-container"><img src="${company.logo}" alt="Logo" class="company-logo" /></div>`;
+            }
+            if (showName) {
+              headerContent += `<div class="company-name">${company.name || 'My Store'}</div>`;
+            }
+            return headerContent;
+          })()}
           <div class="company-details">
             ${company.address ? `<p>${company.address}</p>` : ''}
             ${company.city || company.state || company.pincode
@@ -228,37 +331,46 @@ export function printReceipt(options: PrintOptions) {
         </div>
 
         <div class="receipt-info">
-          <div class="receipt-info-left">
+          <div class="receipt-info-row">
             <p><strong>Receipt #:</strong> ${transaction.id.slice(0, 8).toUpperCase()}</p>
-            ${transaction.transaction_customer_id ? '<p><strong>Customer:</strong> Yes</p>' : ''}
+            <p class="receipt-date-time"><strong>Date:</strong> ${date.toLocaleDateString()} &nbsp; <strong>Time:</strong> ${date.toLocaleTimeString()}</p>
           </div>
-          <div class="receipt-info-right" style="text-align: right;">
-            <p class="date-time-line"><strong>Date:</strong> ${date.toLocaleDateString()} &nbsp; <strong>Time:</strong> ${date.toLocaleTimeString()}</p>
-          </div>
+          ${transaction.transaction_customer_id ? '<p><strong>Customer:</strong> Yes</p>' : ''}
         </div>
 
         <table class="items-table">
           <thead>
             <tr>
-              <th style="width: 10%;">#</th>
-              <th style="width: 43%;">Item</th>
-              <th style="width: 15%;" class="text-center">Qty</th>
-              <th style="width: 16%;" class="text-right price-col">Price</th>
-              <th style="width: 16%;" class="text-right amt-col">Amt</th>
+              <th class="col-number">#</th>
+              <th class="col-item">Item</th>
+              <th class="col-rate">Rate</th>
+              <th class="col-qty">Qty</th>
+              <th class="col-amt">Amt</th>
             </tr>
           </thead>
           <tbody>
             ${items
               .map(
-                (cartItem, index) => `
+                (cartItem, index) => {
+                  const mrp = cartItem.item.mrp ? (typeof cartItem.item.mrp === 'string' ? parseFloat(cartItem.item.mrp) : cartItem.item.mrp) : null;
+                  const price = typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price;
+                  // Use display_name if available, otherwise use name, and convert to uppercase
+                  const itemDisplayName = (cartItem.item.display_name || cartItem.item.name).toUpperCase();
+                  // Hide MRP for cafe business type
+                  const showMrp = businessType !== 'cafe' && mrp;
+                  return `
               <tr>
-                <td>${index + 1}</td>
-                <td class="item-name">${cartItem.item.name}${cartItem.item.code ? `<br><small>${cartItem.item.code}</small>` : ''}</td>
-                <td class="text-center">${cartItem.quantity}</td>
-                <td class="text-right price-col">${formatCurrency(cartItem.item.price)}</td>
-                <td class="text-right amt-col">${formatCurrency(cartItem.subtotal)}</td>
+                <td class="col-number">${index + 1}</td>
+                <td class="col-item item-name">
+                  ${itemDisplayName}
+                  ${showMrp ? `<br><small>MRP: ${formatCurrency(mrp)}</small>` : ''}
+                </td>
+                <td class="col-rate">${formatCurrency(price)}</td>
+                <td class="col-qty">${cartItem.quantity}</td>
+                <td class="col-amt">${formatCurrency(cartItem.subtotal)}</td>
               </tr>
-            `
+            `;
+                }
               )
               .join('')}
           </tbody>
@@ -275,7 +387,7 @@ export function printReceipt(options: PrintOptions) {
               <span>Cash Received:</span>
               <span>${formatCurrency(transaction.received_amount)}</span>
             </div>
-            ${transaction.change_amount && transaction.change_amount > 0
+            ${transaction.change_amount && Number(transaction.change_amount) > 0
               ? `
               <div class="total-row">
                 <span>Change:</span>
@@ -296,8 +408,30 @@ export function printReceipt(options: PrintOptions) {
         </div>
 
         <div class="footer">
-          <p><strong>Your Style Matters to Us. Thank You!</strong></p>
-          <p>Please visit again</p>
+          ${(() => {
+            switch (businessType) {
+              case 'cafe':
+                return `
+                  <p><strong>Thank You for Visiting!</strong></p>
+                  <p>We hope you enjoyed your experience</p>
+                `;
+              case 'clothing':
+                return `
+                  <p><strong>Your Style Matters to Us. Thank You!</strong></p>
+                  <p>Please visit again</p>
+                `;
+              case 'electrical':
+                return `
+                  <p><strong>Thank You for Your Purchase!</strong></p>
+                  <p>Quality Products, Trusted Service</p>
+                `;
+              default:
+                return `
+                  <p><strong>Thank You for Your Business!</strong></p>
+                  <p>Please visit again</p>
+                `;
+            }
+          })()}
           <div class="barcode">
             ${transaction.id.slice(0, 8).toUpperCase()}
           </div>

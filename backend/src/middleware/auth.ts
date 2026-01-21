@@ -47,6 +47,16 @@ export const authenticate = async (
         return res.status(401).json({ error: 'Customer not found' });
       }
 
+      // Log admin account details for debugging
+      if (customer.isAdmin) {
+        console.log('Admin account authenticated:', {
+          id: customer.id,
+          email: customer.email,
+          name: customer.name,
+          customerId: req.customerId,
+        });
+      }
+
       req.customer = customer;
       next();
     } catch (error) {

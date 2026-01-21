@@ -15,13 +15,19 @@ export default function SalesOrders() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filter, setFilter] = useState<FilterPeriod>('today');
   const [loading, setLoading] = useState(true);
-  const { customer } = useAuthStore();
-  const isAdmin = customer?.isAdmin || false;
+  const { customer: currentUser } = useAuthStore();
+  const { company, loadCompany } = useCompanyStore();
+  const isAdmin = currentUser?.isAdmin || false;
 
   useEffect(() => {
     loadTransactions();
     loadCustomers();
   }, []);
+
+  useEffect(() => {
+    // Load company data from database
+    loadCompany();
+  }, [loadCompany]);
 
   const loadCustomers = async () => {
     try {
@@ -48,6 +54,22 @@ export default function SalesOrders() {
       setTransactions([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteTransaction = async (transaction: Transaction) => {
+    if (!confirm(`Are you sure you want to delete this order (ID: ${transaction.id.substring(0, 8)}...)?\n\nThis will restore the stock for all items in this order.`)) {
+      return;
+    }
+
+    try {
+      await storageService.deleteTransaction(transaction.id);
+      alert('Order deleted successfully. Stock has been restored.');
+      // Reload transactions to refresh the list
+      loadTransactions();
+    } catch (error: any) {
+      console.error('Error deleting transaction:', error);
+      alert(`Failed to delete order: ${error?.message || 'Unknown error'}`);
     }
   };
 
@@ -141,10 +163,10 @@ export default function SalesOrders() {
     return totals;
   };
 
-  const handlePrintReceipt = (transaction: Transaction) => {
+  const handlePrintReceipt = async (transaction: Transaction) => {
     try {
       const items = JSON.parse(transaction.items_json);
-      printReceipt({
+      await printReceipt({
         items,
         transaction,
       });
@@ -154,8 +176,13 @@ export default function SalesOrders() {
     }
   };
 
-  const handleExportCSV = () => {
-    const company = useCompanyStore.getState().getCompany();
+  const handleExportCSV = async () => {
+    const companyStore = useCompanyStore.getState();
+    // Ensure company data is loaded from database
+    if (!companyStore.company.id && companyStore.company.name === 'My Store') {
+      await companyStore.loadCompany();
+    }
+    const company = companyStore.getCompany();
     const headers = isAdmin 
       ? ['Date', 'Time', 'Order ID', 'Customer', 'Items Count', 'Payment Method', 'Amount', 'Profit/Loss']
       : ['Date', 'Time', 'Order ID', 'Customer', 'Items Count', 'Payment Method', 'Amount'];
@@ -205,8 +232,13 @@ export default function SalesOrders() {
     document.body.removeChild(link);
   };
 
-  const handleExportPDF = () => {
-    const company = useCompanyStore.getState().getCompany();
+  const handleExportPDF = async () => {
+    const companyStore = useCompanyStore.getState();
+    // Ensure company data is loaded from database
+    if (!companyStore.company.id && companyStore.company.name === 'My Store') {
+      await companyStore.loadCompany();
+    }
+    const company = companyStore.getCompany();
     const printHTML = `
       <!DOCTYPE html>
       <html>
@@ -325,7 +357,18 @@ export default function SalesOrders() {
   return (
     <div className="sales-orders">
       <div className="sales-orders-header">
-        <h1>📊 Sales Orders</h1>
+        {company.logo && (
+          <div className="page-logo-container">
+            <img 
+              src={company.logo} 
+              alt={company.name || 'Company Logo'} 
+              className="page-logo"
+            />
+          </div>
+        )}
+        <div className="header-content">
+          <h1>{company.logo ? '' : '📊 '}Sales Orders</h1>
+        </div>
         <div className="export-buttons">
           <button className="btn btn-secondary" onClick={handleExportCSV} title="Export to CSV">
             📥 CSV
@@ -473,8 +516,25 @@ export default function SalesOrders() {
                         )}
                       </td>
                       <td>
-                        <div className="items-count">
-                          {items.length} item{items.length !== 1 ? 's' : ''}
+                        <div className="items-details">
+                          <div className="items-count">
+                            {items.length} item{items.length !== 1 ? 's' : ''}
+                          </div>
+                          <div className="items-list">
+                            {items.slice(0, 3).map((cartItem: any, idx: number) => {
+                              const item = cartItem.item || cartItem;
+                              return (
+                                <div key={idx} className="item-detail">
+                                  <span className="item-name">{item.name}</span>
+                                  {item.code && <span className="item-code">({item.code})</span>}
+                                  <span className="item-qty">x{cartItem.quantity || 1}</span>
+                                </div>
+                              );
+                            })}
+                            {items.length > 3 && (
+                              <div className="item-more">+{items.length - 3} more</div>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td>
@@ -511,13 +571,24 @@ export default function SalesOrders() {
                         </td>
                       )}
                       <td>
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => handlePrintReceipt(transaction)}
-                          title="Print Receipt"
-                        >
-                          🖨️ Print
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => handlePrintReceipt(transaction)}
+                            title="Print Receipt"
+                          >
+                            🖨️ Print
+                          </button>
+                          {(isAdmin || transaction.customer_id === currentUser?.id) && (
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleDeleteTransaction(transaction)}
+                              title="Delete Order"
+                            >
+                              🗑️
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

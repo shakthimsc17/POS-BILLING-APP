@@ -1,28 +1,19 @@
 import { create } from 'zustand';
-
-interface CompanyDetails {
-  name: string;
-  address: string;
-  city: string;
-  state: string;
-  pincode: string;
-  phone: string;
-  email: string;
-  gstin?: string;
-  website?: string;
-  logo?: string;
-}
+import { Company } from '../types';
+import { storageService } from '../services/storage';
 
 interface CompanyStore {
-  company: CompanyDetails;
-  setCompany: (company: Partial<CompanyDetails>) => void;
-  getCompany: () => CompanyDetails;
-  loadCompany: () => void;
+  company: Company;
+  loading: boolean;
+  error: string | null;
+  loadCompany: () => Promise<void>;
+  saveCompany: (company: Partial<Company>) => Promise<void>;
+  getCompany: () => Company;
 }
 
-const STORAGE_KEY = 'company_details';
-
-const defaultCompany: CompanyDetails = {
+const defaultCompany: Company = {
+  id: null,
+  customer_id: '',
   name: 'My Store',
   address: '',
   city: '',
@@ -33,34 +24,76 @@ const defaultCompany: CompanyDetails = {
   gstin: '',
   website: '',
   logo: '',
-};
-
-const loadFromStorage = (): CompanyDetails => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return { ...defaultCompany, ...JSON.parse(stored) };
-    }
-  } catch (e) {
-    console.error('Error loading company details:', e);
-  }
-  return defaultCompany;
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
 };
 
 export const useCompanyStore = create<CompanyStore>((set, get) => ({
-  company: loadFromStorage(),
-  setCompany: (updates) => {
-    const updated = { ...get().company, ...updates };
-    set({ company: updated });
+  company: defaultCompany,
+  loading: false,
+  error: null,
+
+  loadCompany: async () => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    } catch (e) {
-      console.error('Error saving company details:', e);
+      set({ loading: true, error: null });
+      const companyData = await storageService.getCompany();
+      // Always update with data from API (even if it's default values)
+      // The API returns default values if no company exists in DB
+      console.log('Company data loaded from database:', {
+        id: companyData.id,
+        customer_id: companyData.customer_id,
+        name: companyData.name,
+        address: companyData.address,
+        phone: companyData.phone,
+        email: companyData.email,
+        hasLogo: !!companyData.logo,
+      });
+      // Create a new object to ensure Zustand detects the change
+      set({ 
+        company: { ...companyData }, 
+        loading: false 
+      });
+    } catch (error) {
+      console.error('Error loading company:', error);
+      set({ 
+        error: (error as Error).message, 
+        loading: false,
+        company: { ...defaultCompany }
+      });
     }
   },
-  getCompany: () => get().company,
-  loadCompany: () => {
-    set({ company: loadFromStorage() });
+
+  saveCompany: async (updates) => {
+    try {
+      set({ loading: true, error: null });
+      console.log('Saving company updates:', updates);
+      const updated = await storageService.saveCompany(updates);
+      console.log('Company saved, received:', {
+        id: updated.id,
+        customer_id: updated.customer_id,
+        name: updated.name,
+        address: updated.address,
+        phone: updated.phone,
+        email: updated.email,
+        hasLogo: !!updated.logo,
+        logoLength: updated.logo ? updated.logo.length : 0,
+      });
+      // Create a new object to ensure Zustand detects the change
+      set({ 
+        company: { ...updated }, 
+        loading: false 
+      });
+      return updated;
+    } catch (error) {
+      console.error('Error saving company:', error);
+      set({ 
+        error: (error as Error).message, 
+        loading: false 
+      });
+      throw error;
+    }
   },
+
+  getCompany: () => get().company,
 }));
 

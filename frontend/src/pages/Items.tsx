@@ -1,13 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useInventoryStore } from '../store/inventoryStore';
-import { Item, Category } from '../types';
+import { useAuthStore } from '../store/authStore';
+import { useCompanyStore } from '../store/companyStore';
+import { Item, Category, ItemCodePrefix } from '../types';
 import { formatCurrency } from '../utils/formatters';
+import { storageService } from '../services/storage';
 import './Items.css';
 
-export default function Items() {
+interface ItemsProps {
+  onNavigate?: (page: string) => void;
+}
+
+export default function Items({ onNavigate }: ItemsProps = {}) {
   const [modalVisible, setModalVisible] = useState(false);
+  const [deleteAllModalVisible, setDeleteAllModalVisible] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [name, setName] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [code, setCode] = useState('');
   const [barcode, setBarcode] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -16,6 +26,12 @@ export default function Items() {
   const [price, setPrice] = useState('');
   const [mrp, setMrp] = useState('');
   const [stock, setStock] = useState('0');
+  
+  // Item code prefix states
+  const [prefixes, setPrefixes] = useState<ItemCodePrefix[]>([]);
+  const [selectedPrefixId, setSelectedPrefixId] = useState('');
+  const [productCodeSize, setProductCodeSize] = useState('');
+  const [useManualCode, setUseManualCode] = useState(false);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,17 +39,69 @@ export default function Items() {
   const [filterSubcategory, setFilterSubcategory] = useState('');
   const [filterStock, setFilterStock] = useState<'all' | 'in-stock' | 'out-of-stock'>('all');
 
-  const { items, categories, loadItems, loadCategories, addItem, updateItem, deleteItem } =
+  // Lazy loading states
+  const [displayedItemsCount, setDisplayedItemsCount] = useState(20);
+  const ITEMS_PER_PAGE = 20;
+
+  const { items, categories, loadItems, loadCategories, addItem, updateItem, deleteItem, deleteAllItems } =
     useInventoryStore();
+  const { customer } = useAuthStore();
+  const { company, loadCompany } = useCompanyStore();
+  const isAdmin = customer?.isAdmin || false;
 
   useEffect(() => {
-    loadItems();
-    loadCategories();
+    const loadData = async () => {
+      await Promise.all([
+        loadCategories(),
+        loadItems(),
+        loadPrefixes(),
+      ]);
+    };
+    loadData();
   }, [loadItems, loadCategories]);
 
-  const handleAdd = () => {
+
+  useEffect(() => {
+    // Load company data from database
+    loadCompany();
+  }, [loadCompany]);
+
+  const loadPrefixes = async () => {
+    try {
+      const data = await storageService.getItemCodePrefixes();
+      setPrefixes(data);
+    } catch (error) {
+      console.error('Error loading prefixes:', error);
+    }
+  };
+
+  // Auto-fill barcode when product code and size are entered
+  useEffect(() => {
+    if (!useManualCode && productCodeSize && selectedPrefixId) {
+      const selectedPrefix = prefixes.find(p => p.id === selectedPrefixId);
+      if (selectedPrefix) {
+        const fullBarcode = `${selectedPrefix.prefix}${productCodeSize}`;
+        setBarcode(fullBarcode);
+        setCode(fullBarcode);
+      }
+    }
+  }, [productCodeSize, selectedPrefixId, prefixes, useManualCode]);
+
+  // Auto-populate display_name when name is typed (only if display_name is empty or matches previous name)
+  useEffect(() => {
+    if (name && (!displayName || displayName === editingItem?.name)) {
+      setDisplayName(name);
+    }
+  }, [name]);
+
+  const handleAdd = async () => {
+    // Ensure categories are loaded before opening modal
+    if (categories.length === 0) {
+      await loadCategories();
+    }
     setEditingItem(null);
     setName('');
+    setDisplayName('');
     setCode('');
     setBarcode('');
     setCategoryId('');
@@ -42,12 +110,20 @@ export default function Items() {
     setPrice('');
     setMrp('');
     setStock('0');
+    setSelectedPrefixId('');
+    setProductCodeSize('');
+    setUseManualCode(false);
     setModalVisible(true);
   };
 
-  const handleEdit = (item: Item) => {
+  const handleEdit = async (item: Item) => {
+    // Ensure categories are loaded before opening modal
+    if (categories.length === 0) {
+      await loadCategories();
+    }
     setEditingItem(item);
     setName(item.name);
+    setDisplayName(item.display_name || '');
     setCode(item.code);
     setBarcode(item.barcode || '');
     setCategoryId(item.category_id || '');
@@ -56,6 +132,20 @@ export default function Items() {
     setPrice(item.price.toString());
     setMrp(item.mrp?.toString() || '');
     setStock(item.stock.toString());
+    
+    // Try to extract prefix and product code-size from item code
+    const matchingPrefix = prefixes.find(p => item.code.startsWith(p.prefix));
+    if (matchingPrefix) {
+      setSelectedPrefixId(matchingPrefix.id);
+      const productCodeSizeValue = item.code.replace(matchingPrefix.prefix, '');
+      setProductCodeSize(productCodeSizeValue);
+      setUseManualCode(false);
+    } else {
+      setSelectedPrefixId('');
+      setProductCodeSize('');
+      setUseManualCode(true);
+    }
+    
     setModalVisible(true);
   };
 
@@ -73,16 +163,70 @@ export default function Items() {
   };
 
   const handleSave = async () => {
-    if (!name.trim() || !code.trim() || !price || !cost) {
+    // Validate: either prefix+productCodeSize OR manual code entry
+    if (!useManualCode && selectedPrefixId && !productCodeSize.trim()) {
+      alert('Please enter product code-size when a prefix is selected');
+      return;
+    }
+    if (useManualCode && !code.trim()) {
+      alert('Please enter item code manually');
+      return;
+    }
+    if (!name.trim() || !price || !cost) {
       alert('Please fill in all required fields');
       return;
     }
 
     try {
+      let finalCode = code.trim();
+      
+      // If manual code entry, check if prefix exists, if not try to create it
+      if (useManualCode && code.trim()) {
+        // First check if code starts with any existing prefix
+        const matchingPrefix = prefixes.find(p => finalCode.startsWith(p.prefix));
+        
+        if (!matchingPrefix) {
+          // Try to extract a potential prefix (everything before the last dash/underscore + separator)
+          const separators = /[-_]/;
+          const lastSeparatorIndex = finalCode.search(separators);
+          
+          if (lastSeparatorIndex > 0) {
+            // Find the last separator
+            let lastIndex = -1;
+            for (let i = finalCode.length - 1; i >= 0; i--) {
+              if (finalCode[i] === '-' || finalCode[i] === '_') {
+                lastIndex = i;
+                break;
+              }
+            }
+            
+            if (lastIndex > 0) {
+              const potentialPrefix = finalCode.substring(0, lastIndex + 1);
+              const existingPrefix = prefixes.find(p => p.prefix === potentialPrefix);
+              
+              if (!existingPrefix && potentialPrefix.length > 0) {
+                // Auto-create the prefix
+                try {
+                  await storageService.addItemCodePrefix({
+                    prefix: potentialPrefix,
+                    description: 'Auto-created from item code',
+                  });
+                  await loadPrefixes(); // Reload prefixes
+                } catch (error: any) {
+                  // If prefix already exists (race condition), just continue
+                  console.log('Prefix might already exist:', error);
+                }
+              }
+            }
+          }
+        }
+      }
+
       if (editingItem) {
         await updateItem(editingItem.id, {
           name,
-          code,
+          display_name: displayName || undefined,
+          code: finalCode,
           barcode: barcode || undefined,
           category_id: categoryId || undefined,
           subcategory: subcategory || undefined,
@@ -94,7 +238,8 @@ export default function Items() {
       } else {
         await addItem({
           name,
-          code,
+          display_name: displayName || undefined,
+          code: finalCode,
           barcode: barcode || undefined,
           category_id: categoryId || undefined,
           subcategory: subcategory || undefined,
@@ -121,8 +266,24 @@ export default function Items() {
     }
   };
 
+  const handleDeleteAll = async () => {
+    setDeletingAll(true);
+    try {
+      const result = await deleteAllItems();
+      alert(`Successfully deleted ${result.count} item${result.count === 1 ? '' : 's'}`);
+      setDeleteAllModalVisible(false);
+      loadItems();
+    } catch (error) {
+      console.error('Error deleting all items:', error);
+      alert('Failed to delete all items');
+    } finally {
+      setDeletingAll(false);
+    }
+  };
+
   const resetForm = () => {
     setName('');
+    setDisplayName('');
     setCode('');
     setBarcode('');
     setCategoryId('');
@@ -131,6 +292,9 @@ export default function Items() {
     setPrice('');
     setMrp('');
     setStock('0');
+    setSelectedPrefixId('');
+    setProductCodeSize('');
+    setUseManualCode(false);
   };
 
   // Filter items
@@ -174,8 +338,38 @@ export default function Items() {
     return true;
   });
 
+  // Reset displayed items count when filters change
+  useEffect(() => {
+    setDisplayedItemsCount(ITEMS_PER_PAGE);
+  }, [searchQuery, filterCategory, filterSubcategory, filterStock]);
+
+  // Items to display (lazy loaded)
+  const displayedItems = filteredItems.slice(0, displayedItemsCount);
+  const hasMoreItems = displayedItemsCount < filteredItems.length;
+
+  // Scroll handler for lazy loading
+  useEffect(() => {
+    const handleScroll = () => {
+      // Check if user scrolled near the bottom (within 200px)
+      if (
+        window.innerHeight + document.documentElement.scrollTop >=
+        document.documentElement.offsetHeight - 200
+      ) {
+        if (hasMoreItems) {
+          setDisplayedItemsCount(prev => prev + ITEMS_PER_PAGE);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasMoreItems]);
+
   // Get unique main category names (for filter dropdown)
   const getUniqueMainCategories = () => {
+    if (!categories || categories.length === 0) {
+      return [];
+    }
     const mainCategoryNames = [...new Set(categories.map(c => c.name))];
     return mainCategoryNames.map(name => {
       // Find the main category (without subcategory) or first category with this name
@@ -199,10 +393,43 @@ export default function Items() {
   return (
     <div className="items">
       <div className="items-header">
-        <h1>📦 Items</h1>
-        <button className="btn btn-primary" onClick={handleAdd}>
-          + Add Item
-        </button>
+        {company.logo && (
+          <div className="page-logo-container">
+            <img 
+              src={company.logo} 
+              alt={company.name || 'Company Logo'} 
+              className="page-logo"
+            />
+          </div>
+        )}
+        <div className="header-content">
+          <h1>{company.logo ? '' : '📦 '}Items</h1>
+        </div>
+        <div className="header-actions">
+          {items.length > 0 && (
+            <button 
+              className="btn btn-danger" 
+              onClick={() => setDeleteAllModalVisible(true)}
+              style={{ marginRight: '10px' }}
+            >
+              🗑️ Delete All
+            </button>
+          )}
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button className="btn btn-primary" onClick={handleAdd}>
+              + Add Item
+            </button>
+            {onNavigate && (
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => onNavigate('bulk-operations')}
+                title="Bulk Create Items"
+              >
+                ⚡ Bulk Create
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
@@ -285,7 +512,7 @@ export default function Items() {
         {filteredItems.length > 0 ? (
           <div className="items-table">
             <div className="items-count">
-              Showing {filteredItems.length} of {items.length} items
+              Showing {displayedItems.length} of {filteredItems.length} filtered items ({items.length} total)
             </div>
             <table>
               <thead>
@@ -293,22 +520,46 @@ export default function Items() {
                   <th>Name</th>
                   <th>Code</th>
                   <th>Category</th>
-                  <th>Cost</th>
+                  {isAdmin && <th>Cost</th>}
                   <th>Sale Price</th>
                   <th>MRP</th>
-                  <th>GM %</th>
+                  {isAdmin && <th>GM %</th>}
                   <th>Stock</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.map((item) => {
-                  const category = item.category_id 
-                    ? categories.find(c => c.id === item.category_id)
-                    : null;
-                  const categoryName = category 
-                    ? `${category.name}${item.subcategory ? ` / ${item.subcategory}` : ''}`
-                    : '-';
+                {displayedItems.map((item) => {
+                  // Find category by matching category_id - always show category name
+                  let categoryName = '-';
+                  
+                  if (item.category_id) {
+                    if (categories.length === 0) {
+                      // Categories not loaded yet
+                      categoryName = 'Loading...';
+                    } else {
+                      // Try to find category by ID
+                      const category = categories.find(c => c.id === item.category_id);
+                      
+                      if (category) {
+                        // Show category name with subcategory if available
+                        categoryName = category.name;
+                        if (item.subcategory) {
+                          categoryName += ` / ${item.subcategory}`;
+                        }
+                      } else {
+                        // Category ID exists but category not found
+                        console.warn('Category not found for item:', {
+                          itemName: item.name,
+                          itemCategoryId: item.category_id,
+                          itemCategoryIdType: typeof item.category_id,
+                          availableCategoryIds: categories.map(c => ({ id: c.id, name: c.name })),
+                          totalCategories: categories.length,
+                        });
+                        categoryName = '-';
+                      }
+                    }
+                  }
                   // Calculate GM percentage: ((price - cost) / price) * 100
                   const gmPercentage = item.price > 0 && item.cost > 0 
                     ? ((item.price - item.cost) / item.price) * 100 
@@ -318,20 +569,24 @@ export default function Items() {
                       <td className="item-name">{item.name}</td>
                       <td className="item-code">{item.code}</td>
                       <td className="item-category">{categoryName}</td>
-                      <td className="item-cost">
-                        {item.cost ? formatCurrency(item.cost) : '-'}
-                      </td>
+                      {isAdmin && (
+                        <td className="item-cost">
+                          {item.cost ? formatCurrency(item.cost) : '-'}
+                        </td>
+                      )}
                       <td className="item-price">{formatCurrency(item.price)}</td>
                       <td className="item-mrp">
                         {item.mrp ? formatCurrency(item.mrp) : '-'}
                       </td>
-                      <td className="item-gm">
-                        {gmPercentage > 0 ? (
-                          <span className={gmPercentage >= 30 ? 'gm-high' : gmPercentage >= 15 ? 'gm-medium' : 'gm-low'}>
-                            {gmPercentage.toFixed(1)}%
-                          </span>
-                        ) : '-'}
-                      </td>
+                      {isAdmin && (
+                        <td className="item-gm">
+                          {gmPercentage > 0 ? (
+                            <span className={gmPercentage >= 30 ? 'gm-high' : gmPercentage >= 15 ? 'gm-medium' : 'gm-low'}>
+                              {gmPercentage.toFixed(1)}%
+                            </span>
+                          ) : '-'}
+                        </td>
+                      )}
                       <td>
                         <span className={item.stock > 0 ? 'stock-ok' : 'stock-out'}>
                           {item.stock}
@@ -356,6 +611,11 @@ export default function Items() {
                 })}
               </tbody>
             </table>
+            {hasMoreItems && (
+              <div className="load-more-indicator">
+                <p>Scroll down to load more items...</p>
+              </div>
+            )}
           </div>
         ) : items.length > 0 ? (
           <div className="empty-state">
@@ -384,14 +644,102 @@ export default function Items() {
               />
             </label>
             <label>
-              Code *:
+              Display Name (for receipt):
               <input
                 type="text"
                 className="input"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Auto-filled from name, can be modified"
               />
+              <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                This name will be shown on receipts. Leave empty to use item name.
+              </small>
             </label>
+            <div style={{ marginBottom: '10px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                <input
+                  type="radio"
+                  checked={!useManualCode}
+                  onChange={() => {
+                    setUseManualCode(false);
+                    setCode('');
+                    setBarcode('');
+                  }}
+                />
+                <span>Use Prefix Dropdown</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <input
+                  type="radio"
+                  checked={useManualCode}
+                  onChange={() => {
+                    setUseManualCode(true);
+                    setSelectedPrefixId('');
+                    setProductCodeSize('');
+                  }}
+                />
+                <span>Enter Code Manually</span>
+              </label>
+            </div>
+
+            {!useManualCode ? (
+              <>
+                <label>
+                  Item Code Prefix *:
+                  <select
+                    className="input"
+                    value={selectedPrefixId}
+                    onChange={(e) => {
+                      setSelectedPrefixId(e.target.value);
+                      setProductCodeSize('');
+                      setCode('');
+                      setBarcode('');
+                    }}
+                  >
+                    <option value="">Select prefix...</option>
+                    {prefixes.map((prefix) => (
+                      <option key={prefix.id} value={prefix.id}>
+                        {prefix.prefix} {prefix.description ? `(${prefix.description})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {selectedPrefixId && (
+                  <label>
+                    Product Code-Size (e.g., "PROD001-L"):
+                    <input
+                      type="text"
+                      className="input"
+                      value={productCodeSize}
+                      onChange={(e) => setProductCodeSize(e.target.value)}
+                      placeholder="PROD001-L"
+                    />
+                    <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                      This will auto-fill the barcode and code fields
+                    </small>
+                  </label>
+                )}
+              </>
+            ) : (
+              <label>
+                Item Code * (Manual Entry):
+                <input
+                  type="text"
+                  className="input"
+                  value={code}
+                  onChange={(e) => {
+                    setCode(e.target.value);
+                    // Auto-fill barcode with the same value
+                    setBarcode(e.target.value);
+                  }}
+                  placeholder="Enter item code (e.g., shopname-place-PROD001-L)"
+                />
+                <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                  New codes will be automatically added to the prefix list
+                </small>
+              </label>
+            )}
             <label>
               Barcode:
               <input
@@ -399,6 +747,7 @@ export default function Items() {
                 className="input"
                 value={barcode}
                 onChange={(e) => setBarcode(e.target.value)}
+                placeholder="Auto-filled from prefix + product code-size"
               />
             </label>
             <label>
@@ -412,12 +761,21 @@ export default function Items() {
                 }}
               >
                 <option value="">None</option>
-                {getUniqueMainCategories().map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
+                {categories.length === 0 ? (
+                  <option value="" disabled>Loading categories...</option>
+                ) : (
+                  getUniqueMainCategories().map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))
+                )}
               </select>
+              {categories.length === 0 && (
+                <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                  No categories available. Create categories first.
+                </small>
+              )}
             </label>
             {categoryId && getSubcategories().length > 0 && (
               <label>
@@ -502,6 +860,35 @@ export default function Items() {
               </button>
               <button className="btn btn-primary" onClick={handleSave}>
                 Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete All Confirmation Modal */}
+      {deleteAllModalVisible && (
+        <div className="modal-overlay" onClick={() => setDeleteAllModalVisible(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Delete All Items</h2>
+            <p>
+              Are you sure you want to delete <strong>all {items.length} item{items.length === 1 ? '' : 's'}</strong>?
+              This action cannot be undone.
+            </p>
+            <div className="modal-actions">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setDeleteAllModalVisible(false)}
+                disabled={deletingAll}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={handleDeleteAll}
+                disabled={deletingAll}
+              >
+                {deletingAll ? 'Deleting...' : 'Delete All'}
               </button>
             </div>
           </div>

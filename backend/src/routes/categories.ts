@@ -2,21 +2,31 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { logActivity } from '../utils/activityLogger.js';
 
 const router = express.Router();
 
 // All routes require authentication
 router.use(authenticate);
 
-// Get all categories
+// Get all categories - show all categories to all authenticated users (shared inventory)
 router.get('/', async (req: AuthRequest, res) => {
   try {
     const categories = await prisma.category.findMany({
-      where: { customerId: req.customerId! },
       orderBy: { createdAt: 'desc' },
     });
 
-    res.json(categories);
+    // Transform to snake_case for frontend
+    const transformedCategories = categories.map(category => ({
+      id: category.id,
+      customer_id: category.customerId,
+      name: category.name,
+      subcategory: category.subcategory,
+      brand: category.brand,
+      created_at: category.createdAt.toISOString(),
+    }));
+
+    res.json(transformedCategories);
   } catch (error: any) {
     console.error('Error fetching categories:', error);
     res.status(500).json({ error: error.message || 'Failed to fetch categories' });
@@ -49,7 +59,27 @@ router.post(
         },
       });
 
-      res.status(201).json(category);
+      // Log activity
+      await logActivity({
+        entityType: 'category',
+        entityId: category.id,
+        action: 'create',
+        changedBy: req.customerId!,
+        changes: {
+          name: category.name,
+          subcategory: category.subcategory,
+        },
+      });
+
+      // Transform to snake_case for frontend
+      res.status(201).json({
+        id: category.id,
+        customer_id: category.customerId,
+        name: category.name,
+        subcategory: category.subcategory,
+        brand: category.brand,
+        created_at: category.createdAt.toISOString(),
+      });
     } catch (error: any) {
       console.error('Error creating category:', error);
       res.status(500).json({ error: error.message || 'Failed to create category' });
@@ -84,6 +114,13 @@ router.put(
         return res.status(404).json({ error: 'Category not found' });
       }
 
+      // Prepare old values for activity log
+      const oldValues = {
+        name: existing.name,
+        subcategory: existing.subcategory,
+        brand: existing.brand,
+      };
+
       const category = await prisma.category.update({
         where: { id },
         data: {
@@ -93,13 +130,54 @@ router.put(
         },
       });
 
-      res.json(category);
+      // Log activity
+      await logActivity({
+        entityType: 'category',
+        entityId: category.id,
+        action: 'update',
+        changedBy: req.customerId!,
+        changes: {
+          old: oldValues,
+          new: {
+            name: category.name,
+            subcategory: category.subcategory,
+            brand: category.brand,
+          },
+        },
+      });
+
+      // Transform to snake_case for frontend
+      res.json({
+        id: category.id,
+        customer_id: category.customerId,
+        name: category.name,
+        subcategory: category.subcategory,
+        brand: category.brand,
+        created_at: category.createdAt.toISOString(),
+      });
     } catch (error: any) {
       console.error('Error updating category:', error);
       res.status(500).json({ error: error.message || 'Failed to update category' });
     }
   }
 );
+
+// Delete all categories for the current customer (must be before /:id route)
+router.delete('/', async (req: AuthRequest, res) => {
+  try {
+    const deleted = await prisma.category.deleteMany({
+      where: { customerId: req.customerId! },
+    });
+
+    res.json({ 
+      message: 'All categories deleted successfully',
+      count: deleted.count 
+    });
+  } catch (error: any) {
+    console.error('Error deleting all categories:', error);
+    res.status(500).json({ error: error.message || 'Failed to delete all categories' });
+  }
+});
 
 // Delete category
 router.delete('/:id', async (req: AuthRequest, res) => {
@@ -114,6 +192,18 @@ router.delete('/:id', async (req: AuthRequest, res) => {
     if (!existing) {
       return res.status(404).json({ error: 'Category not found' });
     }
+
+    // Log activity before deletion
+    await logActivity({
+      entityType: 'category',
+      entityId: existing.id,
+      action: 'delete',
+      changedBy: req.customerId!,
+      changes: {
+        name: existing.name,
+        deletedAt: new Date().toISOString(),
+      },
+    });
 
     await prisma.category.delete({
       where: { id },

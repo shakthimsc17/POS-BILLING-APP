@@ -14,20 +14,48 @@
 }
 
 .dashboard-header {
-  text-align: center;
   margin-bottom: 2rem;
-  color: white;
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.page-logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e0e6ed;
+}
+
+.page-logo {
+  max-width: 80px;
+  max-height: 60px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.header-content {
+  flex: 1;
+  text-align: center;
 }
 
 .dashboard-header h1 {
-  font-size: 2.5rem;
+  font-size: 2rem;
   margin-bottom: 0.5rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  font-weight: 600;
+  color: #1a1a1a;
 }
 
 .dashboard-header p {
-  font-size: 1.1rem;
-  opacity: 0.9;
+  font-size: 1rem;
+  color: #6c757d;
 }
 
 .search-container {
@@ -35,47 +63,46 @@
 }
 
 .card.cart-summary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  background: #ffffff !important;
   margin-bottom: 1.5rem;
-  color: white !important;
+  border: 1px solid #e0e6ed;
+  color: #1a1a1a !important;
 }
 
 .card.cart-summary * {
-  color: white !important;
+  color: #1a1a1a !important;
 }
 
 .card.cart-summary h3 {
   margin: 0 0 0.5rem 0;
-  color: white !important;
+  color: #1a1a1a !important;
   font-weight: 600;
 }
 
 .card.cart-summary p {
   margin: 0;
-  opacity: 0.95;
-  color: white !important;
+  color: #6c757d !important;
   font-size: 1rem;
 }
 
 .card.cart-summary .cart-info {
-  color: white !important;
+  color: #1a1a1a !important;
 }
 
 .card.cart-summary .cart-info > div {
-  color: white !important;
+  color: #1a1a1a !important;
 }
 
 .card.cart-summary .btn-primary {
-  background: rgba(255, 255, 255, 0.2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  background: #3498db !important;
+  border: none !important;
   color: white !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
 }
 
 .card.cart-summary .btn-primary:hover {
-  background: rgba(255, 255, 255, 0.3) !important;
-  border-color: rgba(255, 255, 255, 0.5) !important;
-  color: white !important;
+  background: #2980b9 !important;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
 }
 
 .cart-info {
@@ -88,7 +115,7 @@
 .empty-state {
   text-align: center;
   padding: 3rem;
-  color: #666;
+  color: #6c757d;
 }
 
 .empty-subtext {
@@ -118,6 +145,22 @@
   to {
     transform: translateX(0);
     opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .page-logo {
+    max-width: 60px;
+    max-height: 45px;
+  }
+
+  .header-content {
+    width: 100%;
   }
 }
 

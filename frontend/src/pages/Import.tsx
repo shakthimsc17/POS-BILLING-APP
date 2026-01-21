@@ -28,26 +28,43 @@ export default function Import() {
   }, [loadCategories]);
 
   // Helper to find category ID by name (and optionally subcategory)
-  const findCategoryId = (categoryName?: string, subcategoryName?: string): string | undefined => {
+  const findCategoryId = (categoryName?: string, subcategoryName?: string, categoriesList?: Category[]): string | undefined => {
     if (!categoryName) return undefined;
     
+    const categoriesToSearch = categoriesList || categories;
+    const trimmedName = categoryName.trim();
+    const trimmedSubcategory = subcategoryName?.trim();
+    
     // First try to find exact match with subcategory
-    if (subcategoryName) {
-      const category = categories.find(
-        c => c.name === categoryName.trim() && c.subcategory === subcategoryName.trim()
+    if (trimmedSubcategory) {
+      const category = categoriesToSearch.find(
+        c => c.name.toLowerCase() === trimmedName.toLowerCase() && 
+             c.subcategory?.toLowerCase() === trimmedSubcategory.toLowerCase()
       );
-      if (category) return category.id;
+      if (category) {
+        console.log('Found category with subcategory:', { name: category.name, id: category.id });
+        return category.id;
+      }
     }
     
     // Then try to find main category (no subcategory)
-    const mainCategory = categories.find(
-      c => c.name === categoryName.trim() && !c.subcategory
+    const mainCategory = categoriesToSearch.find(
+      c => c.name.toLowerCase() === trimmedName.toLowerCase() && !c.subcategory
     );
-    if (mainCategory) return mainCategory.id;
+    if (mainCategory) {
+      console.log('Found main category:', { name: mainCategory.name, id: mainCategory.id });
+      return mainCategory.id;
+    }
     
-    // If no exact match, return first category with matching name
-    const anyCategory = categories.find(c => c.name === categoryName.trim());
-    return anyCategory?.id;
+    // If no exact match, return first category with matching name (case-insensitive)
+    const anyCategory = categoriesToSearch.find(c => c.name.toLowerCase() === trimmedName.toLowerCase());
+    if (anyCategory) {
+      console.log('Found category by name match:', { name: anyCategory.name, id: anyCategory.id });
+      return anyCategory.id;
+    }
+    
+    console.warn('Category not found:', { categoryName: trimmedName, subcategory: trimmedSubcategory, availableCategories: categoriesToSearch.map(c => ({ name: c.name, subcategory: c.subcategory })) });
+    return undefined;
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -160,6 +177,22 @@ export default function Import() {
     let failedCount = 0;
 
     try {
+      // Ensure categories are loaded before importing items
+      let categoriesToUse = categories;
+      if (importType === 'items') {
+        console.log('Loading categories before item import...');
+        await loadCategories();
+        // Get fresh categories from store after loading
+        const store = useInventoryStore.getState();
+        categoriesToUse = store.categories;
+        console.log('Categories loaded:', categoriesToUse.length, categoriesToUse);
+        if (categoriesToUse.length === 0) {
+          alert('No categories found. Please create categories first before importing items.');
+          setImporting(false);
+          return;
+        }
+      }
+
       const text = await file.text();
       const rows = parseCSV(text);
 
@@ -211,22 +244,54 @@ export default function Import() {
 
           try {
             // Try to find category by name if category_id is not provided
-            let categoryId = row.category_id?.trim();
-            if (!categoryId && row.category_name) {
-              categoryId = findCategoryId(row.category_name, row.subcategory);
-              if (!categoryId) {
-                errors.push(`Row ${i + 1}: Category "${row.category_name}" not found`);
+            // Check for various column name variations
+            const categoryName = row.category_name?.trim() || row['Category Name']?.trim() || row.category?.trim() || '';
+            const categoryIdFromCSV = row.category_id?.trim() || row['Category ID']?.trim() || '';
+            const subcategoryName = row.subcategory?.trim() || row['Subcategory']?.trim() || '';
+            
+            let categoryId = categoryIdFromCSV;
+            
+            console.log(`Row ${i + 1}: Processing category lookup`, {
+              categoryName,
+              categoryIdFromCSV,
+              subcategoryName,
+              availableCategories: categoriesToUse.length,
+              rowKeys: Object.keys(row)
+            });
+            
+            // If category_name is provided, look it up using the loaded categories
+            if (categoryName) {
+              const foundCategoryId = findCategoryId(categoryName, subcategoryName, categoriesToUse);
+              if (foundCategoryId) {
+                categoryId = foundCategoryId;
+                console.log(`Row ${i + 1}: Found category ID for "${categoryName}": ${categoryId}`);
+              } else {
+                const errorMsg = `Row ${i + 1}: Category "${categoryName}"${subcategoryName ? ` / ${subcategoryName}` : ''} not found. Available categories: ${categoriesToUse.map(c => `${c.name}${c.subcategory ? ` / ${c.subcategory}` : ''}`).join(', ')}`;
+                console.error(errorMsg);
+                errors.push(errorMsg);
                 failedCount++;
                 continue;
               }
             }
+
+            // Validate that we have category_id if category_name was provided
+            if (categoryName && !categoryId) {
+              const errorMsg = `Row ${i + 1}: Could not find category "${categoryName}". Please create the category first.`;
+              console.error(errorMsg);
+              errors.push(errorMsg);
+              failedCount++;
+              continue;
+            }
+
+            // Log the final category_id being used
+            console.log(`Row ${i + 1}: Final category_id for item "${row.name}":`, categoryId || 'undefined (no category)');
 
             await addItem({
               name: row.name.trim(),
               code: row.code.trim(),
               barcode: row.barcode?.trim() || undefined,
               category_id: categoryId || undefined,
-              subcategory: row.subcategory?.trim() || undefined,
+              subcategory: subcategoryName || undefined,
               cost: parseFloat(row.cost),
               price: parseFloat(row.price),
               mrp: row.mrp ? parseFloat(row.mrp) : undefined,
@@ -234,7 +299,9 @@ export default function Import() {
             });
             successCount++;
           } catch (error: any) {
-            errors.push(`Row ${i + 1}: ${error.message || 'Failed to import'}`);
+            const errorMsg = `Row ${i + 1}: ${error.message || 'Failed to import'}`;
+            console.error(errorMsg, error);
+            errors.push(errorMsg);
             failedCount++;
           }
         }
@@ -466,6 +533,7 @@ export default function Import() {
           </div>
         </div>
       </div>
+
     </div>
   );
 }
