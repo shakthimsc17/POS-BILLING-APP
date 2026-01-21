@@ -7,12 +7,17 @@ import { formatCurrency } from '../utils/formatters';
 import { storageService } from '../services/storage';
 import './Items.css';
 
-export default function Items() {
+interface ItemsProps {
+  onNavigate?: (page: string) => void;
+}
+
+export default function Items({ onNavigate }: ItemsProps = {}) {
   const [modalVisible, setModalVisible] = useState(false);
   const [deleteAllModalVisible, setDeleteAllModalVisible] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [name, setName] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [code, setCode] = useState('');
   const [barcode, setBarcode] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -78,6 +83,13 @@ export default function Items() {
     }
   }, [productCodeSize, selectedPrefixId, prefixes, useManualCode]);
 
+  // Auto-populate display_name when name is typed (only if display_name is empty or matches previous name)
+  useEffect(() => {
+    if (name && (!displayName || displayName === editingItem?.name)) {
+      setDisplayName(name);
+    }
+  }, [name]);
+
   const handleAdd = async () => {
     // Ensure categories are loaded before opening modal
     if (categories.length === 0) {
@@ -85,6 +97,7 @@ export default function Items() {
     }
     setEditingItem(null);
     setName('');
+    setDisplayName('');
     setCode('');
     setBarcode('');
     setCategoryId('');
@@ -106,6 +119,7 @@ export default function Items() {
     }
     setEditingItem(item);
     setName(item.name);
+    setDisplayName(item.display_name || '');
     setCode(item.code);
     setBarcode(item.barcode || '');
     setCategoryId(item.category_id || '');
@@ -207,6 +221,7 @@ export default function Items() {
       if (editingItem) {
         await updateItem(editingItem.id, {
           name,
+          display_name: displayName || undefined,
           code: finalCode,
           barcode: barcode || undefined,
           category_id: categoryId || undefined,
@@ -219,6 +234,7 @@ export default function Items() {
       } else {
         await addItem({
           name,
+          display_name: displayName || undefined,
           code: finalCode,
           barcode: barcode || undefined,
           category_id: categoryId || undefined,
@@ -263,6 +279,7 @@ export default function Items() {
 
   const resetForm = () => {
     setName('');
+    setDisplayName('');
     setCode('');
     setBarcode('');
     setCategoryId('');
@@ -367,9 +384,20 @@ export default function Items() {
               🗑️ Delete All
             </button>
           )}
-          <button className="btn btn-primary" onClick={handleAdd}>
-            + Add Item
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button className="btn btn-primary" onClick={handleAdd}>
+              + Add Item
+            </button>
+            {onNavigate && (
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => onNavigate('bulk-operations')}
+                title="Bulk Create Items"
+              >
+                ⚡ Bulk Create
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -578,6 +606,19 @@ export default function Items() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
+            </label>
+            <label>
+              Display Name (for receipt):
+              <input
+                type="text"
+                className="input"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Auto-filled from name, can be modified"
+              />
+              <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                This name will be shown on receipts. Leave empty to use item name.
+              </small>
             </label>
             <div style={{ marginBottom: '10px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>

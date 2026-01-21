@@ -2,6 +2,7 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { logActivity } from '../utils/activityLogger.js';
 
 const router = express.Router();
 
@@ -92,7 +93,17 @@ router.post(
       const existing = await prisma.company.findFirst();
 
       let company;
+      const isUpdate = !!existing;
+      
       if (existing) {
+        // Prepare old values for activity log
+        const oldValues = {
+          name: existing.name,
+          address: existing.address,
+          city: existing.city,
+          state: existing.state,
+        };
+
         company = await prisma.company.update({
           where: { id: existing.id },
           data: {
@@ -106,6 +117,23 @@ router.post(
             gstin,
             website,
             logo,
+          },
+        });
+
+        // Log activity for update
+        await logActivity({
+          entityType: 'company',
+          entityId: company.id,
+          action: 'update',
+          changedBy: req.customerId!,
+          changes: {
+            old: oldValues,
+            new: {
+              name: company.name,
+              address: company.address,
+              city: company.city,
+              state: company.state,
+            },
           },
         });
       } else {
@@ -122,6 +150,18 @@ router.post(
             gstin,
             website,
             logo,
+          },
+        });
+
+        // Log activity for create
+        await logActivity({
+          entityType: 'company',
+          entityId: company.id,
+          action: 'create',
+          changedBy: req.customerId!,
+          changes: {
+            name: company.name,
+            address: company.address,
           },
         });
       }

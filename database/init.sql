@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
+  display_name VARCHAR(255),
   code VARCHAR(100) NOT NULL,
   barcode VARCHAR(255),
   category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
@@ -117,6 +118,30 @@ CREATE INDEX IF NOT EXISTS idx_items_code ON items(code);
 -- Transactions indexes
 CREATE INDEX IF NOT EXISTS idx_transactions_customer_id ON transactions(customer_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON transactions(created_at DESC);
+
+-- =====================================================
+-- ACTIVITY LOGS TABLE
+-- =====================================================
+-- Tracks all changes made to items, categories, transactions, and company data
+
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  entity_type VARCHAR(50) NOT NULL CHECK (entity_type IN ('item', 'category', 'transaction', 'company')),
+  entity_id UUID NOT NULL,
+  action VARCHAR(20) NOT NULL CHECK (action IN ('create', 'update', 'delete')),
+  changed_by UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  changes JSONB,
+  created_at TIMESTAMPTZ(6) DEFAULT NOW(),
+  
+  CONSTRAINT fk_activity_logs_changed_by FOREIGN KEY (changed_by) 
+    REFERENCES customers(id) ON DELETE CASCADE
+);
+
+-- Activity logs indexes
+CREATE INDEX IF NOT EXISTS idx_activity_logs_entity_type ON activity_logs(entity_type);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_entity_id ON activity_logs(entity_id);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_changed_by ON activity_logs(changed_by);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at DESC);
 
 -- =====================================================
 -- TRIGGERS

@@ -13,12 +13,14 @@ import Import from './pages/Import';
 import Reports from './pages/Reports';
 import Calculators from './pages/Calculators';
 import CompanySettings from './pages/CompanySettings';
+import ActivityLogs from './pages/ActivityLogs';
+import BulkOperations from './pages/BulkOperations';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import { useCompanyStore } from './store/companyStore';
 import './App.css';
 
-type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'payment' | 'sales' | 'customers' | 'import' | 'reports' | 'calculators' | 'company';
+type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'payment' | 'sales' | 'customers' | 'import' | 'reports' | 'calculators' | 'company' | 'activity-logs' | 'bulk-operations';
 type AuthPage = 'signin' | 'signup';
 
 function App() {
@@ -88,80 +90,107 @@ function App() {
           {company.phone && <p className="company-phone">{company.phone}</p>}
         </div>
         <nav className="sidebar-nav">
-          <button
-            className={currentPage === 'dashboard' ? 'active' : ''}
-            onClick={() => setCurrentPage('dashboard')}
-          >
-            <span className="nav-icon">🏠</span>
-            <span className="nav-text">Dashboard</span>
-          </button>
-          <button
-            className={currentPage === 'cart' ? 'active' : ''}
-            onClick={() => setCurrentPage('cart')}
-          >
-            <span className="nav-icon">🛒</span>
-            <span className="nav-text">Cart</span>
-          </button>
-          <button
-            className={currentPage === 'categories' ? 'active' : ''}
-            onClick={() => setCurrentPage('categories')}
-          >
-            <span className="nav-icon">📁</span>
-            <span className="nav-text">Categories</span>
-          </button>
-          <button
-            className={currentPage === 'items' ? 'active' : ''}
-            onClick={() => setCurrentPage('items')}
-          >
-            <span className="nav-icon">📦</span>
-            <span className="nav-text">Items</span>
-          </button>
-          <button
-            className={currentPage === 'sales' ? 'active' : ''}
-            onClick={() => setCurrentPage('sales')}
-          >
-            <span className="nav-icon">📊</span>
-            <span className="nav-text">Sales</span>
-          </button>
-          {customer?.isAdmin && (
+          <div className="nav-section">
+            <div className="nav-section-label">Main</div>
             <button
-              className={currentPage === 'customers' ? 'active' : ''}
-              onClick={() => setCurrentPage('customers')}
+              className={currentPage === 'dashboard' ? 'active' : ''}
+              onClick={() => setCurrentPage('dashboard')}
             >
-              <span className="nav-icon">👥</span>
-              <span className="nav-text">Customers</span>
+              <span className="nav-icon">🏠</span>
+              <span className="nav-text">Dashboard</span>
             </button>
-          )}
-          <button
-            className={currentPage === 'import' ? 'active' : ''}
-            onClick={() => setCurrentPage('import')}
-          >
-            <span className="nav-icon">📥</span>
-            <span className="nav-text">Import</span>
-          </button>
-          {customer?.isAdmin && (
             <button
-              className={currentPage === 'reports' ? 'active' : ''}
-              onClick={() => setCurrentPage('reports')}
+              className={currentPage === 'cart' ? 'active' : ''}
+              onClick={() => setCurrentPage('cart')}
             >
-              <span className="nav-icon">📊</span>
-              <span className="nav-text">Reports</span>
+              <span className="nav-icon">🛒</span>
+              <span className="nav-text">Cart</span>
             </button>
+            <button
+              className={currentPage === 'sales' ? 'active' : ''}
+              onClick={() => setCurrentPage('sales')}
+            >
+              <span className="nav-icon">💼</span>
+              <span className="nav-text">Sales</span>
+            </button>
+          </div>
+
+          <div className="nav-section">
+            <div className="nav-section-label">Inventory</div>
+            <button
+              className={currentPage === 'items' ? 'active' : ''}
+              onClick={() => setCurrentPage('items')}
+            >
+              <span className="nav-icon">📦</span>
+              <span className="nav-text">Items</span>
+            </button>
+            <button
+              className={currentPage === 'categories' ? 'active' : ''}
+              onClick={() => setCurrentPage('categories')}
+            >
+              <span className="nav-icon">📁</span>
+              <span className="nav-text">Categories</span>
+            </button>
+            <button
+              className={currentPage === 'import' ? 'active' : ''}
+              onClick={() => setCurrentPage('import')}
+            >
+              <span className="nav-icon">📥</span>
+              <span className="nav-text">Import</span>
+            </button>
+          </div>
+
+          {customer?.isAdmin && (
+            <div className="nav-section">
+              <div className="nav-section-label">Admin</div>
+              <button
+                className={currentPage === 'customers' ? 'active' : ''}
+                onClick={() => setCurrentPage('customers')}
+              >
+                <span className="nav-icon">👥</span>
+                <span className="nav-text">Customers</span>
+              </button>
+              <button
+                className={currentPage === 'reports' ? 'active' : ''}
+                onClick={() => setCurrentPage('reports')}
+              >
+                <span className="nav-icon">📊</span>
+                <span className="nav-text">Reports</span>
+              </button>
+              <button
+                className={currentPage === 'activity-logs' ? 'active' : ''}
+                onClick={() => setCurrentPage('activity-logs')}
+              >
+                <span className="nav-icon">📋</span>
+                <span className="nav-text">Activity Logs</span>
+              </button>
+            </div>
           )}
-          <button
-            className={currentPage === 'calculators' ? 'active' : ''}
-            onClick={() => setCurrentPage('calculators')}
-          >
-            <span className="nav-icon">🧮</span>
-            <span className="nav-text">Calculators</span>
-          </button>
-          <button
-            className={currentPage === 'company' ? 'active' : ''}
-            onClick={() => setCurrentPage('company')}
-          >
-            <span className="nav-icon">🏢</span>
-            <span className="nav-text">Company</span>
-          </button>
+
+          <div className="nav-section">
+            <div className="nav-section-label">Tools</div>
+            <button
+              className={currentPage === 'bulk-operations' ? 'active' : ''}
+              onClick={() => setCurrentPage('bulk-operations')}
+            >
+              <span className="nav-icon">⚡</span>
+              <span className="nav-text">Bulk Operations</span>
+            </button>
+            <button
+              className={currentPage === 'calculators' ? 'active' : ''}
+              onClick={() => setCurrentPage('calculators')}
+            >
+              <span className="nav-icon">🧮</span>
+              <span className="nav-text">Calculators</span>
+            </button>
+            <button
+              className={currentPage === 'company' ? 'active' : ''}
+              onClick={() => setCurrentPage('company')}
+            >
+              <span className="nav-icon">🏢</span>
+              <span className="nav-text">Company</span>
+            </button>
+          </div>
         </nav>
 
         <div className="sidebar-footer">
@@ -175,17 +204,30 @@ function App() {
       </aside>
 
       <main className={`main-content ${sidebarOpen ? 'sidebar-open' : ''}`}>
-        {currentPage === 'dashboard' && <Dashboard onNavigate={setCurrentPage} />}
-        {currentPage === 'cart' && <Cart onNavigate={setCurrentPage} />}
-        {currentPage === 'categories' && <Categories />}
-        {currentPage === 'items' && <Items />}
-        {currentPage === 'payment' && <Payment onNavigate={setCurrentPage} />}
-        {currentPage === 'sales' && <SalesOrders />}
-        {currentPage === 'customers' && customer?.isAdmin && <Customers />}
-        {currentPage === 'import' && <Import />}
-        {currentPage === 'reports' && customer?.isAdmin && <Reports />}
-        {currentPage === 'calculators' && <Calculators />}
-        {currentPage === 'company' && <CompanySettings />}
+        <div className="page-content-wrapper">
+          {currentPage === 'dashboard' && <Dashboard onNavigate={setCurrentPage} />}
+          {currentPage === 'cart' && <Cart onNavigate={setCurrentPage} />}
+          {currentPage === 'categories' && <Categories onNavigate={setCurrentPage} />}
+          {currentPage === 'items' && <Items onNavigate={setCurrentPage} />}
+          {currentPage === 'payment' && <Payment onNavigate={setCurrentPage} />}
+          {currentPage === 'sales' && <SalesOrders />}
+          {currentPage === 'customers' && customer?.isAdmin && <Customers />}
+          {currentPage === 'import' && <Import />}
+          {currentPage === 'reports' && customer?.isAdmin && <Reports />}
+          {currentPage === 'activity-logs' && customer?.isAdmin && <ActivityLogs />}
+          {currentPage === 'bulk-operations' && <BulkOperations />}
+          {currentPage === 'calculators' && <Calculators />}
+          {currentPage === 'company' && <CompanySettings />}
+        </div>
+
+        {/* Show footer for all pages except dashboard and sales-related pages */}
+        {!['dashboard', 'cart', 'payment', 'sales'].includes(currentPage) && (
+          <footer className="page-footer">
+            <div className="footer-content">
+              <p className="footer-text">Powered by <strong>SSS Soft Solution</strong></p>
+            </div>
+          </footer>
+        )}
       </main>
     </div>
   );
