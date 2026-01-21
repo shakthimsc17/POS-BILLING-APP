@@ -15,6 +15,7 @@ export default function CompanySettings() {
     gstin: '',
     website: '',
     logo: '',
+    business_type: '' as 'clothing' | 'cafe' | 'electrical' | '',
   });
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -48,6 +49,7 @@ export default function CompanySettings() {
         gstin: company.gstin || '',
         website: company.website || '',
         logo: company.logo || '',
+        business_type: (company.business_type as 'clothing' | 'cafe' | 'electrical') || '',
       });
     }
   }, [company, loading]);
@@ -72,6 +74,7 @@ export default function CompanySettings() {
         gstin: formData.gstin || '',
         website: formData.website || '',
         logo: formData.logo || '',
+        business_type: formData.business_type || null,
       };
       console.log('Saving company data:', dataToSave);
       const saved = await saveCompany(dataToSave);
@@ -89,18 +92,19 @@ export default function CompanySettings() {
   };
 
   const handleReset = () => {
-    setFormData({
-      name: company.name || 'My Store',
-      address: company.address || '',
-      city: company.city || '',
-      state: company.state || '',
-      pincode: company.pincode || '',
-      phone: company.phone || '',
-      email: company.email || '',
-      gstin: company.gstin || '',
-      website: company.website || '',
-      logo: company.logo || '',
-    });
+      setFormData({
+        name: company.name || 'My Store',
+        address: company.address || '',
+        city: company.city || '',
+        state: company.state || '',
+        pincode: company.pincode || '',
+        phone: company.phone || '',
+        email: company.email || '',
+        gstin: company.gstin || '',
+        website: company.website || '',
+        logo: company.logo || '',
+        business_type: (company.business_type as 'clothing' | 'cafe' | 'electrical') || '',
+      });
     setSaved(false);
   };
 
@@ -160,11 +164,13 @@ export default function CompanySettings() {
         </div>
       )}
 
-      <div className="card">
-        <div className="form-section">
-          <h2>Basic Information</h2>
-          <div className="form-grid">
-            <div className="form-group full-width">
+      <div className="company-settings-content">
+        <div className="company-form-cards">
+          {/* Card 1: Company Information */}
+          <div className="card form-card">
+          <h2>Company Information</h2>
+          <div className="form-fields">
+            <div className="form-group">
               <label>
                 Company Name *
                 <input
@@ -172,13 +178,13 @@ export default function CompanySettings() {
                   className="input"
                   value={formData.name}
                   onChange={(e) => handleChange('name', e.target.value)}
-                  placeholder="Enter company name"
+                  placeholder="Company name"
                   required
                 />
               </label>
             </div>
 
-            <div className="form-group full-width">
+            <div className="form-group">
               <label>
                 Address
                 <input
@@ -232,9 +238,10 @@ export default function CompanySettings() {
           </div>
         </div>
 
-        <div className="form-section">
+        {/* Card 2: Contact Information */}
+        <div className="card form-card">
           <h2>Contact Information</h2>
-          <div className="form-grid">
+          <div className="form-fields">
             <div className="form-group">
               <label>
                 Phone *
@@ -277,9 +284,10 @@ export default function CompanySettings() {
           </div>
         </div>
 
-        <div className="form-section">
-          <h2>Tax Information</h2>
-          <div className="form-grid">
+        {/* Card 3: Tax Information & Logo */}
+        <div className="card form-card">
+          <h2>Tax Information & Logo</h2>
+          <div className="form-fields">
             <div className="form-group">
               <label>
                 GSTIN
@@ -292,13 +300,24 @@ export default function CompanySettings() {
                 />
               </label>
             </div>
-          </div>
-        </div>
 
-        <div className="form-section">
-          <h2>Company Logo</h2>
-          <div className="form-grid">
-            <div className="form-group full-width">
+            <div className="form-group">
+              <label>
+                Business Type
+                <select
+                  className="input"
+                  value={formData.business_type}
+                  onChange={(e) => handleChange('business_type', e.target.value)}
+                >
+                  <option value="">Select Business Type</option>
+                  <option value="clothing">Clothing</option>
+                  <option value="cafe">Cafe</option>
+                  <option value="electrical">Electrical</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="form-group">
               <label>
                 Logo Image
                 <div className="logo-upload-section">
@@ -346,8 +365,10 @@ export default function CompanySettings() {
             </div>
           </div>
         </div>
+        </div>
 
-        <div className="form-actions">
+        {/* Form Actions */}
+        <div className="card form-actions-card">
           {saved && (
             <div className="success-message">
               ✅ Company details saved successfully!
@@ -362,32 +383,33 @@ export default function CompanySettings() {
             </button>
           </div>
         </div>
-      </div>
 
-      <div className="card preview-section">
-        <h2>Preview</h2>
-        <div className="company-preview">
-          <div className="preview-header">
-            {formData.logo && (
-              <div className="preview-logo-container">
-                <img 
-                  src={formData.logo} 
-                  alt="Company Logo" 
-                  className="preview-logo"
-                />
-              </div>
-            )}
-            <h3>{formData.name || 'Company Name'}</h3>
-            {formData.address && <p>{formData.address}</p>}
-            <p>
-              {[formData.city, formData.state, formData.pincode]
-                .filter(Boolean)
-                .join(', ')}
-            </p>
-            {formData.phone && <p>Phone: {formData.phone}</p>}
-            {formData.email && <p>Email: {formData.email}</p>}
-            {formData.website && <p>Website: {formData.website}</p>}
-            {formData.gstin && <p>GSTIN: {formData.gstin}</p>}
+        {/* Preview Section */}
+        <div className="card preview-section">
+          <h2>Preview</h2>
+          <div className="company-preview">
+            <div className="preview-header">
+              {formData.logo && (
+                <div className="preview-logo-container">
+                  <img 
+                    src={formData.logo} 
+                    alt="Company Logo" 
+                    className="preview-logo"
+                  />
+                </div>
+              )}
+              <h3>{formData.name || 'Company Name'}</h3>
+              {formData.address && <p>{formData.address}</p>}
+              <p>
+                {[formData.city, formData.state, formData.pincode]
+                  .filter(Boolean)
+                  .join(', ')}
+              </p>
+              {formData.phone && <p>Phone: {formData.phone}</p>}
+              {formData.email && <p>Email: {formData.email}</p>}
+              {formData.website && <p>Website: {formData.website}</p>}
+              {formData.gstin && <p>GSTIN: {formData.gstin}</p>}
+            </div>
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { logActivity } from '../utils/activityLogger.js';
 
 const router = express.Router();
 
@@ -27,6 +28,7 @@ router.get('/', async (req: AuthRequest, res) => {
         gstin: '',
         website: '',
         logo: '',
+        business_type: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
@@ -45,6 +47,7 @@ router.get('/', async (req: AuthRequest, res) => {
       gstin: company.gstin || '',
       website: company.website || '',
       logo: company.logo || '',
+      business_type: company.businessType || null,
       created_at: company.createdAt.toISOString(),
       updated_at: company.updatedAt.toISOString(),
     });
@@ -68,6 +71,7 @@ router.post(
     body('gstin').optional().isString(),
     body('website').optional().isString(),
     body('logo').optional().isString(),
+    body('business_type').optional().isIn(['clothing', 'cafe', 'electrical']),
   ],
   async (req: AuthRequest, res) => {
     try {
@@ -87,12 +91,23 @@ router.post(
         gstin,
         website,
         logo,
+        business_type,
       } = req.body;
 
       const existing = await prisma.company.findFirst();
 
       let company;
+      const isUpdate = !!existing;
+      
       if (existing) {
+        // Prepare old values for activity log
+        const oldValues = {
+          name: existing.name,
+          address: existing.address,
+          city: existing.city,
+          state: existing.state,
+        };
+
         company = await prisma.company.update({
           where: { id: existing.id },
           data: {
@@ -106,6 +121,24 @@ router.post(
             gstin,
             website,
             logo,
+            businessType: business_type || null,
+          },
+        });
+
+        // Log activity for update
+        await logActivity({
+          entityType: 'company',
+          entityId: company.id,
+          action: 'update',
+          changedBy: req.customerId!,
+          changes: {
+            old: oldValues,
+            new: {
+              name: company.name,
+              address: company.address,
+              city: company.city,
+              state: company.state,
+            },
           },
         });
       } else {
@@ -122,6 +155,19 @@ router.post(
             gstin,
             website,
             logo,
+            businessType: business_type || null,
+          },
+        });
+
+        // Log activity for create
+        await logActivity({
+          entityType: 'company',
+          entityId: company.id,
+          action: 'create',
+          changedBy: req.customerId!,
+          changes: {
+            name: company.name,
+            address: company.address,
           },
         });
       }
@@ -140,6 +186,7 @@ router.post(
         gstin: company.gstin,
         website: company.website,
         logo: company.logo,
+        business_type: company.businessType || null,
         created_at: company.createdAt.toISOString(),
         updated_at: company.updatedAt.toISOString(),
       });

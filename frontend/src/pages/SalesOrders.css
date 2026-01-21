@@ -7,7 +7,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-  color: white;
+  color: #1a1a1a;
   flex-wrap: wrap;
   gap: 1rem;
 }
@@ -17,9 +17,9 @@
   align-items: center;
   justify-content: center;
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e0e6ed;
 }
 
 .sales-orders-header .page-logo {
@@ -36,8 +36,9 @@
 }
 
 .sales-orders-header h1 {
-  font-size: 2.5rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a1a1a;
   margin: 0;
 }
 
@@ -58,25 +59,25 @@
 
 .filter-btn {
   padding: 0.75rem 1.5rem;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 8px;
+  border: 1px solid #d0d7de;
+  background: #ffffff;
+  color: #1a1a1a;
+  border-radius: 6px;
   cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .filter-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
+  background: #f8f9fa;
+  border-color: #3498db;
 }
 
 .filter-btn.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  background: #3498db;
+  border-color: #3498db;
+  color: white;
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
 }
 
 .summary-cards {
@@ -88,36 +89,36 @@
 
 .summary-card {
   background: white;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e6ed;
   display: flex;
   align-items: center;
   gap: 1rem;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .summary-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .summary-icon {
-  font-size: 3rem;
-  width: 70px;
-  height: 70px;
+  font-size: 2.5rem;
+  width: 60px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
+  background: #3498db;
+  border-radius: 8px;
   color: white;
 }
 
 .summary-content h3 {
   margin: 0 0 0.5rem 0;
-  font-size: 0.9rem;
-  color: #666;
+  font-size: 0.875rem;
+  color: #6c757d;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -125,13 +126,13 @@
 
 .summary-value {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #333;
+  color: #1a1a1a;
 }
 
 .profit-card .summary-icon {
-  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+  background: #27ae60;
 }
 
 .profit-value {
@@ -139,7 +140,7 @@
 }
 
 .loss-card .summary-icon {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  background: #e74c3c;
 }
 
 .loss-value {
@@ -147,11 +148,11 @@
 }
 
 .net-card .summary-icon {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #3498db;
 }
 
 .net-value {
-  color: #667eea !important;
+  color: #3498db !important;
 }
 
 .transactions-table {
@@ -164,7 +165,7 @@
 }
 
 .transactions-table thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #2c3e50;
   color: white;
 }
 
@@ -179,7 +180,7 @@
 
 .transactions-table td {
   padding: 1rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e6ed;
 }
 
 .transactions-table tbody tr {
@@ -187,17 +188,17 @@
 }
 
 .transactions-table tbody tr:hover {
-  background: #f5f5f5;
+  background: #f8f9fa;
 }
 
 .order-id {
   font-family: 'Courier New', monospace;
   font-size: 0.85rem;
-  color: #666;
+  color: #6c757d;
 }
 
 .items-count {
-  color: #666;
+  color: #6c757d;
   font-size: 0.9rem;
 }
 
@@ -206,11 +207,11 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.75rem;
-  background: #f0f0f0;
+  background: #f8f9fa;
   border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #333;
+  color: #1a1a1a;
 }
 
 .customer-info {
@@ -221,12 +222,12 @@
 
 .customer-name {
   font-weight: 600;
-  color: #333;
+  color: #1a1a1a;
 }
 
 .customer-phone {
   font-size: 0.85rem;
-  color: #666;
+  color: #6c757d;
 }
 
 .walk-in {
@@ -241,7 +242,7 @@
 
 .items-count {
   font-size: 0.9rem;
-  color: #666;
+  color: #6c757d;
   margin-bottom: 4px;
   font-weight: 600;
 }
@@ -262,16 +263,16 @@
 
 .item-name {
   font-weight: 500;
-  color: #333;
+  color: #1a1a1a;
 }
 
 .item-code {
-  color: #666;
+  color: #6c757d;
   font-size: 0.8rem;
 }
 
 .item-qty {
-  color: #667eea;
+  color: #3498db;
   font-weight: 600;
   margin-left: auto;
 }
@@ -286,7 +287,7 @@
 .amount {
   font-weight: 700;
   font-size: 1.1rem;
-  color: #667eea;
+  color: #1a1a1a;
 }
 
 .profit-loss-cell {
@@ -365,7 +366,7 @@
 .loading-state {
   text-align: center;
   padding: 3rem;
-  color: white;
+  color: #1a1a1a;
   font-size: 1.2rem;
 }
 

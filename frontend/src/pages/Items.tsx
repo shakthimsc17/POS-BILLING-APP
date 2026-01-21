@@ -7,12 +7,17 @@ import { formatCurrency } from '../utils/formatters';
 import { storageService } from '../services/storage';
 import './Items.css';
 
-export default function Items() {
+interface ItemsProps {
+  onNavigate?: (page: string) => void;
+}
+
+export default function Items({ onNavigate }: ItemsProps = {}) {
   const [modalVisible, setModalVisible] = useState(false);
   const [deleteAllModalVisible, setDeleteAllModalVisible] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [name, setName] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [code, setCode] = useState('');
   const [barcode, setBarcode] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -33,6 +38,10 @@ export default function Items() {
   const [filterCategory, setFilterCategory] = useState('');
   const [filterSubcategory, setFilterSubcategory] = useState('');
   const [filterStock, setFilterStock] = useState<'all' | 'in-stock' | 'out-of-stock'>('all');
+
+  // Lazy loading states
+  const [displayedItemsCount, setDisplayedItemsCount] = useState(20);
+  const ITEMS_PER_PAGE = 20;
 
   const { items, categories, loadItems, loadCategories, addItem, updateItem, deleteItem, deleteAllItems } =
     useInventoryStore();
@@ -78,6 +87,13 @@ export default function Items() {
     }
   }, [productCodeSize, selectedPrefixId, prefixes, useManualCode]);
 
+  // Auto-populate display_name when name is typed (only if display_name is empty or matches previous name)
+  useEffect(() => {
+    if (name && (!displayName || displayName === editingItem?.name)) {
+      setDisplayName(name);
+    }
+  }, [name]);
+
   const handleAdd = async () => {
     // Ensure categories are loaded before opening modal
     if (categories.length === 0) {
@@ -85,6 +101,7 @@ export default function Items() {
     }
     setEditingItem(null);
     setName('');
+    setDisplayName('');
     setCode('');
     setBarcode('');
     setCategoryId('');
@@ -106,6 +123,7 @@ export default function Items() {
     }
     setEditingItem(item);
     setName(item.name);
+    setDisplayName(item.display_name || '');
     setCode(item.code);
     setBarcode(item.barcode || '');
     setCategoryId(item.category_id || '');
@@ -207,6 +225,7 @@ export default function Items() {
       if (editingItem) {
         await updateItem(editingItem.id, {
           name,
+          display_name: displayName || undefined,
           code: finalCode,
           barcode: barcode || undefined,
           category_id: categoryId || undefined,
@@ -219,6 +238,7 @@ export default function Items() {
       } else {
         await addItem({
           name,
+          display_name: displayName || undefined,
           code: finalCode,
           barcode: barcode || undefined,
           category_id: categoryId || undefined,
@@ -263,6 +283,7 @@ export default function Items() {
 
   const resetForm = () => {
     setName('');
+    setDisplayName('');
     setCode('');
     setBarcode('');
     setCategoryId('');
@@ -317,6 +338,33 @@ export default function Items() {
     return true;
   });
 
+  // Reset displayed items count when filters change
+  useEffect(() => {
+    setDisplayedItemsCount(ITEMS_PER_PAGE);
+  }, [searchQuery, filterCategory, filterSubcategory, filterStock]);
+
+  // Items to display (lazy loaded)
+  const displayedItems = filteredItems.slice(0, displayedItemsCount);
+  const hasMoreItems = displayedItemsCount < filteredItems.length;
+
+  // Scroll handler for lazy loading
+  useEffect(() => {
+    const handleScroll = () => {
+      // Check if user scrolled near the bottom (within 200px)
+      if (
+        window.innerHeight + document.documentElement.scrollTop >=
+        document.documentElement.offsetHeight - 200
+      ) {
+        if (hasMoreItems) {
+          setDisplayedItemsCount(prev => prev + ITEMS_PER_PAGE);
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasMoreItems]);
+
   // Get unique main category names (for filter dropdown)
   const getUniqueMainCategories = () => {
     if (!categories || categories.length === 0) {
@@ -367,9 +415,20 @@ export default function Items() {
               🗑️ Delete All
             </button>
           )}
-          <button className="btn btn-primary" onClick={handleAdd}>
-            + Add Item
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button className="btn btn-primary" onClick={handleAdd}>
+              + Add Item
+            </button>
+            {onNavigate && (
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => onNavigate('bulk-operations')}
+                title="Bulk Create Items"
+              >
+                ⚡ Bulk Create
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -453,7 +512,7 @@ export default function Items() {
         {filteredItems.length > 0 ? (
           <div className="items-table">
             <div className="items-count">
-              Showing {filteredItems.length} of {items.length} items
+              Showing {displayedItems.length} of {filteredItems.length} filtered items ({items.length} total)
             </div>
             <table>
               <thead>
@@ -470,7 +529,7 @@ export default function Items() {
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.map((item) => {
+                {displayedItems.map((item) => {
                   // Find category by matching category_id - always show category name
                   let categoryName = '-';
                   
@@ -552,6 +611,11 @@ export default function Items() {
                 })}
               </tbody>
             </table>
+            {hasMoreItems && (
+              <div className="load-more-indicator">
+                <p>Scroll down to load more items...</p>
+              </div>
+            )}
           </div>
         ) : items.length > 0 ? (
           <div className="empty-state">
@@ -578,6 +642,19 @@ export default function Items() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
+            </label>
+            <label>
+              Display Name (for receipt):
+              <input
+                type="text"
+                className="input"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Auto-filled from name, can be modified"
+              />
+              <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                This name will be shown on receipts. Leave empty to use item name.
+              </small>
             </label>
             <div style={{ marginBottom: '10px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>

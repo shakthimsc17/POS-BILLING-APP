@@ -106,27 +106,28 @@ export default function Calculators() {
     <div className="calculators-page">
       <div className="calculators-header">
         <h1>🧮 Business Calculators</h1>
-        <button className="btn btn-secondary" onClick={resetForm}>
-          Reset All
-        </button>
-      </div>
-
-      <div className="calculator-selector">
-        <label>Select Calculator:</label>
-        <select
-          className="input"
-          value={calculatorType}
-          onChange={(e) => {
-            setCalculatorType(e.target.value as CalculatorType);
-            resetForm();
-          }}
-        >
-          <option value="discount">Discount Calculator</option>
-          <option value="gm">Gross Margin Calculator</option>
-          <option value="markup">Markup Calculator</option>
-          <option value="break-even">Break-Even Calculator</option>
-          <option value="margin">Margin Calculator</option>
-        </select>
+        <div className="header-actions">
+          <div className="calculator-selector">
+            <label>Select Calculator:</label>
+            <select
+              className="input"
+              value={calculatorType}
+              onChange={(e) => {
+                setCalculatorType(e.target.value as CalculatorType);
+                resetForm();
+              }}
+            >
+              <option value="discount">Discount Calculator</option>
+              <option value="gm">Gross Margin Calculator</option>
+              <option value="markup">Markup Calculator</option>
+              <option value="break-even">Break-Even Calculator</option>
+              <option value="margin">Margin Calculator</option>
+            </select>
+          </div>
+          <button className="btn btn-secondary" onClick={resetForm}>
+            Reset All
+          </button>
+        </div>
       </div>
 
       <div className="calculator-container">
@@ -134,33 +135,9 @@ export default function Calculators() {
         {calculatorType === 'discount' && (
           <div className="calculator-card">
             <h2>💰 Discount Calculator</h2>
-            <div className="info-section">
-              <p className="calculator-description">
-                <strong>What it does:</strong> Calculate the discount amount and final price after applying a percentage discount.
-              </p>
-              <p className="calculator-description">
-                <strong>When to use:</strong> Running sales, offering discounts to customers, or calculating final prices after promotions.
-              </p>
-              <div className="example-box">
-                <strong>📝 Example:</strong>
-                <p>An item costs ₹1,000 and you want to offer a 25% discount:</p>
-                <ul>
-                  <li>Original Price: ₹1,000</li>
-                  <li>Discount (25%): ₹1,000 × 25% = ₹250</li>
-                  <li>Final Price: ₹1,000 - ₹250 = ₹750</li>
-                </ul>
-                <button 
-                  className="btn-example"
-                  onClick={() => {
-                    setOriginalPrice('1000');
-                    setDiscountPercent('25');
-                  }}
-                >
-                  Load This Example
-                </button>
-              </div>
-            </div>
-            <div className="calculator-form">
+            <div className="calculator-layout">
+              <div className="calculator-form-section">
+                <div className="calculator-form">
               <label>
                 Original Price (₹):
                 <input
@@ -202,6 +179,36 @@ export default function Calculators() {
                   </div>
                 </div>
               )}
+                </div>
+              </div>
+              <div className="calculator-info-section">
+                <div className="info-section">
+                  <p className="calculator-description">
+                    <strong>What it does:</strong> Calculate the discount amount and final price after applying a percentage discount.
+                  </p>
+                  <p className="calculator-description">
+                    <strong>When to use:</strong> Running sales, offering discounts to customers, or calculating final prices after promotions.
+                  </p>
+                  <div className="example-box">
+                    <strong>📝 Example:</strong>
+                    <p>An item costs ₹1,000 and you want to offer a 25% discount:</p>
+                    <ul>
+                      <li>Original Price: ₹1,000</li>
+                      <li>Discount (25%): ₹1,000 × 25% = ₹250</li>
+                      <li>Final Price: ₹1,000 - ₹250 = ₹750</li>
+                    </ul>
+                    <button 
+                      className="btn-example"
+                      onClick={() => {
+                        setOriginalPrice('1000');
+                        setDiscountPercent('25');
+                      }}
+                    >
+                      Load This Example
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -210,40 +217,9 @@ export default function Calculators() {
         {calculatorType === 'gm' && (
           <div className="calculator-card">
             <h2>📊 Gross Margin Calculator</h2>
-            <div className="info-section">
-              <p className="calculator-description">
-                <strong>What it does:</strong> Calculate gross margin percentage, profit, and markup based on cost and selling price.
-              </p>
-              <p className="calculator-description">
-                <strong>When to use:</strong> Analyzing profitability of items, comparing margins across products, or understanding pricing efficiency.
-              </p>
-              <div className="example-box">
-                <strong>📝 Example:</strong>
-                <p>You buy a shirt for ₹300 and sell it for ₹500:</p>
-                <ul>
-                  <li>Cost Price: ₹300</li>
-                  <li>Selling Price: ₹500</li>
-                  <li>Profit: ₹200</li>
-                  <li>Gross Margin: 40% (₹200 ÷ ₹500)</li>
-                  <li>Markup: 66.67% (₹200 ÷ ₹300)</li>
-                </ul>
-                <button 
-                  className="btn-example"
-                  onClick={() => {
-                    setCostPrice('300');
-                    setSellingPrice('500');
-                  }}
-                >
-                  Load This Example
-                </button>
-              </div>
-              <div className="formula-box">
-                <strong>Formula:</strong> Gross Margin = (Selling Price - Cost) ÷ Selling Price × 100
-                <br />
-                <small>Markup = (Selling Price - Cost) ÷ Cost × 100</small>
-              </div>
-            </div>
-            <div className="calculator-form">
+            <div className="calculator-layout">
+              <div className="calculator-form-section">
+                <div className="calculator-form">
               <label>
                 Cost Price (₹):
                 <input
@@ -290,6 +266,43 @@ export default function Calculators() {
                   </div>
                 </div>
               )}
+                </div>
+              </div>
+              <div className="calculator-info-section">
+                <div className="info-section">
+                  <p className="calculator-description">
+                    <strong>What it does:</strong> Calculate gross margin percentage, profit, and markup based on cost and selling price.
+                  </p>
+                  <p className="calculator-description">
+                    <strong>When to use:</strong> Analyzing profitability of items, comparing margins across products, or understanding pricing efficiency.
+                  </p>
+                  <div className="example-box">
+                    <strong>📝 Example:</strong>
+                    <p>You buy a shirt for ₹300 and sell it for ₹500:</p>
+                    <ul>
+                      <li>Cost Price: ₹300</li>
+                      <li>Selling Price: ₹500</li>
+                      <li>Profit: ₹200</li>
+                      <li>Gross Margin: 40% (₹200 ÷ ₹500)</li>
+                      <li>Markup: 66.67% (₹200 ÷ ₹300)</li>
+                    </ul>
+                    <button 
+                      className="btn-example"
+                      onClick={() => {
+                        setCostPrice('300');
+                        setSellingPrice('500');
+                      }}
+                    >
+                      Load This Example
+                    </button>
+                  </div>
+                  <div className="formula-box">
+                    <strong>Formula:</strong> Gross Margin = (Selling Price - Cost) ÷ Selling Price × 100
+                    <br />
+                    <small>Markup = (Selling Price - Cost) ÷ Cost × 100</small>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -298,36 +311,9 @@ export default function Calculators() {
         {calculatorType === 'markup' && (
           <div className="calculator-card">
             <h2>📈 Markup Calculator</h2>
-            <div className="info-section">
-              <p className="calculator-description">
-                <strong>What it does:</strong> Calculate selling price when you know the cost and want to add a markup percentage on top of it.
-              </p>
-              <p className="calculator-description">
-                <strong>When to use:</strong> Setting prices for new items, applying consistent markup across categories, or quick pricing decisions.
-              </p>
-              <div className="example-box">
-                <strong>📝 Example:</strong>
-                <p>You buy a T-shirt for ₹200 and want a 60% markup:</p>
-                <ul>
-                  <li>Cost Price: ₹200</li>
-                  <li>Markup (60%): ₹200 × 60% = ₹120</li>
-                  <li>Selling Price: ₹200 + ₹120 = ₹320</li>
-                </ul>
-                <button 
-                  className="btn-example"
-                  onClick={() => {
-                    setMarkupCost('200');
-                    setMarkupPercent('60');
-                  }}
-                >
-                  Load This Example
-                </button>
-              </div>
-              <div className="formula-box">
-                <strong>Formula:</strong> Selling Price = Cost + (Cost × Markup%)
-              </div>
-            </div>
-            <div className="calculator-form">
+            <div className="calculator-layout">
+              <div className="calculator-form-section">
+                <div className="calculator-form">
               <label>
                 Cost Price (₹):
                 <input
@@ -372,6 +358,39 @@ export default function Calculators() {
                   </div>
                 </div>
               )}
+                </div>
+              </div>
+              <div className="calculator-info-section">
+                <div className="info-section">
+                  <p className="calculator-description">
+                    <strong>What it does:</strong> Calculate selling price when you know the cost and want to add a markup percentage on top of it.
+                  </p>
+                  <p className="calculator-description">
+                    <strong>When to use:</strong> Setting prices for new items, applying consistent markup across categories, or quick pricing decisions.
+                  </p>
+                  <div className="example-box">
+                    <strong>📝 Example:</strong>
+                    <p>You buy a T-shirt for ₹200 and want a 60% markup:</p>
+                    <ul>
+                      <li>Cost Price: ₹200</li>
+                      <li>Markup (60%): ₹200 × 60% = ₹120</li>
+                      <li>Selling Price: ₹200 + ₹120 = ₹320</li>
+                    </ul>
+                    <button 
+                      className="btn-example"
+                      onClick={() => {
+                        setMarkupCost('200');
+                        setMarkupPercent('60');
+                      }}
+                    >
+                      Load This Example
+                    </button>
+                  </div>
+                  <div className="formula-box">
+                    <strong>Formula:</strong> Selling Price = Cost + (Cost × Markup%)
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -380,40 +399,9 @@ export default function Calculators() {
         {calculatorType === 'break-even' && (
           <div className="calculator-card">
             <h2>⚖️ Break-Even Calculator</h2>
-            <div className="info-section">
-              <p className="calculator-description">
-                <strong>What it does:</strong> Calculate how many units you need to sell to cover all costs (no profit, no loss).
-              </p>
-              <p className="calculator-description">
-                <strong>When to use:</strong> Planning new product launches, understanding minimum sales targets, or evaluating product viability.
-              </p>
-              <div className="example-box">
-                <strong>📝 Example - Clothing Store:</strong>
-                <p>You open a clothing store with:</p>
-                <ul>
-                  <li><strong>Fixed Costs:</strong> ₹1,00,000/month (rent, staff, utilities)</li>
-                  <li><strong>Variable Cost:</strong> ₹200/item (materials, packaging)</li>
-                  <li><strong>Selling Price:</strong> ₹500/item</li>
-                </ul>
-                <p><strong>Result:</strong> You need to sell 334 units (₹1,67,000 revenue) per month to break even.</p>
-                <button 
-                  className="btn-example"
-                  onClick={() => {
-                    setFixedCosts('100000');
-                    setVariableCost('200');
-                    setSellingPriceBE('500');
-                  }}
-                >
-                  Load This Example
-                </button>
-              </div>
-              <div className="formula-box">
-                <strong>Formula:</strong> Break-Even Units = Fixed Costs ÷ (Selling Price - Variable Cost)
-                <br />
-                <small>Contribution Margin = Selling Price - Variable Cost (profit per unit after variable costs)</small>
-              </div>
-            </div>
-            <div className="calculator-form">
+            <div className="calculator-layout">
+              <div className="calculator-form-section">
+                <div className="calculator-form">
               <label>
                 Fixed Costs (₹):
                 <span className="field-help">Monthly/period costs that don't change: rent, salaries, utilities, insurance</span>
@@ -486,6 +474,43 @@ export default function Calculators() {
                   </div>
                 </div>
               )}
+                </div>
+              </div>
+              <div className="calculator-info-section">
+                <div className="info-section">
+                  <p className="calculator-description">
+                    <strong>What it does:</strong> Calculate how many units you need to sell to cover all costs (no profit, no loss).
+                  </p>
+                  <p className="calculator-description">
+                    <strong>When to use:</strong> Planning new product launches, understanding minimum sales targets, or evaluating product viability.
+                  </p>
+                  <div className="example-box">
+                    <strong>📝 Example - Clothing Store:</strong>
+                    <p>You open a clothing store with:</p>
+                    <ul>
+                      <li><strong>Fixed Costs:</strong> ₹1,00,000/month (rent, staff, utilities)</li>
+                      <li><strong>Variable Cost:</strong> ₹200/item (materials, packaging)</li>
+                      <li><strong>Selling Price:</strong> ₹500/item</li>
+                    </ul>
+                    <p><strong>Result:</strong> You need to sell 334 units (₹1,67,000 revenue) per month to break even.</p>
+                    <button 
+                      className="btn-example"
+                      onClick={() => {
+                        setFixedCosts('100000');
+                        setVariableCost('200');
+                        setSellingPriceBE('500');
+                      }}
+                    >
+                      Load This Example
+                    </button>
+                  </div>
+                  <div className="formula-box">
+                    <strong>Formula:</strong> Break-Even Units = Fixed Costs ÷ (Selling Price - Variable Cost)
+                    <br />
+                    <small>Contribution Margin = Selling Price - Variable Cost (profit per unit after variable costs)</small>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -494,39 +519,9 @@ export default function Calculators() {
         {calculatorType === 'margin' && (
           <div className="calculator-card">
             <h2>💹 Margin Calculator</h2>
-            <div className="info-section">
-              <p className="calculator-description">
-                <strong>What it does:</strong> Calculate selling price based on cost price and desired margin percentage.
-              </p>
-              <p className="calculator-description">
-                <strong>When to use:</strong> When you want a specific profit margin percentage (not markup). Margin is calculated on selling price, while markup is on cost.
-              </p>
-              <div className="example-box">
-                <strong>📝 Example:</strong>
-                <p>You buy an item for ₹400 and want a 30% margin:</p>
-                <ul>
-                  <li>Cost Price: ₹400</li>
-                  <li>Desired Margin: 30%</li>
-                  <li>Selling Price: ₹400 ÷ (1 - 30%) = ₹571.43</li>
-                  <li>Profit: ₹171.43</li>
-                </ul>
-                <button 
-                  className="btn-example"
-                  onClick={() => {
-                    setMarginCost('400');
-                    setMarginPercent('30');
-                  }}
-                >
-                  Load This Example
-                </button>
-              </div>
-              <div className="formula-box">
-                <strong>Formula:</strong> Selling Price = Cost ÷ (1 - Margin%)
-                <br />
-                <small>Note: Margin is calculated on selling price, while markup is calculated on cost price.</small>
-              </div>
-            </div>
-            <div className="calculator-form">
+            <div className="calculator-layout">
+              <div className="calculator-form-section">
+                <div className="calculator-form">
               <label>
                 Cost Price (₹):
                 <input
@@ -568,6 +563,42 @@ export default function Calculators() {
                   </div>
                 </div>
               )}
+                </div>
+              </div>
+              <div className="calculator-info-section">
+                <div className="info-section">
+                  <p className="calculator-description">
+                    <strong>What it does:</strong> Calculate selling price based on cost price and desired margin percentage.
+                  </p>
+                  <p className="calculator-description">
+                    <strong>When to use:</strong> When you want a specific profit margin percentage (not markup). Margin is calculated on selling price, while markup is on cost.
+                  </p>
+                  <div className="example-box">
+                    <strong>📝 Example:</strong>
+                    <p>You buy an item for ₹400 and want a 30% margin:</p>
+                    <ul>
+                      <li>Cost Price: ₹400</li>
+                      <li>Desired Margin: 30%</li>
+                      <li>Selling Price: ₹400 ÷ (1 - 30%) = ₹571.43</li>
+                      <li>Profit: ₹171.43</li>
+                    </ul>
+                    <button 
+                      className="btn-example"
+                      onClick={() => {
+                        setMarginCost('400');
+                        setMarginPercent('30');
+                      }}
+                    >
+                      Load This Example
+                    </button>
+                  </div>
+                  <div className="formula-box">
+                    <strong>Formula:</strong> Selling Price = Cost ÷ (1 - Margin%)
+                    <br />
+                    <small>Note: Margin is calculated on selling price, while markup is calculated on cost price.</small>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

@@ -50,7 +50,9 @@ export function printThermalReceipt(options: PrintOptions) {
   printContent += 'Items:\n';
   items.forEach((cartItem) => {
     const item = cartItem.item;
-    printContent += item.name + '\n';
+    // Use display_name if available, otherwise use name, and convert to uppercase
+    const itemDisplayName = (item.display_name || item.name).toUpperCase();
+    printContent += itemDisplayName + '\n';
     if (item.code) {
       printContent += 'Code: ' + item.code + '  ';
     }

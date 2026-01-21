@@ -2,6 +2,7 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { logActivity } from '../utils/activityLogger.js';
 
 const router = express.Router();
 
@@ -58,6 +59,18 @@ router.post(
         },
       });
 
+      // Log activity
+      await logActivity({
+        entityType: 'category',
+        entityId: category.id,
+        action: 'create',
+        changedBy: req.customerId!,
+        changes: {
+          name: category.name,
+          subcategory: category.subcategory,
+        },
+      });
+
       // Transform to snake_case for frontend
       res.status(201).json({
         id: category.id,
@@ -101,12 +114,35 @@ router.put(
         return res.status(404).json({ error: 'Category not found' });
       }
 
+      // Prepare old values for activity log
+      const oldValues = {
+        name: existing.name,
+        subcategory: existing.subcategory,
+        brand: existing.brand,
+      };
+
       const category = await prisma.category.update({
         where: { id },
         data: {
           ...(name && { name }),
           ...(subcategory !== undefined && { subcategory }),
           ...(brand !== undefined && { brand }),
+        },
+      });
+
+      // Log activity
+      await logActivity({
+        entityType: 'category',
+        entityId: category.id,
+        action: 'update',
+        changedBy: req.customerId!,
+        changes: {
+          old: oldValues,
+          new: {
+            name: category.name,
+            subcategory: category.subcategory,
+            brand: category.brand,
+          },
         },
       });
 
@@ -156,6 +192,18 @@ router.delete('/:id', async (req: AuthRequest, res) => {
     if (!existing) {
       return res.status(404).json({ error: 'Category not found' });
     }
+
+    // Log activity before deletion
+    await logActivity({
+      entityType: 'category',
+      entityId: existing.id,
+      action: 'delete',
+      changedBy: req.customerId!,
+      changes: {
+        name: existing.name,
+        deletedAt: new Date().toISOString(),
+      },
+    });
 
     await prisma.category.delete({
       where: { id },

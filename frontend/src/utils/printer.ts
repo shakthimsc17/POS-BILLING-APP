@@ -20,9 +20,10 @@ export async function printReceipt(options: PrintOptions) {
     await companyStore.loadCompany();
   }
   const company = companyStore.getCompany();
+  const businessType = company.business_type || null;
 
   // Get receipt settings
-  const receiptHeaderOption = receiptSettings.getHeaderOption();
+  const receiptHeaderOption = await receiptSettings.getHeaderOption();
 
   const date = new Date(transaction.created_at);
   const total = items.reduce((sum, item) => sum + item.subtotal, 0);
@@ -33,6 +34,9 @@ export async function printReceipt(options: PrintOptions) {
     <html>
       <head>
         <title>Receipt - ${transaction.id.slice(0, 8)}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
           @media print {
             @page {
@@ -55,7 +59,7 @@ export async function printReceipt(options: PrintOptions) {
             box-sizing: border-box;
           }
           body {
-            font-family: 'Arial', 'Helvetica', sans-serif;
+            font-family: 'Montserrat', sans-serif;
             font-size: 14px;
             font-weight: bold;
             line-height: 1.5;
@@ -287,7 +291,7 @@ export async function printReceipt(options: PrintOptions) {
           .barcode {
             margin-top: 4px;
             padding: 3px 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: 'Montserrat', sans-serif;
             font-size: 14px;
             font-weight: bold;
             letter-spacing: 2px;
@@ -350,12 +354,16 @@ export async function printReceipt(options: PrintOptions) {
                 (cartItem, index) => {
                   const mrp = cartItem.item.mrp ? (typeof cartItem.item.mrp === 'string' ? parseFloat(cartItem.item.mrp) : cartItem.item.mrp) : null;
                   const price = typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price;
+                  // Use display_name if available, otherwise use name, and convert to uppercase
+                  const itemDisplayName = (cartItem.item.display_name || cartItem.item.name).toUpperCase();
+                  // Hide MRP for cafe business type
+                  const showMrp = businessType !== 'cafe' && mrp;
                   return `
               <tr>
                 <td class="col-number">${index + 1}</td>
                 <td class="col-item item-name">
-                  ${cartItem.item.name}
-                  ${mrp ? `<br><small>MRP: ${formatCurrency(mrp)}</small>` : ''}
+                  ${itemDisplayName}
+                  ${showMrp ? `<br><small>MRP: ${formatCurrency(mrp)}</small>` : ''}
                 </td>
                 <td class="col-rate">${formatCurrency(price)}</td>
                 <td class="col-qty">${cartItem.quantity}</td>
@@ -400,8 +408,30 @@ export async function printReceipt(options: PrintOptions) {
         </div>
 
         <div class="footer">
-          <p><strong>Your Style Matters to Us. Thank You!</strong></p>
-          <p>Please visit again</p>
+          ${(() => {
+            switch (businessType) {
+              case 'cafe':
+                return `
+                  <p><strong>Thank You for Visiting!</strong></p>
+                  <p>We hope you enjoyed your experience</p>
+                `;
+              case 'clothing':
+                return `
+                  <p><strong>Your Style Matters to Us. Thank You!</strong></p>
+                  <p>Please visit again</p>
+                `;
+              case 'electrical':
+                return `
+                  <p><strong>Thank You for Your Purchase!</strong></p>
+                  <p>Quality Products, Trusted Service</p>
+                `;
+              default:
+                return `
+                  <p><strong>Thank You for Your Business!</strong></p>
+                  <p>Please visit again</p>
+                `;
+            }
+          })()}
           <div class="barcode">
             ${transaction.id.slice(0, 8).toUpperCase()}
           </div>

@@ -11,6 +11,7 @@ export interface Item {
   id: string;
   customer_id: string;
   name: string;
+  display_name?: string;
   code: string;
   barcode?: string;
   category_id?: string;
@@ -77,6 +78,29 @@ export interface Company {
   gstin?: string;
   website?: string;
   logo?: string;
+  business_type?: 'clothing' | 'cafe' | 'electrical' | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ActivityLog {
+  id: string;
+  entity_type: 'item' | 'category' | 'transaction' | 'company';
+  entity_id: string;
+  action: 'create' | 'update' | 'delete';
+  changed_by: string;
+  changed_by_name?: string;
+  changed_by_email?: string;
+  changes?: any; // JSON object with old/new values
+  created_at: string;
+}
+
+export interface Settings {
+  id: string;
+  customer_id: string;
+  activity_log_enabled: boolean;
+  item_log_actions: 'all' | 'update_delete';
+  receipt_header_option: 'logo' | 'company_name' | 'both';
   created_at: string;
   updated_at: string;
 }

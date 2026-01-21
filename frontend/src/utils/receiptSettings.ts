@@ -1,48 +1,45 @@
 export type ReceiptHeaderOption = 'logo' | 'company_name' | 'both';
 
-const RECEIPT_SETTINGS_KEY = 'receipt_settings';
 const DEFAULT_HEADER_OPTION: ReceiptHeaderOption = 'both';
 
-interface ReceiptSettings {
-  headerOption: ReceiptHeaderOption;
-}
+// Cache for settings to avoid repeated API calls
+let settingsCache: { receiptHeaderOption: ReceiptHeaderOption; timestamp: number } | null = null;
+const CACHE_DURATION = 60000; // 1 minute
 
 export const receiptSettings = {
-  get: (): ReceiptSettings => {
+  get: async (): Promise<{ headerOption: ReceiptHeaderOption }> => {
+    // Check cache first
+    if (settingsCache && Date.now() - settingsCache.timestamp < CACHE_DURATION) {
+      return { headerOption: settingsCache.receiptHeaderOption };
+    }
+
     try {
-      const stored = localStorage.getItem(RECEIPT_SETTINGS_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return {
-          headerOption: parsed.headerOption || DEFAULT_HEADER_OPTION,
-        };
-      }
+      // Import dynamically to avoid circular dependencies
+      const { storageService } = await import('../services/storage');
+      const settings = await storageService.getSettings();
+      const headerOption = (settings.receipt_header_option || DEFAULT_HEADER_OPTION) as ReceiptHeaderOption;
+      
+      // Update cache
+      settingsCache = {
+        receiptHeaderOption: headerOption,
+        timestamp: Date.now(),
+      };
+      
+      return { headerOption };
     } catch (error) {
       console.error('Error reading receipt settings:', error);
-    }
-    return {
-      headerOption: DEFAULT_HEADER_OPTION,
-    };
-  },
-
-  set: (settings: ReceiptSettings): void => {
-    try {
-      localStorage.setItem(RECEIPT_SETTINGS_KEY, JSON.stringify(settings));
-    } catch (error) {
-      console.error('Error saving receipt settings:', error);
+      return { headerOption: DEFAULT_HEADER_OPTION };
     }
   },
 
-  getHeaderOption: (): ReceiptHeaderOption => {
-    return receiptSettings.get().headerOption;
+  getHeaderOption: async (): Promise<ReceiptHeaderOption> => {
+    const settings = await receiptSettings.get();
+    return settings.headerOption;
   },
 
-  setHeaderOption: (option: ReceiptHeaderOption): void => {
-    const current = receiptSettings.get();
-    receiptSettings.set({
-      ...current,
-      headerOption: option,
-    });
+  // Clear cache when settings are updated
+  clearCache: (): void => {
+    settingsCache = null;
   },
 };
 

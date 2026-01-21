@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
+  display_name VARCHAR(255),
   code VARCHAR(100) NOT NULL,
   barcode VARCHAR(255),
   category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
@@ -119,6 +120,80 @@ CREATE INDEX IF NOT EXISTS idx_transactions_customer_id ON transactions(customer
 CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON transactions(created_at DESC);
 
 -- =====================================================
+-- ACTIVITY LOGS TABLE
+-- =====================================================
+-- Tracks all changes made to items, categories, transactions, and company data
+
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  entity_type VARCHAR(50) NOT NULL CHECK (entity_type IN ('item', 'category', 'transaction', 'company')),
+  entity_id UUID NOT NULL,
+  action VARCHAR(20) NOT NULL CHECK (action IN ('create', 'update', 'delete')),
+  changed_by UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  changes JSONB,
+  created_at TIMESTAMPTZ(6) DEFAULT NOW(),
+  
+  CONSTRAINT fk_activity_logs_changed_by FOREIGN KEY (changed_by) 
+    REFERENCES customers(id) ON DELETE CASCADE
+);
+
+-- Activity logs indexes
+CREATE INDEX IF NOT EXISTS idx_activity_logs_entity_type ON activity_logs(entity_type);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_entity_id ON activity_logs(entity_id);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_changed_by ON activity_logs(changed_by);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at DESC);
+
+-- =====================================================
+-- COMPANIES TABLE
+-- =====================================================
+-- Company information for each customer
+
+CREATE TABLE IF NOT EXISTS companies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id UUID UNIQUE NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  address TEXT,
+  city VARCHAR(100),
+  state VARCHAR(100),
+  pincode VARCHAR(20),
+  phone VARCHAR(20),
+  email VARCHAR(255),
+  gstin VARCHAR(50),
+  website VARCHAR(255),
+  logo TEXT,
+  business_type VARCHAR(50) CHECK (business_type IN ('clothing', 'cafe', 'electrical')),
+  created_at TIMESTAMPTZ(6) DEFAULT NOW(),
+  updated_at TIMESTAMPTZ(6) DEFAULT NOW(),
+  
+  CONSTRAINT fk_companies_customer FOREIGN KEY (customer_id) 
+    REFERENCES customers(id) ON DELETE CASCADE
+);
+
+-- Companies indexes
+CREATE INDEX IF NOT EXISTS idx_companies_customer_id ON companies(customer_id);
+
+-- =====================================================
+-- SETTINGS TABLE
+-- =====================================================
+-- Application settings for each customer
+
+CREATE TABLE IF NOT EXISTS settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id UUID UNIQUE NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  activity_log_enabled BOOLEAN DEFAULT true,
+  item_log_actions VARCHAR(20) DEFAULT 'update_delete' CHECK (item_log_actions IN ('all', 'update_delete')),
+  receipt_header_option VARCHAR(20) DEFAULT 'both' CHECK (receipt_header_option IN ('logo', 'company_name', 'both')),
+  created_at TIMESTAMPTZ(6) DEFAULT NOW(),
+  updated_at TIMESTAMPTZ(6) DEFAULT NOW(),
+  
+  CONSTRAINT fk_settings_customer FOREIGN KEY (customer_id) 
+    REFERENCES customers(id) ON DELETE CASCADE
+);
+
+-- Settings indexes
+CREATE INDEX IF NOT EXISTS idx_settings_customer_id ON settings(customer_id);
+
+-- =====================================================
 -- TRIGGERS
 -- =====================================================
 
@@ -135,6 +210,20 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS trigger_update_customers_updated_at ON customers;
 CREATE TRIGGER trigger_update_customers_updated_at
   BEFORE UPDATE ON customers
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger for companies table
+DROP TRIGGER IF EXISTS trigger_update_companies_updated_at ON companies;
+CREATE TRIGGER trigger_update_companies_updated_at
+  BEFORE UPDATE ON companies
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger for settings table
+DROP TRIGGER IF EXISTS trigger_update_settings_updated_at ON settings;
+CREATE TRIGGER trigger_update_settings_updated_at
+  BEFORE UPDATE ON settings
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
