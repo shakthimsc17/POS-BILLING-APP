@@ -204,19 +204,30 @@ function App() {
       </aside>
 
       <main className={`main-content ${sidebarOpen ? 'sidebar-open' : ''}`}>
-        {currentPage === 'dashboard' && <Dashboard onNavigate={setCurrentPage} />}
-        {currentPage === 'cart' && <Cart onNavigate={setCurrentPage} />}
-        {currentPage === 'categories' && <Categories onNavigate={setCurrentPage} />}
-        {currentPage === 'items' && <Items onNavigate={setCurrentPage} />}
-        {currentPage === 'payment' && <Payment onNavigate={setCurrentPage} />}
-        {currentPage === 'sales' && <SalesOrders />}
-        {currentPage === 'customers' && customer?.isAdmin && <Customers />}
-        {currentPage === 'import' && <Import />}
-        {currentPage === 'reports' && customer?.isAdmin && <Reports />}
-        {currentPage === 'activity-logs' && customer?.isAdmin && <ActivityLogs />}
-        {currentPage === 'bulk-operations' && <BulkOperations />}
-        {currentPage === 'calculators' && <Calculators />}
-        {currentPage === 'company' && <CompanySettings />}
+        <div className="page-content-wrapper">
+          {currentPage === 'dashboard' && <Dashboard onNavigate={setCurrentPage} />}
+          {currentPage === 'cart' && <Cart onNavigate={setCurrentPage} />}
+          {currentPage === 'categories' && <Categories onNavigate={setCurrentPage} />}
+          {currentPage === 'items' && <Items onNavigate={setCurrentPage} />}
+          {currentPage === 'payment' && <Payment onNavigate={setCurrentPage} />}
+          {currentPage === 'sales' && <SalesOrders />}
+          {currentPage === 'customers' && customer?.isAdmin && <Customers />}
+          {currentPage === 'import' && <Import />}
+          {currentPage === 'reports' && customer?.isAdmin && <Reports />}
+          {currentPage === 'activity-logs' && customer?.isAdmin && <ActivityLogs />}
+          {currentPage === 'bulk-operations' && <BulkOperations />}
+          {currentPage === 'calculators' && <Calculators />}
+          {currentPage === 'company' && <CompanySettings />}
+        </div>
+
+        {/* Show footer for all pages except dashboard and sales-related pages */}
+        {!['dashboard', 'cart', 'payment', 'sales'].includes(currentPage) && (
+          <footer className="page-footer">
+            <div className="footer-content">
+              <p className="footer-text">Powered by <strong>SSS Soft Solution</strong></p>
+            </div>
+          </footer>
+        )}
       </main>
     </div>
   );
