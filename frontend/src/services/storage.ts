@@ -1,4 +1,4 @@
-import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog } from '../types';
+import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings } from '../types';
 import apiClient from '../lib/apiClient';
 
 export const storageService = {
@@ -132,5 +132,32 @@ export const storageService = {
     
     const queryString = queryParams.toString();
     return apiClient.get<ActivityLog[]>(`/activity-logs${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Settings
+  getSettings: async (): Promise<Settings> => {
+    return apiClient.get<Settings>('/settings');
+  },
+
+  saveSettings: async (settings: Partial<Settings>): Promise<Settings> => {
+    return apiClient.post<Settings>('/settings', settings);
+  },
+
+  // Activity Logs - Delete operations
+  deleteActivityLog: async (id: string): Promise<void> => {
+    await apiClient.delete(`/activity-logs/${id}`);
+  },
+
+  deleteAllActivityLogs: async (): Promise<{ message: string; count: number }> => {
+    return apiClient.delete<{ message: string; count: number }>('/activity-logs/all');
+  },
+
+  deleteFilteredActivityLogs: async (filters: {
+    entityType?: string;
+    entityId?: string;
+    changedBy?: string;
+    action?: string;
+  }): Promise<{ message: string; count: number }> => {
+    return apiClient.post<{ message: string; count: number }>('/activity-logs/delete-filtered', filters);
   },
 };

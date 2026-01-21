@@ -20,9 +20,10 @@ export async function printReceipt(options: PrintOptions) {
     await companyStore.loadCompany();
   }
   const company = companyStore.getCompany();
+  const businessType = company.business_type || null;
 
   // Get receipt settings
-  const receiptHeaderOption = receiptSettings.getHeaderOption();
+  const receiptHeaderOption = await receiptSettings.getHeaderOption();
 
   const date = new Date(transaction.created_at);
   const total = items.reduce((sum, item) => sum + item.subtotal, 0);
@@ -355,12 +356,14 @@ export async function printReceipt(options: PrintOptions) {
                   const price = typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price;
                   // Use display_name if available, otherwise use name, and convert to uppercase
                   const itemDisplayName = (cartItem.item.display_name || cartItem.item.name).toUpperCase();
+                  // Hide MRP for cafe business type
+                  const showMrp = businessType !== 'cafe' && mrp;
                   return `
               <tr>
                 <td class="col-number">${index + 1}</td>
                 <td class="col-item item-name">
                   ${itemDisplayName}
-                  ${mrp ? `<br><small>MRP: ${formatCurrency(mrp)}</small>` : ''}
+                  ${showMrp ? `<br><small>MRP: ${formatCurrency(mrp)}</small>` : ''}
                 </td>
                 <td class="col-rate">${formatCurrency(price)}</td>
                 <td class="col-qty">${cartItem.quantity}</td>
@@ -405,8 +408,30 @@ export async function printReceipt(options: PrintOptions) {
         </div>
 
         <div class="footer">
-          <p><strong>Your Style Matters to Us. Thank You!</strong></p>
-          <p>Please visit again</p>
+          ${(() => {
+            switch (businessType) {
+              case 'cafe':
+                return `
+                  <p><strong>Thank You for Visiting!</strong></p>
+                  <p>We hope you enjoyed your experience</p>
+                `;
+              case 'clothing':
+                return `
+                  <p><strong>Your Style Matters to Us. Thank You!</strong></p>
+                  <p>Please visit again</p>
+                `;
+              case 'electrical':
+                return `
+                  <p><strong>Thank You for Your Purchase!</strong></p>
+                  <p>Quality Products, Trusted Service</p>
+                `;
+              default:
+                return `
+                  <p><strong>Thank You for Your Business!</strong></p>
+                  <p>Please visit again</p>
+                `;
+            }
+          })()}
           <div class="barcode">
             ${transaction.id.slice(0, 8).toUpperCase()}
           </div>

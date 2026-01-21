@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useInventoryStore } from '../store/inventoryStore';
-import { Category, Item, ItemCodePrefix } from '../types';
-import { storageService } from '../services/storage';
-import { receiptSettings, ReceiptHeaderOption } from '../utils/receiptSettings';
+import { Category, Item } from '../types';
 import './Import.css';
 
 interface CSVRow {
@@ -22,90 +20,12 @@ export default function Import() {
     errors: string[];
   } | null>(null);
 
-  // Item code prefix states
-  const [prefixes, setPrefixes] = useState<ItemCodePrefix[]>([]);
-  const [showPrefixForm, setShowPrefixForm] = useState(false);
-  const [prefixPrefix, setPrefixPrefix] = useState('');
-  const [prefixDescription, setPrefixDescription] = useState('');
-  const [editingPrefix, setEditingPrefix] = useState<ItemCodePrefix | null>(null);
-  const [loadingPrefixes, setLoadingPrefixes] = useState(false);
-
-  // Receipt settings state
-  const [receiptHeaderOption, setReceiptHeaderOption] = useState<ReceiptHeaderOption>('both');
-
   const { categories, loadCategories, addCategory, addItem } = useInventoryStore();
 
   useEffect(() => {
     // Load categories when component mounts (needed for item import)
     loadCategories();
-    loadPrefixes();
-    // Load receipt settings
-    const settings = receiptSettings.get();
-    setReceiptHeaderOption(settings.headerOption);
   }, [loadCategories]);
-
-  const loadPrefixes = async () => {
-    try {
-      setLoadingPrefixes(true);
-      const data = await storageService.getItemCodePrefixes();
-      setPrefixes(data);
-    } catch (error) {
-      console.error('Error loading prefixes:', error);
-    } finally {
-      setLoadingPrefixes(false);
-    }
-  };
-
-  const handleSavePrefix = async () => {
-    if (!prefixPrefix.trim()) {
-      alert('Prefix is required');
-      return;
-    }
-
-    try {
-      if (editingPrefix) {
-        await storageService.updateItemCodePrefix(editingPrefix.id, {
-          prefix: prefixPrefix.trim(),
-          description: prefixDescription.trim() || undefined,
-        });
-      } else {
-        await storageService.addItemCodePrefix({
-          prefix: prefixPrefix.trim(),
-          description: prefixDescription.trim() || undefined,
-        });
-      }
-      await loadPrefixes();
-      setShowPrefixForm(false);
-      setPrefixPrefix('');
-      setPrefixDescription('');
-      setEditingPrefix(null);
-    } catch (error: any) {
-      alert(`Failed to save prefix: ${error.message || 'Unknown error'}`);
-    }
-  };
-
-  const handleEditPrefix = (prefix: ItemCodePrefix) => {
-    setEditingPrefix(prefix);
-    setPrefixPrefix(prefix.prefix);
-    setPrefixDescription(prefix.description || '');
-    setShowPrefixForm(true);
-  };
-
-  const handleDeletePrefix = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this prefix?')) return;
-
-    try {
-      await storageService.deleteItemCodePrefix(id);
-      await loadPrefixes();
-    } catch (error: any) {
-      alert(`Failed to delete prefix: ${error.message || 'Unknown error'}`);
-    }
-  };
-
-  const handleReceiptHeaderOptionChange = (option: ReceiptHeaderOption) => {
-    setReceiptHeaderOption(option);
-    receiptSettings.setHeaderOption(option);
-  };
 
   // Helper to find category ID by name (and optionally subcategory)
   const findCategoryId = (categoryName?: string, subcategoryName?: string, categoriesList?: Category[]): string | undefined => {
@@ -614,159 +534,6 @@ export default function Import() {
         </div>
       </div>
 
-      {/* Receipt Settings */}
-      <div className="card" style={{ marginTop: '20px' }}>
-        <div className="import-section">
-          <h2>🧾 Receipt Settings</h2>
-          <div className="receipt-settings-section">
-            <div className="form-group">
-              <label className="receipt-settings-label">Receipt Header Display:</label>
-              <div className="radio-group">
-                <label className="radio-option">
-                  <input
-                    type="radio"
-                    name="receiptHeaderOption"
-                    value="logo"
-                    checked={receiptHeaderOption === 'logo'}
-                    onChange={() => handleReceiptHeaderOptionChange('logo')}
-                  />
-                  <span>Logo Only</span>
-                </label>
-                <label className="radio-option">
-                  <input
-                    type="radio"
-                    name="receiptHeaderOption"
-                    value="company_name"
-                    checked={receiptHeaderOption === 'company_name'}
-                    onChange={() => handleReceiptHeaderOptionChange('company_name')}
-                  />
-                  <span>Company Name Only</span>
-                </label>
-                <label className="radio-option">
-                  <input
-                    type="radio"
-                    name="receiptHeaderOption"
-                    value="both"
-                    checked={receiptHeaderOption === 'both'}
-                    onChange={() => handleReceiptHeaderOptionChange('both')}
-                  />
-                  <span>Both (Logo & Company Name)</span>
-                </label>
-              </div>
-            </div>
-            <div className="receipt-settings-note">
-              <p>This setting controls how your company information appears at the top of receipts.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Item Code Prefix Management */}
-      <div className="card" style={{ marginTop: '20px' }}>
-        <div className="import-section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-            <h2>🏷️ Item Code Prefixes</h2>
-            <button
-              className="btn btn-primary"
-              onClick={() => {
-                setShowPrefixForm(!showPrefixForm);
-                if (showPrefixForm) {
-                  setEditingPrefix(null);
-                  setPrefixPrefix('');
-                  setPrefixDescription('');
-                }
-              }}
-            >
-              {showPrefixForm ? 'Cancel' : '+ Add Prefix'}
-            </button>
-          </div>
-
-          {showPrefixForm && (
-            <div style={{ marginBottom: '20px', padding: '15px', border: '1px solid #ddd', borderRadius: '8px' }}>
-              <h3>{editingPrefix ? 'Edit' : 'Add'} Item Code Prefix</h3>
-              <label style={{ display: 'block', marginBottom: '10px' }}>
-                Prefix * (e.g., "shopname-place-"):
-                <input
-                  type="text"
-                  className="input"
-                  value={prefixPrefix}
-                  onChange={(e) => setPrefixPrefix(e.target.value)}
-                  placeholder="shopname-place-"
-                  style={{ marginTop: '5px' }}
-                />
-              </label>
-              <label style={{ display: 'block', marginBottom: '10px' }}>
-                Description (optional):
-                <input
-                  type="text"
-                  className="input"
-                  value={prefixDescription}
-                  onChange={(e) => setPrefixDescription(e.target.value)}
-                  placeholder="Description for this prefix"
-                  style={{ marginTop: '5px' }}
-                />
-              </label>
-              <button className="btn btn-primary" onClick={handleSavePrefix}>
-                {editingPrefix ? 'Update' : 'Save'} Prefix
-              </button>
-            </div>
-          )}
-
-          {loadingPrefixes ? (
-            <p>Loading prefixes...</p>
-          ) : prefixes.length === 0 ? (
-            <div className="empty-state">
-              <p>📭 No item code prefixes yet</p>
-              <p className="empty-subtext">Add a prefix to get started</p>
-            </div>
-          ) : (
-            <div>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid #ddd' }}>
-                    <th style={{ textAlign: 'left', padding: '10px' }}>Prefix</th>
-                    <th style={{ textAlign: 'left', padding: '10px' }}>Description</th>
-                    <th style={{ textAlign: 'right', padding: '10px' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {prefixes.map((prefix) => (
-                    <tr key={prefix.id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '10px', fontWeight: 'bold' }}>{prefix.prefix}</td>
-                      <td style={{ padding: '10px' }}>{prefix.description || '-'}</td>
-                      <td style={{ padding: '10px', textAlign: 'right' }}>
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => handleEditPrefix(prefix)}
-                          style={{ marginRight: '5px' }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => handleDeletePrefix(prefix.id)}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <div className="import-instructions" style={{ marginTop: '20px' }}>
-            <h3>📋 About Item Code Prefixes:</h3>
-            <ul>
-              <li>Prefixes help reduce redundant data in item codes</li>
-              <li>Example: If prefix is "shopname-place-", item code will be "shopname-place-PROD001-L" (prefix + product code-size)</li>
-              <li>When adding items, you can select a prefix from the dropdown</li>
-              <li>Product code and size will auto-fill the barcode field</li>
-            </ul>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

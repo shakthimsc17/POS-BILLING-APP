@@ -9,12 +9,14 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-  color: white;
+  color: #1a1a1a;
 }
 
 .payment-header h1 {
-  font-size: 2.5rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
 }
 
 .payment-content {
@@ -28,6 +30,10 @@
 .cash-payment h2,
 .customer-selection h2 {
   margin-top: 0;
+  color: #1a1a1a;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
 }
 
 .customer-selection {
@@ -38,7 +44,7 @@
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  color: #333;
+  color: #1a1a1a;
 }
 
 .summary-item {
@@ -46,7 +52,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 0;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  color: #1a1a1a;
 }
 
 .summary-item.discount-item {
@@ -58,11 +65,12 @@
 }
 
 .summary-item.final-amount {
-  border-top: 2px solid #e0e0e0;
+  border-top: 2px solid #e0e6ed;
   margin-top: 0.5rem;
   padding-top: 1rem;
   font-weight: 600;
-  font-size: 1.3rem;
+  font-size: 1.25rem;
+  color: #1a1a1a;
 }
 
 .summary-item.info-item {
@@ -81,12 +89,9 @@
 }
 
 .total-amount {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #1a1a1a;
 }
 
 .discount-value {
@@ -98,10 +103,7 @@
 .final-amount-value {
   font-size: 1.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #1a1a1a;
 }
 
 .payment-options {
@@ -111,34 +113,34 @@
 }
 
 .payment-option {
-  padding: 2rem;
-  border: 3px solid #e0e0e0;
-  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
   background: white;
-  font-size: 1.5rem;
+  font-size: 1.125rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  color: #1a1a1a;
 }
 
 .payment-option:hover {
-  border-color: #667eea;
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+  border-color: #3498db;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
 }
 
 .payment-option.active {
-  border-color: #667eea;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #3498db;
+  background: #3498db;
   color: white;
-  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
 }
 
 .cash-payment label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  color: #333;
+  color: #1a1a1a;
 }
 
 .cash-payment .input {

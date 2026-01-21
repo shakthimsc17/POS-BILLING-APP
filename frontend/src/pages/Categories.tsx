@@ -22,6 +22,10 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBrand, setFilterBrand] = useState('');
 
+  // Collapse/expand states
+  const [expandedMainCategories, setExpandedMainCategories] = useState<Set<string>>(new Set());
+  const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set());
+
   const { categories, loadCategories, addCategory, updateCategory, deleteCategory, deleteAllCategories } =
     useInventoryStore();
   const { company, loadCompany } = useCompanyStore();
@@ -179,6 +183,46 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
     });
   });
 
+  // Initialize all main categories as expanded by default when categories change
+  useEffect(() => {
+    const mainCategoryNames = [...new Set(categories.map(c => c.name))];
+    setExpandedMainCategories(new Set(mainCategoryNames));
+  }, [categories.length]);
+
+  const toggleMainCategory = (mainCategoryName: string) => {
+    setExpandedMainCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(mainCategoryName)) {
+        newSet.delete(mainCategoryName);
+      } else {
+        newSet.add(mainCategoryName);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSubcategory = (mainCategoryName: string, subcategoryName: string) => {
+    setExpandedSubcategories(prev => {
+      const newSet = new Set(prev);
+      const key = `${mainCategoryName}-${subcategoryName}`;
+      if (newSet.has(key)) {
+        newSet.delete(key);
+      } else {
+        newSet.add(key);
+      }
+      return newSet;
+    });
+  };
+
+  const isMainCategoryExpanded = (mainCategoryName: string) => {
+    return expandedMainCategories.has(mainCategoryName);
+  };
+
+  const isSubcategoryExpanded = (mainCategoryName: string, subcategoryName: string) => {
+    const key = `${mainCategoryName}-${subcategoryName}`;
+    return expandedSubcategories.has(key);
+  };
+
   return (
     <div className="categories">
       <div className="categories-header">
@@ -272,13 +316,25 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
               const mainCategory = categoryGroup.find(c => !c.subcategory) || categoryGroup[0];
               const subcategories = categoryGroup.filter(c => c.subcategory);
               
+              const isExpanded = isMainCategoryExpanded(mainCategoryName);
+              
               return (
                 <div key={mainCategoryName} className="category-group">
                   <div className="main-category">
                     <div className="category-header">
+                      <button
+                        className="collapse-toggle"
+                        onClick={() => toggleMainCategory(mainCategoryName)}
+                        title={isExpanded ? "Collapse" : "Expand"}
+                      >
+                        {isExpanded ? '▼' : '▶'}
+                      </button>
                       <h3 className="category-name">{mainCategoryName}</h3>
                       {mainCategory.brand && (
                         <span className="category-brand-badge">{mainCategory.brand}</span>
+                      )}
+                      {subcategories.length > 0 && (
+                        <span className="subcategory-count">({subcategories.length} subcategor{subcategories.length === 1 ? 'y' : 'ies'})</span>
                       )}
                     </div>
                     <div className="category-actions">
@@ -306,7 +362,7 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
                     </div>
                   </div>
                   
-                  {subcategories.length > 0 && (
+                  {isExpanded && subcategories.length > 0 && (
                     <div className="subcategories-list">
                       {subcategories.map((subcategory) => (
                         <div key={subcategory.id} className="subcategory-item">

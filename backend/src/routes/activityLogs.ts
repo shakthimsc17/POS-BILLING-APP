@@ -68,5 +68,99 @@ router.get('/', async (req: AuthRequest, res) => {
   }
 });
 
+// Delete all activity logs (admin only) - must come before /:id route
+router.delete('/all', async (req: AuthRequest, res) => {
+  try {
+    const isAdmin = req.customer?.isAdmin || false;
+    
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Only administrators can delete activity logs' });
+    }
+
+    const result = await prisma.activityLog.deleteMany({});
+
+    res.json({ 
+      message: 'All activity logs deleted successfully',
+      count: result.count 
+    });
+  } catch (error: any) {
+    console.error('Error deleting all activity logs:', error);
+    res.status(500).json({ error: error.message || 'Failed to delete activity logs' });
+  }
+});
+
+// Delete a single activity log (admin only)
+router.delete('/:id', async (req: AuthRequest, res) => {
+  try {
+    const isAdmin = req.customer?.isAdmin || false;
+    
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Only administrators can delete activity logs' });
+    }
+
+    const { id } = req.params;
+
+    const log = await prisma.activityLog.findUnique({
+      where: { id },
+    });
+
+    if (!log) {
+      return res.status(404).json({ error: 'Activity log not found' });
+    }
+
+    await prisma.activityLog.delete({
+      where: { id },
+    });
+
+    res.json({ message: 'Activity log deleted successfully' });
+  } catch (error: any) {
+    console.error('Error deleting activity log:', error);
+    res.status(500).json({ error: error.message || 'Failed to delete activity log' });
+  }
+});
+
+// Delete filtered activity logs (admin only)
+router.post('/delete-filtered', async (req: AuthRequest, res) => {
+  try {
+    const isAdmin = req.customer?.isAdmin || false;
+    
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Only administrators can delete activity logs' });
+    }
+
+    const { entityType, entityId, changedBy, action } = req.body;
+
+    const whereClause: any = {};
+    
+    if (entityType) {
+      whereClause.entityType = entityType;
+    }
+    
+    if (entityId) {
+      whereClause.entityId = entityId;
+    }
+    
+    if (changedBy) {
+      whereClause.changedBy = changedBy;
+    }
+
+    if (action) {
+      whereClause.action = action;
+    }
+
+    const result = await prisma.activityLog.deleteMany({
+      where: whereClause,
+    });
+
+    res.json({ 
+      message: 'Filtered activity logs deleted successfully',
+      count: result.count 
+    });
+  } catch (error: any) {
+    console.error('Error deleting filtered activity logs:', error);
+    res.status(500).json({ error: error.message || 'Failed to delete filtered activity logs' });
+  }
+});
+
 export default router;
 

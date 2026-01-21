@@ -6,13 +6,13 @@ import Dashboard from './pages/Dashboard';
 import Cart from './pages/Cart';
 import Categories from './pages/Categories';
 import Items from './pages/Items';
-import Payment from './pages/Payment';
 import SalesOrders from './pages/SalesOrders';
 import Customers from './pages/Customers';
 import Import from './pages/Import';
 import Reports from './pages/Reports';
 import Calculators from './pages/Calculators';
 import CompanySettings from './pages/CompanySettings';
+import Settings from './pages/Settings';
 import ActivityLogs from './pages/ActivityLogs';
 import BulkOperations from './pages/BulkOperations';
 import SignIn from './pages/SignIn';
@@ -20,7 +20,7 @@ import SignUp from './pages/SignUp';
 import { useCompanyStore } from './store/companyStore';
 import './App.css';
 
-type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'payment' | 'sales' | 'customers' | 'import' | 'reports' | 'calculators' | 'company' | 'activity-logs' | 'bulk-operations';
+type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'sales' | 'customers' | 'import' | 'reports' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations';
 type AuthPage = 'signin' | 'signup';
 
 function App() {
@@ -190,6 +190,13 @@ function App() {
               <span className="nav-icon">🏢</span>
               <span className="nav-text">Company</span>
             </button>
+            <button
+              className={currentPage === 'settings' ? 'active' : ''}
+              onClick={() => setCurrentPage('settings')}
+            >
+              <span className="nav-icon">⚙️</span>
+              <span className="nav-text">Settings</span>
+            </button>
           </div>
         </nav>
 
@@ -209,7 +216,6 @@ function App() {
           {currentPage === 'cart' && <Cart onNavigate={setCurrentPage} />}
           {currentPage === 'categories' && <Categories onNavigate={setCurrentPage} />}
           {currentPage === 'items' && <Items onNavigate={setCurrentPage} />}
-          {currentPage === 'payment' && <Payment onNavigate={setCurrentPage} />}
           {currentPage === 'sales' && <SalesOrders />}
           {currentPage === 'customers' && customer?.isAdmin && <Customers />}
           {currentPage === 'import' && <Import />}
@@ -218,10 +224,11 @@ function App() {
           {currentPage === 'bulk-operations' && <BulkOperations />}
           {currentPage === 'calculators' && <Calculators />}
           {currentPage === 'company' && <CompanySettings />}
+          {currentPage === 'settings' && <Settings />}
         </div>
 
         {/* Show footer for all pages except dashboard and sales-related pages */}
-        {!['dashboard', 'cart', 'payment', 'sales'].includes(currentPage) && (
+        {!['dashboard', 'cart', 'sales'].includes(currentPage) && (
           <footer className="page-footer">
             <div className="footer-content">
               <p className="footer-text">Powered by <strong>SSS Soft Solution</strong></p>
