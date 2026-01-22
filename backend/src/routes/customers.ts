@@ -21,13 +21,29 @@ router.get('/', async (req: AuthRequest, res) => {
         city: true,
         state: true,
         pincode: true,
+        customerType: true,
         createdAt: true,
         updatedAt: true,
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    res.json(customers);
+    // Transform to snake_case for frontend
+    const transformedCustomers = customers.map(customer => ({
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      address: customer.address,
+      city: customer.city,
+      state: customer.state,
+      pincode: customer.pincode,
+      customer_type: customer.customerType || 'sales person',
+      created_at: customer.createdAt.toISOString(),
+      updated_at: customer.updatedAt.toISOString(),
+    }));
+
+    res.json(transformedCustomers);
   } catch (error: any) {
     console.error('Error fetching customers:', error);
     res.status(500).json({ error: error.message || 'Failed to fetch customers' });
@@ -49,7 +65,7 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { name, email, phone, address, city, state, pincode } = req.body;
+      const { name, email, phone, address, city, state, pincode, customer_type } = req.body;
 
       // If email provided, check if it exists
       if (email) {
@@ -72,6 +88,7 @@ router.post(
           city,
           state,
           pincode,
+          customerType: customer_type || 'sales person',
         },
         select: {
           id: true,
@@ -82,12 +99,28 @@ router.post(
           city: true,
           state: true,
           pincode: true,
+          customerType: true,
           createdAt: true,
           updatedAt: true,
         },
       });
 
-      res.status(201).json(customer);
+      // Transform to snake_case for frontend
+      const transformedCustomer = {
+        id: customer.id,
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        address: customer.address,
+        city: customer.city,
+        state: customer.state,
+        pincode: customer.pincode,
+        customer_type: customer.customerType || 'sales person',
+        created_at: customer.createdAt.toISOString(),
+        updated_at: customer.updatedAt.toISOString(),
+      };
+
+      res.status(201).json(transformedCustomer);
     } catch (error: any) {
       console.error('Error creating customer:', error);
       res.status(500).json({ error: error.message || 'Failed to create customer' });
@@ -111,7 +144,7 @@ router.put(
       }
 
       const { id } = req.params;
-      const { name, email, phone, address, city, state, pincode } = req.body;
+      const { name, email, phone, address, city, state, pincode, customer_type } = req.body;
 
       // Check if customer exists
       const existing = await prisma.customer.findUnique({
@@ -141,6 +174,7 @@ router.put(
       if (city !== undefined) updateData.city = city;
       if (state !== undefined) updateData.state = state;
       if (pincode !== undefined) updateData.pincode = pincode;
+      if (customer_type !== undefined) updateData.customerType = customer_type;
 
       const customer = await prisma.customer.update({
         where: { id },
@@ -154,12 +188,28 @@ router.put(
           city: true,
           state: true,
           pincode: true,
+          customerType: true,
           createdAt: true,
           updatedAt: true,
         },
       });
 
-      res.json(customer);
+      // Transform to snake_case for frontend
+      const transformedCustomer = {
+        id: customer.id,
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        address: customer.address,
+        city: customer.city,
+        state: customer.state,
+        pincode: customer.pincode,
+        customer_type: customer.customerType || 'sales person',
+        created_at: customer.createdAt.toISOString(),
+        updated_at: customer.updatedAt.toISOString(),
+      };
+
+      res.json(transformedCustomer);
     } catch (error: any) {
       console.error('Error updating customer:', error);
       res.status(500).json({ error: error.message || 'Failed to update customer' });

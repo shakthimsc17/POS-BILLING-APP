@@ -1,4 +1,4 @@
-import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer, QuickSaleItem, CashFlowEntry, CashFlowSummary } from '../types';
+import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer, QuickSaleItem, CashFlowEntry, CashFlowSummary, Permission, PagePermission } from '../types';
 import apiClient from '../lib/apiClient';
 
 export const storageService = {
@@ -296,5 +296,36 @@ export const storageService = {
     if (startHour !== undefined) params.append('startHour', startHour.toString());
     if (endHour !== undefined) params.append('endHour', endHour.toString());
     return apiClient.get<any[]>(`/sales-performance/hourly?${params.toString()}`);
+  },
+
+  // Permissions
+  getPermissions: async (customerType?: string): Promise<Permission[]> => {
+    const url = customerType ? `/permissions?customerType=${encodeURIComponent(customerType)}` : '/permissions';
+    return apiClient.get<Permission[]>(url);
+  },
+
+  getPermissionsByType: async (customerType: string): Promise<Permission[]> => {
+    return apiClient.get<Permission[]>(`/permissions/by-type/${encodeURIComponent(customerType)}`);
+  },
+
+  getAvailablePages: async (): Promise<any[]> => {
+    return apiClient.get<any[]>('/permissions/pages');
+  },
+
+  savePermissions: async (customerType: string, permissions: PagePermission[]): Promise<Permission[]> => {
+    return apiClient.post<Permission[]>('/permissions', {
+      customerType,
+      permissions: permissions.map(p => ({
+        page: p.page,
+        can_view: p.can_view,
+        can_edit: p.can_edit,
+        can_delete: p.can_delete,
+        can_view_profit: p.can_view_profit,
+      })),
+    });
+  },
+
+  updatePermission: async (id: string, updates: Partial<Permission>): Promise<Permission> => {
+    return apiClient.put<Permission>(`/permissions/${id}`, updates);
   },
 };

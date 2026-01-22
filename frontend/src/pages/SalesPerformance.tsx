@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { storageService } from '../services/storage';
 import { formatCurrency } from '../utils/formatters';
+import { usePermissions } from '../hooks/usePermissions';
+import AccessDenied from '../components/AccessDenied';
 import './SalesPerformance.css';
 
 type Period = '7days' | 'week' | 'month' | 'year' | 'overall';
@@ -23,6 +25,7 @@ interface ProfitData {
 const COLORS = ['#3498db', '#27ae60', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c'];
 
 export default function SalesPerformance() {
+  const { canViewProfit } = usePermissions();
   const [salesPeriod, setSalesPeriod] = useState<Period>('7days');
   const [profitPeriod, setProfitPeriod] = useState<Period>('7days');
   const [salesData, setSalesData] = useState<SalesDataPoint[]>([]);
@@ -34,6 +37,11 @@ export default function SalesPerformance() {
   const [startHour, setStartHour] = useState<number>(8);
   const [endHour, setEndHour] = useState<number>(22);
   const [loading, setLoading] = useState(true);
+
+  // Check if user can view profit data
+  if (!canViewProfit('sales-performance')) {
+    return <AccessDenied />;
+  }
 
   useEffect(() => {
     loadAllData();

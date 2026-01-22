@@ -60,6 +60,7 @@ router.post(
           state: true,
           pincode: true,
           isAdmin: true,
+          customerType: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -68,10 +69,21 @@ router.post(
       // Generate JWT token
       const token = generateToken(customer.id, false);
 
+      // Transform to snake_case for frontend
       res.status(201).json({
         customer: {
-          ...customer,
+          id: customer.id,
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone,
+          address: customer.address,
+          city: customer.city,
+          state: customer.state,
+          pincode: customer.pincode,
           isAdmin: false,
+          customer_type: customer.customerType || 'sales person',
+          created_at: customer.createdAt.toISOString(),
+          updated_at: customer.updatedAt.toISOString(),
         },
         token,
       });
@@ -117,6 +129,7 @@ router.post(
       // Generate JWT token
       const token = generateToken(customer.id, customer.isAdmin);
 
+      // Transform to snake_case for frontend
       res.json({
         customer: {
           id: customer.id,
@@ -128,8 +141,9 @@ router.post(
           state: customer.state,
           pincode: customer.pincode,
           isAdmin: customer.isAdmin,
-          createdAt: customer.createdAt,
-          updatedAt: customer.updatedAt,
+          customer_type: customer.customerType || 'sales person',
+          created_at: customer.createdAt.toISOString(),
+          updated_at: customer.updatedAt.toISOString(),
         },
         token,
       });
@@ -142,7 +156,24 @@ router.post(
 
 // Get current customer
 router.get('/me', authenticate, async (req: AuthRequest, res) => {
-  res.json({ customer: req.customer });
+  // Transform to snake_case for frontend
+  const customer = req.customer as any;
+  res.json({ 
+    customer: {
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      address: customer.address,
+      city: customer.city,
+      state: customer.state,
+      pincode: customer.pincode,
+      isAdmin: customer.isAdmin,
+      customer_type: customer.customerType || 'sales person',
+      created_at: customer.createdAt.toISOString(),
+      updated_at: customer.updatedAt.toISOString(),
+    }
+  });
 });
 
 // Sign out (client-side, but we can add token blacklisting here if needed)

@@ -5,6 +5,7 @@ import { formatCurrency } from '../utils/formatters';
 import { printReceipt } from '../utils/printer';
 import { useCompanyStore } from '../store/companyStore';
 import { useAuthStore } from '../store/authStore';
+import { usePermissions } from '../hooks/usePermissions';
 import './SalesOrders.css';
 
 type FilterPeriod = 'today' | 'week' | 'month' | 'year' | 'all' | 'custom';
@@ -19,7 +20,9 @@ export default function SalesOrders() {
   const [loading, setLoading] = useState(true);
   const { customer: currentUser } = useAuthStore();
   const { company, loadCompany } = useCompanyStore();
+  const { canViewProfit } = usePermissions();
   const isAdmin = currentUser?.isAdmin || false;
+  const canViewProfitData = isAdmin || canViewProfit('sales');
 
   useEffect(() => {
     loadTransactions();
@@ -204,7 +207,7 @@ export default function SalesOrders() {
       await companyStore.loadCompany();
     }
     const company = companyStore.getCompany();
-    const headers = isAdmin 
+    const headers = canViewProfitData 
       ? ['Date', 'Time', 'Order ID', 'Customer', 'Items Count', 'Payment Method', 'Amount', 'Profit/Loss']
       : ['Date', 'Time', 'Order ID', 'Customer', 'Items Count', 'Payment Method', 'Amount'];
     
@@ -232,7 +235,7 @@ export default function SalesOrders() {
         formatCurrency(tx.total_amount),
       ];
       
-      if (isAdmin) {
+      if (canViewProfitData) {
         const { profit, loss } = calculateTransactionProfitLoss(tx);
         const netProfit = profit - loss;
         row.push(formatCurrency(netProfit));
@@ -297,7 +300,7 @@ export default function SalesOrders() {
                 <th>Items</th>
                 <th>Payment</th>
                 <th>Amount</th>
-                {isAdmin && <th>Profit/Loss</th>}
+                {canViewProfitData && <th>Profit/Loss</th>}
               </tr>
             </thead>
             <tbody>
@@ -308,7 +311,7 @@ export default function SalesOrders() {
                   ? customers.find(c => c.id === tx.transaction_customer_id)?.name || 'Walk-in'
                   : 'Walk-in';
                 let profitLossCell = '';
-                if (isAdmin) {
+                if (canViewProfitData) {
                   const { profit, loss } = calculateTransactionProfitLoss(tx);
                   const netProfit = profit - loss;
                   profitLossCell = `<td>${formatCurrency(netProfit)}</td>`;
@@ -330,7 +333,7 @@ export default function SalesOrders() {
           <div class="summary">
             <div class="summary-row"><strong>Total Orders:</strong> ${getTotalTransactions()}</div>
             <div class="summary-row"><strong>Total Sales:</strong> ${formatCurrency(getTotalSales())}</div>
-            ${isAdmin ? `<div class="summary-row"><strong>Total Profit:</strong> ${formatCurrency(getTotalProfitLoss().profit - getTotalProfitLoss().loss)}</div>` : ''}
+            ${canViewProfitData ? `<div class="summary-row"><strong>Total Profit:</strong> ${formatCurrency(getTotalProfitLoss().profit - getTotalProfitLoss().loss)}</div>` : ''}
           </div>
         </body>
       </html>
@@ -489,7 +492,7 @@ export default function SalesOrders() {
             </p>
           </div>
         </div>
-        {isAdmin && (
+        {canViewProfitData && (
           <>
             <div className="summary-card profit-card">
               <div className="summary-icon">📊</div>
@@ -535,7 +538,7 @@ export default function SalesOrders() {
                   <th>Items</th>
                   <th>Payment</th>
                   <th>Amount</th>
-                  {isAdmin && <th>Profit/Loss</th>}
+                  {canViewProfitData && <th>Profit/Loss</th>}
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -546,8 +549,8 @@ export default function SalesOrders() {
                   const customer = transaction.transaction_customer_id 
                     ? customers.find(c => c.id === transaction.transaction_customer_id)
                     : null;
-                  const { profit, loss } = calculateTransactionProfitLoss(transaction);
-                  const netProfit = profit - loss;
+                  const profitLoss = canViewProfitData ? calculateTransactionProfitLoss(transaction) : null;
+                  const netProfit = profitLoss ? profitLoss.profit - profitLoss.loss : null;
                   return (
                     <tr key={transaction.id}>
                       <td>{formatDate(transaction.created_at)}</td>
@@ -591,25 +594,25 @@ export default function SalesOrders() {
                         </span>
                       </td>
                       <td className="amount">{formatCurrency(transaction.total_amount)}</td>
-                      {isAdmin && (
+                      {canViewProfitData && profitLoss && (
                         <td>
                           <div className="profit-loss-cell">
-                            {profit > 0 && (
+                            {profitLoss.profit > 0 && (
                               <div className="profit-badge">
                                 <span className="profit-label">Profit:</span>
-                                <span className="profit-amount">+{formatCurrency(profit)}</span>
+                                <span className="profit-amount">+{formatCurrency(profitLoss.profit)}</span>
                               </div>
                             )}
-                            {loss > 0 && (
+                            {profitLoss.loss > 0 && (
                               <div className="loss-badge">
                                 <span className="loss-label">Loss:</span>
-                                <span className="loss-amount">-{formatCurrency(loss)}</span>
+                                <span className="loss-amount">-{formatCurrency(profitLoss.loss)}</span>
                               </div>
                             )}
-                            {profit === 0 && loss === 0 && (
+                            {profitLoss.profit === 0 && profitLoss.loss === 0 && (
                               <span className="no-profit-loss">-</span>
                             )}
-                            {netProfit !== 0 && (
+                            {netProfit !== null && netProfit !== 0 && (
                               <div className={`net-badge ${netProfit > 0 ? 'net-profit' : 'net-loss'}`}>
                                 Net: {formatCurrency(netProfit)}
                               </div>
