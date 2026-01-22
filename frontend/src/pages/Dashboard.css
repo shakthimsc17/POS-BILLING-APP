@@ -20,6 +20,32 @@
   align-items: center;
   gap: 1.5rem;
   flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.quick-sale-btn {
+  background: #27ae60;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.quick-sale-btn:hover {
+  background: #229954;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
 }
 
 .page-logo-container {

@@ -72,6 +72,20 @@
 
 .form-row label {
   margin-bottom: 0;
+  margin-top: 13px;
+}
+
+.modal-content label {
+  display: block;
+  margin-bottom: 0.5rem;
+  margin-top: 10px;
+  font-weight: 500;
+  color: #1a1a1a;
+  font-size: 0.9rem;
+}
+
+.modal-content label:first-child {
+  margin-top: 0;
 }
 
 textarea.input {

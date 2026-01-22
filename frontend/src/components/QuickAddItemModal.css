@@ -1,3 +1,4 @@
+/* Quick Add Item Modal - Scoped Styles */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -12,7 +13,7 @@
   padding: 1rem;
 }
 
-.quick-add-modal {
+.modal-content.quick-add-modal {
   background: white;
   border-radius: 12px;
   width: 100%;
@@ -23,21 +24,23 @@
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
-.modal-header {
+.modal-content.quick-add-modal .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
   border-bottom: 1px solid #e0e6ed;
+  flex-shrink: 0;
 }
 
-.modal-header h2 {
+.modal-content.quick-add-modal .modal-header h2 {
   margin: 0;
   font-size: 1.5rem;
   color: #1a1a1a;
+  font-weight: 600;
 }
 
-.modal-close {
+.modal-content.quick-add-modal .modal-close {
   background: none;
   border: none;
   font-size: 2rem;
@@ -51,21 +54,43 @@
   justify-content: center;
   border-radius: 4px;
   transition: all 0.2s;
+  line-height: 1;
 }
 
-.modal-close:hover {
+.modal-content.quick-add-modal .modal-close:hover {
   background: #f1f1f1;
   color: #1a1a1a;
 }
 
-.modal-body {
+.modal-content.quick-add-modal .modal-body {
   padding: 1.5rem;
   overflow-y: auto;
   flex: 1;
 }
 
-.search-section {
+.modal-content.quick-add-modal .search-section {
   margin-bottom: 1.5rem;
+}
+
+.modal-content.quick-add-modal .search-section .input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background: #ffffff;
+  color: #1a1a1a;
+  box-sizing: border-box;
+  text-align: left;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.modal-content.quick-add-modal .search-section .input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
 .search-loading,
@@ -88,17 +113,21 @@
 .results-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  max-height: 300px;
+  gap: 0.4rem;
+  max-height: 400px;
   overflow-y: auto;
 }
 
 .result-item {
-  padding: 1rem;
+  padding: 0.5rem 1rem;
   border: 2px solid #e0e6ed;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-height: auto;
 }
 
 .result-item:hover {
@@ -111,33 +140,55 @@
   background: #e3f2fd;
 }
 
+.result-item-info {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  width: 100%;
+  margin-right: 3px;
+  margin-left: 3px;
+}
+
 .result-item-info h4 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1rem;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: #1a1a1a;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .result-code {
-  margin: 0.25rem 0;
-  font-size: 0.85rem;
+  margin: 0;
+  font-size: 0.75rem;
   color: #6c757d;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
 .result-price {
-  margin: 0.5rem 0;
-  font-size: 1.1rem;
+  margin: 0;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #27ae60;
+  line-height: 1.4;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .result-stock {
-  display: inline-block;
-  margin-top: 0.5rem;
-  padding: 0.25rem 0.5rem;
+  display: inline-flex;
+  margin: 0;
+  padding: 0.2rem 0.4rem;
   background: #e8f5e9;
   color: #2e7d32;
   border-radius: 4px;
-  font-size: 0.85rem;
+  font-size: 0.7rem;
+  white-space: nowrap;
 }
 
 .result-stock.out-of-stock {
@@ -152,45 +203,71 @@
 }
 
 .selected-item-section h3 {
-  margin: 0 0 1rem 0;
-  font-size: 1.1rem;
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 600;
   color: #1a1a1a;
 }
 
 .selected-item-card {
-  padding: 1.5rem;
+  padding: 0.5rem 1rem;
   background: #f8f9fa;
   border-radius: 8px;
   border: 2px solid #3498db;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.selected-item-info {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 1fr;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.3rem 0;
 }
 
 .selected-item-card h4 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.2rem;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: #1a1a1a;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .selected-item-card p {
-  margin: 0.5rem 0;
+  margin: 0;
+  font-size: 0.75rem;
   color: #6c757d;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
 .selected-price {
-  font-size: 1.3rem;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 700;
   color: #27ae60;
-  margin: 0.75rem 0 !important;
+  margin: 0;
+  text-align: right;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
 .quantity-selector {
-  margin-top: 1rem;
+  margin-top: 0.25rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e0e6ed;
 }
 
 .quantity-selector label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
   font-weight: 500;
   color: #1a1a1a;
+  font-size: 0.85rem;
 }
 
 .quantity-controls {
@@ -225,18 +302,54 @@
   border-radius: 6px;
   text-align: center;
   font-size: 1rem;
+  box-sizing: border-box;
 }
 
-.modal-footer {
+.modal-content.quick-add-modal .modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
   padding: 1.5rem;
   border-top: 1px solid #e0e6ed;
+  flex-shrink: 0;
+}
+
+.modal-content.quick-add-modal .btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  white-space: nowrap;
+}
+
+.modal-content.quick-add-modal .btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.modal-content.quick-add-modal .btn-secondary:hover {
+  background: #5a6268;
+}
+
+.modal-content.quick-add-modal .btn-primary {
+  background: #3498db;
+  color: white;
+}
+
+.modal-content.quick-add-modal .btn-primary:hover {
+  background: #2980b9;
+}
+
+.modal-content.quick-add-modal .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
-  .quick-add-modal {
+  .modal-content.quick-add-modal {
     max-width: 100%;
     max-height: 95vh;
   }

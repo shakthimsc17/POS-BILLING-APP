@@ -4,6 +4,7 @@ import { useInventoryStore } from '../store/inventoryStore';
 import { useCompanyStore } from '../store/companyStore';
 import ItemCard from '../components/ItemCard';
 import CategoryFilter from '../components/CategoryFilter';
+import QuickSaleModal from '../components/QuickSaleModal';
 import { Item } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { storageService } from '../services/storage';
@@ -19,6 +20,7 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [allCategories, setAllCategories] = useState<any[]>([]); // Store all categories for filtering
+  const [showQuickSaleModal, setShowQuickSaleModal] = useState(false);
 
   const { items: cartItems, addItem, getTotal, getItemCount } = useCartStore();
   const { items, loadItems, searchItems } = useInventoryStore();
@@ -142,6 +144,15 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
           <h1>{company.logo ? '' : '🛒 '}Point of Sale Dashboard</h1>
           <p>Search and add items to cart</p>
         </div>
+        <div className="header-actions">
+          <button 
+            className="btn btn-success quick-sale-btn"
+            onClick={() => setShowQuickSaleModal(true)}
+            title="Quick Sale - Add items not in inventory"
+          >
+            ⚡ Quick Sale
+          </button>
+        </div>
       </div>
 
       {/* Search Bar and Category Filter */}
@@ -197,6 +208,12 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
           </div>
         )}
       </div>
+
+      {/* Quick Sale Modal */}
+      <QuickSaleModal
+        isOpen={showQuickSaleModal}
+        onClose={() => setShowQuickSaleModal(false)}
+      />
     </div>
   );
 }

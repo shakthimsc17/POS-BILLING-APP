@@ -15,12 +15,13 @@ import CompanySettings from './pages/CompanySettings';
 import Settings from './pages/Settings';
 import ActivityLogs from './pages/ActivityLogs';
 import BulkOperations from './pages/BulkOperations';
+import QuickSaleItems from './pages/QuickSaleItems';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import { useCompanyStore } from './store/companyStore';
 import './App.css';
 
-type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'sales' | 'customers' | 'import' | 'reports' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations';
+type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'sales' | 'customers' | 'import' | 'reports' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items';
 type AuthPage = 'signin' | 'signup';
 
 function App() {
@@ -138,6 +139,13 @@ function App() {
               <span className="nav-icon">📥</span>
               <span className="nav-text">Import</span>
             </button>
+            <button
+              className={currentPage === 'quick-sale-items' ? 'active' : ''}
+              onClick={() => setCurrentPage('quick-sale-items')}
+            >
+              <span className="nav-icon">⚡</span>
+              <span className="nav-text">Quick Sale Items</span>
+            </button>
           </div>
 
           {customer?.isAdmin && (
@@ -219,6 +227,7 @@ function App() {
           {currentPage === 'sales' && <SalesOrders />}
           {currentPage === 'customers' && customer?.isAdmin && <Customers />}
           {currentPage === 'import' && <Import />}
+          {currentPage === 'quick-sale-items' && <QuickSaleItems />}
           {currentPage === 'reports' && customer?.isAdmin && <Reports />}
           {currentPage === 'activity-logs' && customer?.isAdmin && <ActivityLogs />}
           {currentPage === 'bulk-operations' && <BulkOperations />}
@@ -228,7 +237,7 @@ function App() {
         </div>
 
         {/* Show footer for all pages except dashboard and sales-related pages */}
-        {!['dashboard', 'cart', 'sales'].includes(currentPage) && (
+        {!['dashboard', 'cart', 'sales', 'quick-sale-items'].includes(currentPage) && (
           <footer className="page-footer">
             <div className="footer-content">
               <p className="footer-text">Powered by <strong>SSS Soft Solution</strong></p>

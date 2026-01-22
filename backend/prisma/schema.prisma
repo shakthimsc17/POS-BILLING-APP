@@ -74,6 +74,7 @@ model Item {
   // Relations
   customer Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
   category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  quickSaleItems QuickSaleItem[]
 
   @@map("items")
   @@index([customerId])
@@ -189,4 +190,25 @@ model SalesCustomer {
 
   @@map("sales_customers")
   @@index([mobile])
+}
+
+model QuickSaleItem {
+  id                String    @id @default(uuid()) @db.Uuid
+  name              String    @db.VarChar(255)
+  quantity          Int
+  price             Decimal   @db.Decimal(10, 2)
+  totalAmount       Decimal   @map("total_amount") @db.Decimal(10, 2)
+  soldAt            DateTime  @default(now()) @map("sold_at") @db.Timestamptz(6)
+  addedToInventory  Boolean   @default(false) @map("added_to_inventory")
+  inventoryItemId   String?   @map("inventory_item_id") @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  inventoryItem Item? @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+
+  @@map("quick_sale_items")
+  @@index([addedToInventory])
+  @@index([inventoryItemId])
+  @@index([soldAt])
 }

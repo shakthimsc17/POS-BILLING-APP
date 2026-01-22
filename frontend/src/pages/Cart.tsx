@@ -63,24 +63,6 @@ export default function Cart({ onNavigate }: CartProps) {
     });
   };
 
-  const handleQuickSale = async () => {
-    if (items.length === 0) {
-      alert('Cart is empty');
-      return;
-    }
-
-    const confirmed = confirm('Process quick sale with default settings?');
-    if (!confirmed) return;
-
-    // Set default payment method if not set
-    if (!paymentMethod) {
-      setPaymentMethod('cash');
-    }
-
-    // Process payment with defaults
-    await handlePayment();
-  };
-
   const handlePayment = async () => {
     if (!paymentMethod) {
       alert('Please select a payment method');
@@ -215,10 +197,17 @@ export default function Cart({ onNavigate }: CartProps) {
               const originalPrice = cartItem.originalPrice ?? (typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price);
               const editingPriceValue = editingPrice[cartItem.item.id];
               
+              const isQuickSaleItem = cartItem.item.id.startsWith('quick-sale-');
+              
               return (
                 <div key={cartItem.item.id} className="cart-item">
                   <div className="cart-item-info">
-                    <h3>{cartItem.item.name}</h3>
+                    <div className="item-name-row">
+                      <h3>{cartItem.item.name}</h3>
+                      {isQuickSaleItem && (
+                        <span className="quick-sale-badge" title="Quick Sale Item">⚡ Quick Sale</span>
+                      )}
+                    </div>
                     <p className="item-code">Code: {cartItem.item.code}</p>
                     <div className="price-editor">
                       <label>Price:</label>
@@ -403,13 +392,6 @@ export default function Cart({ onNavigate }: CartProps) {
               disabled={processing || !paymentMethod}
             >
               {processing ? 'Processing...' : 'Complete Payment'}
-            </button>
-            <button
-              className="btn btn-success btn-large"
-              onClick={handleQuickSale}
-              disabled={processing || items.length === 0}
-            >
-              ⚡ Quick Sale
             </button>
             <div className="cart-actions-row">
               <button

@@ -1,4 +1,4 @@
-import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer } from '../types';
+import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer, QuickSaleItem } from '../types';
 import apiClient from '../lib/apiClient';
 
 export const storageService = {
@@ -184,5 +184,40 @@ export const storageService = {
 
   deleteSalesCustomer: async (id: string): Promise<void> => {
     await apiClient.delete(`/sales-customers/${id}`);
+  },
+
+  // Quick Sale Items
+  getQuickSaleItems: async (filter?: 'all' | 'pending' | 'added'): Promise<QuickSaleItem[]> => {
+    const query = filter ? `?filter=${filter}` : '';
+    return apiClient.get<QuickSaleItem[]>(`/quick-sale-items${query}`);
+  },
+
+  addQuickSaleItem: async (item: { name: string; quantity: number; price: number }): Promise<QuickSaleItem> => {
+    return apiClient.post<QuickSaleItem>('/quick-sale-items', item);
+  },
+
+  updateQuickSaleItem: async (id: string, updates: Partial<QuickSaleItem>): Promise<void> => {
+    await apiClient.put(`/quick-sale-items/${id}`, updates);
+  },
+
+  deleteQuickSaleItem: async (id: string): Promise<void> => {
+    await apiClient.delete(`/quick-sale-items/${id}`);
+  },
+
+  addQuickSaleItemToInventory: async (
+    id: string,
+    data: {
+      category_id: string;
+      code: string;
+      stock: number;
+      cost: number;
+      price?: number;
+      mrp?: number;
+      display_name?: string;
+      subcategory?: string;
+      barcode?: string;
+    }
+  ): Promise<Item> => {
+    return apiClient.post<Item>(`/quick-sale-items/${id}/add-to-inventory`, data);
   },
 };

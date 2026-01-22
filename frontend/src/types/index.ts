@@ -31,6 +31,7 @@ export interface CartItem {
   subtotal: number;
   customPrice?: number;
   originalPrice: number;
+  quickSaleItemId?: string;
 }
 
 export interface ItemCodePrefix {
@@ -115,6 +116,19 @@ export interface SalesCustomer {
   mobile: string;
   email?: string;
   place?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuickSaleItem {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number | string;
+  total_amount: number | string;
+  sold_at: string;
+  added_to_inventory: boolean;
+  inventory_item_id?: string;
   created_at: string;
   updated_at: string;
 }

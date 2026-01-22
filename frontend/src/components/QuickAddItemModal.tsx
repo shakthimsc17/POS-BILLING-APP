@@ -68,8 +68,15 @@ export default function QuickAddItemModal({ isOpen, onClose }: QuickAddItemModal
 
   if (!isOpen) return null;
 
+  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only close if clicking directly on the overlay, not on child elements
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={handleOverlayClick}>
       <div className="modal-content quick-add-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Quick Add Item</h2>
@@ -134,11 +141,13 @@ export default function QuickAddItemModal({ isOpen, onClose }: QuickAddItemModal
             <div className="selected-item-section">
               <h3>Selected Item</h3>
               <div className="selected-item-card">
-                <h4>{selectedItem.name}</h4>
-                <p>Code: {selectedItem.code}</p>
-                <p className="selected-price">
-                  {formatCurrency(typeof selectedItem.price === 'string' ? parseFloat(selectedItem.price) : selectedItem.price)}
-                </p>
+                <div className="selected-item-info">
+                  <h4>{selectedItem.name}</h4>
+                  <p>Code: {selectedItem.code}</p>
+                  <p className="selected-price">
+                    {formatCurrency(typeof selectedItem.price === 'string' ? parseFloat(selectedItem.price) : selectedItem.price)}
+                  </p>
+                </div>
                 <div className="quantity-selector">
                   <label>Quantity:</label>
                   <div className="quantity-controls">
