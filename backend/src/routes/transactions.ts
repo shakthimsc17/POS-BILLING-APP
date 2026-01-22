@@ -1,4 +1,5 @@
 import express from 'express';
+import { query, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { logActivity } from '../utils/activityLogger.js';
@@ -9,17 +10,34 @@ const router = express.Router();
 router.use(authenticate);
 
 // Get all transactions
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', [
+  query('page').optional().isInt({ min: 1 }),
+  query('limit').optional().isInt({ min: 1, max: 1000 }),
+], async (req: AuthRequest, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const skip = (page - 1) * limit;
+
     const isAdmin = req.customer?.isAdmin || false;
     
     // If admin, return all transactions; otherwise filter by customerId
     const whereClause = isAdmin ? {} : { customerId: req.customerId! };
     
-    const transactions = await prisma.transaction.findMany({
+    const [transactions, totalCount] = await Promise.all([
+      prisma.transaction.findMany({
       where: whereClause,
+        skip,
+        take: limit,
       orderBy: { createdAt: 'desc' },
-    });
+      }),
+      prisma.transaction.count({ where: whereClause }),
+    ]);
 
     // Transform Prisma camelCase to snake_case for frontend compatibility
     const transformedTransactions = transactions.map((tx) => ({
@@ -35,7 +53,16 @@ router.get('/', async (req: AuthRequest, res) => {
       created_at: tx.createdAt.toISOString(),
     }));
 
-    res.json(transformedTransactions);
+    res.json({
+      transactions: transformedTransactions,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasMore: skip + limit < totalCount,
+      },
+    });
   } catch (error: any) {
     console.error('Error fetching transactions:', error);
     res.status(500).json({ error: error.message || 'Failed to fetch transactions' });

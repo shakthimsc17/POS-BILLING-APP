@@ -34,6 +34,14 @@ export const useCartStore = create<CartStore>((set, get) => ({
     const currentItems = get().items;
     const existingItem = currentItems.find((ci) => ci.item.id === item.id);
     const itemPrice = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
+    
+    // Stock validation
+    const itemStock = typeof item.stock === 'number' ? item.stock : parseInt(item.stock?.toString() || '0', 10);
+    const requestedQuantity = existingItem ? existingItem.quantity + quantity : quantity;
+    
+    if (itemStock < requestedQuantity) {
+      throw new Error(`Only ${itemStock} ${item.name} available in stock. Requested: ${requestedQuantity}`);
+    }
 
     if (existingItem) {
       const currentPrice = existingItem.customPrice ?? itemPrice;
@@ -78,6 +86,15 @@ export const useCartStore = create<CartStore>((set, get) => ({
     const currentItems = get().items;
     const cartItem = currentItems.find((ci) => ci.item.id === itemId);
     if (cartItem) {
+      // Stock validation
+      const itemStock = typeof cartItem.item.stock === 'number' 
+        ? cartItem.item.stock 
+        : parseInt(cartItem.item.stock?.toString() || '0', 10);
+      
+      if (itemStock < quantity) {
+        throw new Error(`Only ${itemStock} ${cartItem.item.name} available in stock. Requested: ${quantity}`);
+      }
+      
       const itemPrice = get().getItemPrice(itemId);
       set({
         items: currentItems.map((ci) =>

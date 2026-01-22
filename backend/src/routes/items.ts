@@ -10,11 +10,28 @@ const router = express.Router();
 router.use(authenticate);
 
 // Get all items - show all items to all authenticated users (shared inventory)
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', [
+  query('page').optional().isInt({ min: 1 }),
+  query('limit').optional().isInt({ min: 1, max: 1000 }),
+], async (req: AuthRequest, res) => {
   try {
-    const items = await prisma.item.findMany({
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 100; // Default 100 items per page
+    const skip = (page - 1) * limit;
+
+    const [items, totalCount] = await Promise.all([
+      prisma.item.findMany({
+        skip,
+        take: limit,
       orderBy: { createdAt: 'desc' },
-    });
+      }),
+      prisma.item.count(),
+    ]);
 
     // Transform to snake_case for frontend
     const transformedItems = items.map(item => ({
@@ -34,7 +51,16 @@ router.get('/', async (req: AuthRequest, res) => {
       created_at: item.createdAt.toISOString(),
     }));
 
-    res.json(transformedItems);
+    res.json({
+      items: transformedItems,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasMore: skip + limit < totalCount,
+      },
+    });
   } catch (error: any) {
     console.error('Error fetching items:', error);
     res.status(500).json({ error: error.message || 'Failed to fetch items' });
