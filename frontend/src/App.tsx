@@ -16,12 +16,14 @@ import Settings from './pages/Settings';
 import ActivityLogs from './pages/ActivityLogs';
 import BulkOperations from './pages/BulkOperations';
 import QuickSaleItems from './pages/QuickSaleItems';
+import CashFlow from './pages/CashFlow';
+import SalesPerformance from './pages/SalesPerformance';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import { useCompanyStore } from './store/companyStore';
 import './App.css';
 
-type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'sales' | 'customers' | 'import' | 'reports' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items';
+type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'sales' | 'sales-performance' | 'customers' | 'import' | 'reports' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items' | 'cash-flow';
 type AuthPage = 'signin' | 'signup';
 
 function App() {
@@ -113,6 +115,20 @@ function App() {
             >
               <span className="nav-icon">💼</span>
               <span className="nav-text">Sales</span>
+            </button>
+            <button
+              className={currentPage === 'sales-performance' ? 'active' : ''}
+              onClick={() => setCurrentPage('sales-performance')}
+            >
+              <span className="nav-icon">📊</span>
+              <span className="nav-text">Sales Performance</span>
+            </button>
+            <button
+              className={currentPage === 'cash-flow' ? 'active' : ''}
+              onClick={() => setCurrentPage('cash-flow')}
+            >
+              <span className="nav-icon">💰</span>
+              <span className="nav-text">Cash Flow</span>
             </button>
           </div>
 
@@ -225,6 +241,8 @@ function App() {
           {currentPage === 'categories' && <Categories onNavigate={setCurrentPage} />}
           {currentPage === 'items' && <Items onNavigate={setCurrentPage} />}
           {currentPage === 'sales' && <SalesOrders />}
+          {currentPage === 'sales-performance' && <SalesPerformance />}
+          {currentPage === 'cash-flow' && <CashFlow />}
           {currentPage === 'customers' && customer?.isAdmin && <Customers />}
           {currentPage === 'import' && <Import />}
           {currentPage === 'quick-sale-items' && <QuickSaleItems />}

@@ -32,6 +32,7 @@ model Customer {
   company      Company?
   settings     Settings?
   activityLogs ActivityLog[]
+  cashFlowEntries CashFlowEntry[]
 
   @@map("customers")
   @@index([email])
@@ -211,4 +212,25 @@ model QuickSaleItem {
   @@index([addedToInventory])
   @@index([inventoryItemId])
   @@index([soldAt])
+}
+
+model CashFlowEntry {
+  id          String   @id @default(uuid()) @db.Uuid
+  customerId  String   @map("customer_id") @db.Uuid
+  type        String   @db.VarChar(20) // 'income' or 'expense'
+  category    String   @db.VarChar(100) // Predefined category names
+  amount      Decimal  @db.Decimal(10, 2)
+  description String?  @db.Text
+  entryDate   DateTime @map("entry_date") @db.Timestamptz(6) // Date of the transaction
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("cash_flow_entries")
+  @@index([customerId])
+  @@index([entryDate])
+  @@index([type])
+  @@index([category])
 }

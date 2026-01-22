@@ -1,4 +1,4 @@
-import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer, QuickSaleItem } from '../types';
+import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer, QuickSaleItem, CashFlowEntry, CashFlowSummary } from '../types';
 import apiClient from '../lib/apiClient';
 
 export const storageService = {
@@ -219,5 +219,82 @@ export const storageService = {
     }
   ): Promise<Item> => {
     return apiClient.post<Item>(`/quick-sale-items/${id}/add-to-inventory`, data);
+  },
+
+  // Cash Flow
+  getCashFlowEntries: async (filters?: {
+    startDate?: string;
+    endDate?: string;
+    type?: 'income' | 'expense';
+  }): Promise<CashFlowEntry[]> => {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    if (filters?.type) params.append('type', filters.type);
+    const query = params.toString();
+    return apiClient.get<CashFlowEntry[]>(`/cash-flow${query ? `?${query}` : ''}`);
+  },
+
+  addCashFlowEntry: async (entry: Omit<CashFlowEntry, 'id' | 'customer_id' | 'created_at' | 'updated_at'>): Promise<CashFlowEntry> => {
+    return apiClient.post<CashFlowEntry>('/cash-flow', entry);
+  },
+
+  updateCashFlowEntry: async (id: string, updates: Partial<CashFlowEntry>): Promise<void> => {
+    await apiClient.put(`/cash-flow/${id}`, updates);
+  },
+
+  deleteCashFlowEntry: async (id: string): Promise<void> => {
+    await apiClient.delete(`/cash-flow/${id}`);
+  },
+
+  getCashFlowSummary: async (filters?: {
+    startDate?: string;
+    endDate?: string;
+  }): Promise<CashFlowSummary> => {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append('startDate', filters.startDate);
+    if (filters?.endDate) params.append('endDate', filters.endDate);
+    const query = params.toString();
+    return apiClient.get<CashFlowSummary>(`/cash-flow/summary${query ? `?${query}` : ''}`);
+  },
+
+  getStockInvestment: async (): Promise<{ total_investment: number }> => {
+    return apiClient.get<{ total_investment: number }>('/cash-flow/stock-investment');
+  },
+
+  getCashFlowCategories: async (): Promise<{ income: any[]; expense: any[] }> => {
+    return apiClient.get<{ income: any[]; expense: any[] }>('/cash-flow/categories');
+  },
+
+  // Sales Performance
+  getSalesData: async (period: '7days' | 'week' | 'month' | 'year' | 'overall'): Promise<any[]> => {
+    return apiClient.get<any[]>(`/sales-performance/sales?period=${period}`);
+  },
+
+  getProfitData: async (period: '7days' | 'week' | 'month' | 'year' | 'overall'): Promise<any> => {
+    return apiClient.get<any>(`/sales-performance/profit?period=${period}`);
+  },
+
+  getTopItems: async (period: '7days' | 'week' | 'month' | 'year' | 'overall' = 'overall', limit: number = 10): Promise<any[]> => {
+    return apiClient.get<any[]>(`/sales-performance/top-items?period=${period}&limit=${limit}`);
+  },
+
+  getPaymentMethodsData: async (period: '7days' | 'week' | 'month' | 'year' | 'overall' = 'overall'): Promise<any[]> => {
+    return apiClient.get<any[]>(`/sales-performance/payment-methods?period=${period}`);
+  },
+
+  getHourlySalesData: async (date: string, startHour?: number, endHour?: number, endDate?: string): Promise<any[]> => {
+    const params = new URLSearchParams();
+    if (endDate) {
+      // Date range mode
+      params.append('startDate', date);
+      params.append('endDate', endDate);
+    } else {
+      // Single date mode
+      params.append('date', date);
+    }
+    if (startHour !== undefined) params.append('startHour', startHour.toString());
+    if (endHour !== undefined) params.append('endHour', endHour.toString());
+    return apiClient.get<any[]>(`/sales-performance/hourly?${params.toString()}`);
   },
 };

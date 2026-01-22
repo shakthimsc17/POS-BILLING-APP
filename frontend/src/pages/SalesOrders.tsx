@@ -7,13 +7,15 @@ import { useCompanyStore } from '../store/companyStore';
 import { useAuthStore } from '../store/authStore';
 import './SalesOrders.css';
 
-type FilterPeriod = 'today' | 'week' | 'month' | 'year' | 'all';
+type FilterPeriod = 'today' | 'week' | 'month' | 'year' | 'all' | 'custom';
 
 export default function SalesOrders() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filter, setFilter] = useState<FilterPeriod>('today');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const { customer: currentUser } = useAuthStore();
   const { company, loadCompany } = useCompanyStore();
@@ -40,7 +42,7 @@ export default function SalesOrders() {
 
   useEffect(() => {
     applyFilter();
-  }, [filter, transactions]);
+  }, [filter, transactions, customStartDate, customEndDate]);
 
   const loadTransactions = async () => {
     try {
@@ -75,21 +77,35 @@ export default function SalesOrders() {
 
   const applyFilter = () => {
     const now = new Date();
-    let startDate: Date;
+    let startDate: Date | null = null;
+    let endDate: Date | null = null;
 
     switch (filter) {
       case 'today':
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        endDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 - 1);
         break;
       case 'week':
         startDate = new Date(now);
         startDate.setDate(now.getDate() - 7);
+        endDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 - 1);
         break;
       case 'month':
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 - 1);
         break;
       case 'year':
         startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 - 1);
+        break;
+      case 'custom':
+        if (customStartDate && customEndDate) {
+          startDate = new Date(customStartDate);
+          endDate = new Date(customEndDate + 'T23:59:59');
+        } else {
+          setFilteredTransactions([]);
+          return;
+        }
         break;
       case 'all':
       default:
@@ -99,7 +115,12 @@ export default function SalesOrders() {
 
     const filtered = transactions.filter((tx) => {
       const txDate = new Date(tx.created_at);
-      return txDate >= startDate;
+      if (startDate && endDate) {
+        return txDate >= startDate && txDate <= endDate;
+      } else if (startDate) {
+        return txDate >= startDate;
+      }
+      return true;
     });
 
     setFilteredTransactions(filtered);
@@ -412,7 +433,33 @@ export default function SalesOrders() {
           >
             All Time
           </button>
+          <button
+            className={`filter-btn ${filter === 'custom' ? 'active' : ''}`}
+            onClick={() => setFilter('custom')}
+          >
+            Custom Range
+          </button>
         </div>
+        {filter === 'custom' && (
+          <div className="custom-date-filter">
+            <div className="date-input-group">
+              <label>Start Date:</label>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+              />
+            </div>
+            <div className="date-input-group">
+              <label>End Date:</label>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Summary Cards */}

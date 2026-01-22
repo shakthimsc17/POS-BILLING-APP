@@ -133,3 +133,72 @@ export interface QuickSaleItem {
   updated_at: string;
 }
 
+export interface CashFlowEntry {
+  id: string;
+  customer_id: string;
+  type: 'income' | 'expense';
+  category: string;
+  amount: number | string;
+  description?: string;
+  entry_date: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CashFlowSummary {
+  total_income: number;
+  total_sales: number;
+  manual_income: number;
+  total_expense: number;
+  net_cash_flow: number;
+}
+
+export interface CashFlowCategory {
+  name: string;
+  icon: string; // Emoji or icon identifier
+  type: 'income' | 'expense';
+}
+
+export const INCOME_CATEGORIES: CashFlowCategory[] = [
+  { name: 'Profit', icon: '💰', type: 'income' },
+  { name: 'Salary', icon: '💵', type: 'income' },
+  { name: 'Awards', icon: '🏆', type: 'income' },
+  { name: 'Rental', icon: '🏠', type: 'income' },
+  { name: 'Sale', icon: '🛒', type: 'income' },
+  { name: 'Refund', icon: '↩️', type: 'income' },
+  { name: 'Lottery', icon: '🎰', type: 'income' },
+  { name: 'Dividend', icon: '📈', type: 'income' },
+  { name: 'Investment', icon: '💼', type: 'income' },
+  { name: 'Interest', icon: '💳', type: 'income' },
+  { name: 'Commission', icon: '🤝', type: 'income' },
+  { name: 'Fee', icon: '💸', type: 'income' },
+  { name: 'Loan', icon: '🏦', type: 'income' },
+  { name: 'Miscellaneous', icon: '📦', type: 'income' },
+  { name: 'Custom', icon: '➕', type: 'income' }
+];
+
+export const EXPENSE_CATEGORIES: CashFlowCategory[] = [
+  { name: 'Tax', icon: '📋', type: 'expense' },
+  { name: 'Fuel', icon: '⛽', type: 'expense' },
+  { name: 'Food', icon: '🍔', type: 'expense' },
+  { name: 'Bill', icon: '📄', type: 'expense' },
+  { name: 'Transportation', icon: '🚗', type: 'expense' },
+  { name: 'Insurance', icon: '🛡️', type: 'expense' },
+  { name: 'Salary', icon: '👔', type: 'expense' },
+  { name: 'Rent', icon: '🏢', type: 'expense' },
+  { name: 'Repairs', icon: '🔧', type: 'expense' },
+  { name: 'Commissions', icon: '💼', type: 'expense' },
+  { name: 'Advertising', icon: '📢', type: 'expense' },
+  { name: 'Fee', icon: '💳', type: 'expense' },
+  { name: 'Interest', icon: '📊', type: 'expense' },
+  { name: 'Loan', icon: '🏦', type: 'expense' },
+  { name: 'Supplies', icon: '📦', type: 'expense' },
+  { name: 'Transfer', icon: '💸', type: 'expense' },
+  { name: 'Contract', icon: '📝', type: 'expense' },
+  { name: 'Miscellaneous', icon: '📋', type: 'expense' },
+  { name: 'Stock Investment', icon: '📊', type: 'expense' },
+  { name: 'Employee Salary', icon: '👥', type: 'expense' },
+  { name: 'Daily Expenses', icon: '☕', type: 'expense' },
+  { name: 'Custom', icon: '➕', type: 'expense' }
+];
+
