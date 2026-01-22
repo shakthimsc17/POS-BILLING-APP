@@ -87,6 +87,55 @@ router.get('/search', [query('q').notEmpty()], async (req: AuthRequest, res) => 
   }
 });
 
+// Get items by categories
+router.get('/by-categories', [query('categoryIds').notEmpty()], async (req: AuthRequest, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const categoryIdsParam = req.query.categoryIds as string;
+    const categoryIds = categoryIdsParam.split(',').filter(id => id.trim() !== '');
+
+    if (categoryIds.length === 0) {
+      return res.status(400).json({ error: 'At least one category ID is required' });
+    }
+
+    const items = await prisma.item.findMany({
+      where: {
+        categoryId: {
+          in: categoryIds,
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Transform to snake_case for frontend
+    const transformedItems = items.map(item => ({
+      id: item.id,
+      customer_id: item.customerId,
+      name: item.name,
+      display_name: item.displayName,
+      code: item.code,
+      barcode: item.barcode,
+      category_id: item.categoryId,
+      subcategory: item.subcategory,
+      cost: item.cost,
+      price: item.price,
+      mrp: item.mrp,
+      stock: item.stock,
+      image_url: item.imageUrl,
+      created_at: item.createdAt.toISOString(),
+    }));
+
+    res.json(transformedItems);
+  } catch (error: any) {
+    console.error('Error fetching items by categories:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch items by categories' });
+  }
+});
+
 // Get item by barcode
 router.get('/barcode/:barcode', async (req: AuthRequest, res) => {
   try {

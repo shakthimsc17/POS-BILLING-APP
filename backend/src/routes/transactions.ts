@@ -26,6 +26,7 @@ router.get('/', async (req: AuthRequest, res) => {
       id: tx.id,
       customer_id: tx.customerId,
       transaction_customer_id: tx.transactionCustomerId,
+      sales_customer_id: tx.salesCustomerId,
       total_amount: tx.totalAmount.toString(),
       payment_method: tx.paymentMethod,
       received_amount: tx.receivedAmount ? tx.receivedAmount.toString() : null,
@@ -51,6 +52,7 @@ router.post(
       const paymentMethod = req.body.paymentMethod || req.body.payment_method;
       const itemsJson = req.body.itemsJson || req.body.items_json;
       const transactionCustomerId = req.body.transactionCustomerId || req.body.transaction_customer_id;
+      const salesCustomerId = req.body.salesCustomerId || req.body.sales_customer_id;
       const receivedAmount = req.body.receivedAmount || req.body.received_amount;
       const changeAmount = req.body.changeAmount || req.body.change_amount;
 
@@ -93,6 +95,7 @@ router.post(
         data: {
           customerId: req.customerId!,
           transactionCustomerId,
+          salesCustomerId,
           totalAmount: parseFloat(totalAmount),
           paymentMethod,
           receivedAmount: receivedAmount ? parseFloat(receivedAmount) : null,
@@ -135,6 +138,7 @@ router.post(
         id: transaction.id,
         customer_id: transaction.customerId,
         transaction_customer_id: transaction.transactionCustomerId,
+        sales_customer_id: transaction.salesCustomerId,
         total_amount: transaction.totalAmount.toString(),
         payment_method: transaction.paymentMethod,
         received_amount: transaction.receivedAmount ? transaction.receivedAmount.toString() : null,

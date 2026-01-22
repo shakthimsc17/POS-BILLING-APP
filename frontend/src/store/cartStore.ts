@@ -10,6 +10,9 @@ interface CartStore {
   addItem: (item: Item, quantity?: number) => void;
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
+  setCustomPrice: (itemId: string, price: number) => void;
+  getItemPrice: (itemId: string) => number;
+  hasCustomPrice: (itemId: string) => boolean;
   clearCart: () => void;
   setPaymentMethod: (method: 'cash' | 'card' | 'upi') => void;
   setTaxRate: (rate: number) => void;
@@ -30,15 +33,17 @@ export const useCartStore = create<CartStore>((set, get) => ({
   addItem: (item: Item, quantity: number = 1) => {
     const currentItems = get().items;
     const existingItem = currentItems.find((ci) => ci.item.id === item.id);
+    const itemPrice = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
 
     if (existingItem) {
+      const currentPrice = existingItem.customPrice ?? itemPrice;
       set({
         items: currentItems.map((ci) =>
           ci.item.id === item.id
             ? {
                 ...ci,
                 quantity: ci.quantity + quantity,
-                subtotal: (ci.quantity + quantity) * item.price,
+                subtotal: (ci.quantity + quantity) * currentPrice,
               }
             : ci
         ),
@@ -50,7 +55,8 @@ export const useCartStore = create<CartStore>((set, get) => ({
           {
             item,
             quantity,
-            subtotal: quantity * item.price,
+            subtotal: quantity * itemPrice,
+            originalPrice: itemPrice,
           },
         ],
       });
@@ -72,13 +78,14 @@ export const useCartStore = create<CartStore>((set, get) => ({
     const currentItems = get().items;
     const cartItem = currentItems.find((ci) => ci.item.id === itemId);
     if (cartItem) {
+      const itemPrice = get().getItemPrice(itemId);
       set({
         items: currentItems.map((ci) =>
           ci.item.id === itemId
             ? {
                 ...ci,
                 quantity,
-                subtotal: quantity * ci.item.price,
+                subtotal: quantity * itemPrice,
               }
             : ci
         ),
@@ -86,11 +93,43 @@ export const useCartStore = create<CartStore>((set, get) => ({
     }
   },
 
+  setCustomPrice: (itemId: string, price: number) => {
+    const currentItems = get().items;
+    const cartItem = currentItems.find((ci) => ci.item.id === itemId);
+    if (cartItem) {
+      set({
+        items: currentItems.map((ci) =>
+          ci.item.id === itemId
+            ? {
+                ...ci,
+                customPrice: price,
+                subtotal: ci.quantity * price,
+                originalPrice: ci.originalPrice ?? (typeof ci.item.price === 'string' ? parseFloat(ci.item.price) : ci.item.price),
+              }
+            : ci
+        ),
+      });
+    }
+  },
+
+  getItemPrice: (itemId: string) => {
+    const cartItem = get().items.find((ci) => ci.item.id === itemId);
+    if (!cartItem) return 0;
+    if (cartItem.customPrice !== undefined) return cartItem.customPrice;
+    return typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price;
+  },
+
+  hasCustomPrice: (itemId: string) => {
+    const cartItem = get().items.find((ci) => ci.item.id === itemId);
+    return cartItem?.customPrice !== undefined;
+  },
+
   clearCart: () => {
     set({
       items: [],
       paymentMethod: null,
       discount: 0,
+      taxRate: 0,
     });
   },
 
@@ -107,7 +146,10 @@ export const useCartStore = create<CartStore>((set, get) => ({
   },
 
   getSubtotal: () => {
-    return calculateSubtotal(get().items);
+    return get().items.reduce((sum, ci) => {
+      const price = ci.customPrice ?? (typeof ci.item.price === 'string' ? parseFloat(ci.item.price) : ci.item.price);
+      return sum + (ci.quantity * price);
+    }, 0);
   },
 
   getTax: () => {

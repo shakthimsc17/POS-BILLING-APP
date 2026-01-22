@@ -23,6 +23,7 @@ router.get('/', async (req: AuthRequest, res) => {
       name: category.name,
       subcategory: category.subcategory,
       brand: category.brand,
+      icon: category.icon,
       created_at: category.createdAt.toISOString(),
     }));
 
@@ -40,6 +41,7 @@ router.post(
     body('name').notEmpty().trim(),
     body('subcategory').optional().isString().trim(),
     body('brand').optional().isString().trim(),
+    body('icon').optional().isString().trim(),
   ],
   async (req: AuthRequest, res) => {
     try {
@@ -48,7 +50,7 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { name, subcategory, brand } = req.body;
+      const { name, subcategory, brand, icon } = req.body;
 
       const category = await prisma.category.create({
         data: {
@@ -56,6 +58,7 @@ router.post(
           name,
           subcategory,
           brand,
+          icon,
         },
       });
 
@@ -78,6 +81,7 @@ router.post(
         name: category.name,
         subcategory: category.subcategory,
         brand: category.brand,
+        icon: category.icon,
         created_at: category.createdAt.toISOString(),
       });
     } catch (error: any) {
@@ -94,6 +98,7 @@ router.put(
     body('name').optional().notEmpty().trim(),
     body('subcategory').optional().isString().trim(),
     body('brand').optional().isString().trim(),
+    body('icon').optional().isString().trim(),
   ],
   async (req: AuthRequest, res) => {
     try {
@@ -103,7 +108,7 @@ router.put(
       }
 
       const { id } = req.params;
-      const { name, subcategory, brand } = req.body;
+      const { name, subcategory, brand, icon } = req.body;
 
       // Verify ownership
       const existing = await prisma.category.findFirst({
@@ -127,6 +132,7 @@ router.put(
           ...(name && { name }),
           ...(subcategory !== undefined && { subcategory }),
           ...(brand !== undefined && { brand }),
+          ...(icon !== undefined && { icon }),
         },
       });
 
@@ -153,6 +159,7 @@ router.put(
         name: category.name,
         subcategory: category.subcategory,
         brand: category.brand,
+        icon: category.icon,
         created_at: category.createdAt.toISOString(),
       });
     } catch (error: any) {

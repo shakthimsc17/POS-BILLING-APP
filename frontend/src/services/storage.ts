@@ -1,4 +1,4 @@
-import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings } from '../types';
+import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer } from '../types';
 import apiClient from '../lib/apiClient';
 
 export const storageService = {
@@ -57,6 +57,10 @@ export const storageService = {
       }
       throw error;
     }
+  },
+
+  getItemsByCategories: async (categoryIds: string): Promise<Item[]> => {
+    return apiClient.get<Item[]>(`/items/by-categories?categoryIds=${encodeURIComponent(categoryIds)}`);
   },
 
   // Transactions
@@ -159,5 +163,26 @@ export const storageService = {
     action?: string;
   }): Promise<{ message: string; count: number }> => {
     return apiClient.post<{ message: string; count: number }>('/activity-logs/delete-filtered', filters);
+  },
+
+  // Sales Customers
+  getSalesCustomers: async (): Promise<SalesCustomer[]> => {
+    return apiClient.get<SalesCustomer[]>('/sales-customers');
+  },
+
+  searchSalesCustomers: async (query: string): Promise<SalesCustomer[]> => {
+    return apiClient.get<SalesCustomer[]>(`/sales-customers/search?q=${encodeURIComponent(query)}`);
+  },
+
+  addSalesCustomer: async (customer: Omit<SalesCustomer, 'id' | 'created_at' | 'updated_at'>): Promise<SalesCustomer> => {
+    return apiClient.post<SalesCustomer>('/sales-customers', customer);
+  },
+
+  updateSalesCustomer: async (id: string, updates: Partial<SalesCustomer>): Promise<void> => {
+    await apiClient.put(`/sales-customers/${id}`, updates);
+  },
+
+  deleteSalesCustomer: async (id: string): Promise<void> => {
+    await apiClient.delete(`/sales-customers/${id}`);
   },
 };

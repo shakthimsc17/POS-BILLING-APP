@@ -4,6 +4,7 @@ export interface Category {
   name: string;
   subcategory?: string;
   brand?: string;
+  icon?: string;
   created_at: string;
 }
 
@@ -28,6 +29,8 @@ export interface CartItem {
   item: Item;
   quantity: number;
   subtotal: number;
+  customPrice?: number;
+  originalPrice: number;
 }
 
 export interface ItemCodePrefix {
@@ -56,7 +59,8 @@ export interface Customer {
 export interface Transaction {
   id: string;
   customer_id: string; // The customer who owns this transaction (the seller/store owner)
-  transaction_customer_id?: string; // The customer who made the purchase (buyer)
+  transaction_customer_id?: string; // The customer who made the purchase (buyer) - system user
+  sales_customer_id?: string; // The sales customer who made the purchase (buyer) - sales customer
   total_amount: number | string; // Prisma Decimal returns as string
   payment_method: 'cash' | 'card' | 'upi';
   received_amount?: number | string; // Prisma Decimal returns as string
@@ -101,6 +105,16 @@ export interface Settings {
   activity_log_enabled: boolean;
   item_log_actions: 'all' | 'update_delete';
   receipt_header_option: 'logo' | 'company_name' | 'both';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SalesCustomer {
+  id: string;
+  name: string;
+  mobile: string;
+  email?: string;
+  place?: string;
   created_at: string;
   updated_at: string;
 }

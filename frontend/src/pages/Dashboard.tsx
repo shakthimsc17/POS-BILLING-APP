@@ -3,8 +3,10 @@ import { useCartStore } from '../store/cartStore';
 import { useInventoryStore } from '../store/inventoryStore';
 import { useCompanyStore } from '../store/companyStore';
 import ItemCard from '../components/ItemCard';
+import CategoryFilter from '../components/CategoryFilter';
 import { Item } from '../types';
 import { formatCurrency } from '../utils/formatters';
+import { storageService } from '../services/storage';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -14,6 +16,9 @@ interface DashboardProps {
 export default function Dashboard({ onNavigate }: DashboardProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [displayItems, setDisplayItems] = useState<Item[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [allCategories, setAllCategories] = useState<any[]>([]); // Store all categories for filtering
 
   const { items: cartItems, addItem, getTotal, getItemCount } = useCartStore();
   const { items, loadItems, searchItems } = useInventoryStore();
@@ -21,7 +26,23 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
 
   useEffect(() => {
     loadItems();
+    loadCategories();
   }, [loadItems]);
+
+  const loadCategories = async () => {
+    try {
+      const data = await storageService.getCategories();
+      // Store all categories for filtering
+      setAllCategories(data);
+      // Filter to show only unique categories by name (keep first occurrence) for display
+      const uniqueCategories = data.filter((category, index, self) =>
+        index === self.findIndex((c) => c.name.toLowerCase() === category.name.toLowerCase())
+      );
+      setCategories(uniqueCategories);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  };
 
   useEffect(() => {
     // Load company data from database
@@ -29,32 +50,70 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
   }, [loadCompany]);
 
   useEffect(() => {
-    if (searchQuery.trim() === '') {
-      // Sort items alphabetically by name
-      const sortedItems = [...items].sort((a, b) => 
-        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
-      );
-      setDisplayItems(sortedItems);
-    } else {
-      handleSearch(searchQuery);
-    }
-  }, [searchQuery, items]);
+    filterItems();
+  }, [searchQuery, items, selectedCategories]);
 
-  const handleSearch = async (query: string) => {
-    if (query.trim() === '') {
-      // Sort items alphabetically by name
-      const sortedItems = [...items].sort((a, b) => 
-        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
-      );
-      setDisplayItems(sortedItems);
-      return;
+  const filterItems = async () => {
+    let filtered: Item[] = [];
+
+    // If categories are selected, filter by categories
+    if (selectedCategories.length > 0) {
+      // Get all category IDs that match the selected category names
+      // This handles cases where multiple categories have the same name
+      const selectedCategoryNames = categories
+        .filter(cat => selectedCategories.includes(cat.id))
+        .map(cat => cat.name.toLowerCase());
+      
+      const allMatchingCategoryIds = allCategories
+        .filter(cat => selectedCategoryNames.includes(cat.name.toLowerCase()))
+        .map(cat => cat.id);
+
+      if (allMatchingCategoryIds.length > 0) {
+        try {
+          const categoryIds = allMatchingCategoryIds.join(',');
+          const categoryItems = await storageService.getItemsByCategories(categoryIds);
+          // Remove duplicates in case backend returns any
+          const uniqueItems = categoryItems.filter((item, index, self) =>
+            index === self.findIndex((i) => i.id === item.id)
+          );
+          filtered = uniqueItems;
+        } catch (error) {
+          console.error('Error fetching items by categories:', error);
+          // Fallback to client-side filtering - show items from ANY selected category
+          filtered = items.filter(item => 
+            item.category_id && allMatchingCategoryIds.includes(item.category_id)
+          );
+        }
+      }
+    } else {
+      filtered = items;
     }
-    const results = await searchItems(query);
-    // Sort search results alphabetically too
-    const sortedResults = [...results].sort((a, b) => 
+
+    // Apply search filter if search query exists
+    if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(item =>
+        item.name.toLowerCase().includes(query) ||
+        item.code.toLowerCase().includes(query) ||
+        (item.barcode && item.barcode.toLowerCase().includes(query))
+      );
+    }
+
+    // Sort items alphabetically by name
+    const sortedItems = filtered.sort((a, b) => 
       a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
     );
-    setDisplayItems(sortedResults);
+    setDisplayItems(sortedItems);
+  };
+
+  const handleToggleCategory = (categoryId: string) => {
+    setSelectedCategories(prev => {
+      if (prev.includes(categoryId)) {
+        return prev.filter(id => id !== categoryId);
+      } else {
+        return [...prev, categoryId];
+      }
+    });
   };
 
   const handleItemPress = (item: Item) => {
@@ -85,15 +144,26 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="card search-container">
-        <input
-          type="text"
-          className="input"
-          placeholder="🔍 Search items by name, code, or barcode..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+      {/* Search Bar and Category Filter */}
+      <div className="search-and-filter-container">
+        <div className="card search-container">
+          <input
+            type="text"
+            className="input"
+            placeholder="🔍 Search items by name, code, or barcode..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        {categories.length > 0 && (
+          <div className="card category-filter-container">
+            <CategoryFilter
+              categories={categories}
+              selectedCategories={selectedCategories}
+              onToggleCategory={handleToggleCategory}
+            />
+          </div>
+        )}
       </div>
 
       {/* Cart Summary */}
