@@ -77,7 +77,8 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
   deleteCategory: async (id) => {
     try {
       await storageService.deleteCategory(id);
-      set({ categories: get().categories.filter((c) => c.id !== id) });
+      // Reload categories to ensure we have the latest from database
+      await get().loadCategories();
     } catch (error) {
       set({ error: (error as Error).message });
       throw error;
@@ -87,7 +88,8 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
   deleteAllCategories: async () => {
     try {
       const result = await storageService.deleteAllCategories();
-      set({ categories: [] });
+      // Reload categories to ensure we have the latest from database
+      await get().loadCategories();
       return result;
     } catch (error) {
       set({ error: (error as Error).message });

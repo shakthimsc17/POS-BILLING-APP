@@ -491,12 +491,17 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
       {/* Delete All Confirmation Modal */}
       {deleteAllModalVisible && (
         <div className="modal-overlay" onClick={() => setDeleteAllModalVisible(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Delete All Categories</h2>
-            <p>
-              Are you sure you want to delete <strong>all {categories.length} categor{categories.length === 1 ? 'y' : 'ies'}</strong>?
-              This action cannot be undone.
-            </p>
+          <div className="modal-content categories-delete-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Delete All Categories</h2>
+              <button className="modal-close" onClick={() => setDeleteAllModalVisible(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <p>
+                Are you sure you want to delete <strong>all {categories.length} categor{categories.length === 1 ? 'y' : 'ies'}</strong>?
+                This action cannot be undone.
+              </p>
+            </div>
             <div className="modal-actions">
               <button
                 className="btn btn-secondary"
