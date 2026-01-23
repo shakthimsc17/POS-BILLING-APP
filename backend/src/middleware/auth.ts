@@ -38,6 +38,7 @@ export const authenticate = async (
           state: true,
           pincode: true,
           isAdmin: true,
+          customerType: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -57,7 +58,21 @@ export const authenticate = async (
         });
       }
 
-      req.customer = customer;
+      // Transform to snake_case for consistency
+      req.customer = {
+        id: customer.id,
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        address: customer.address,
+        city: customer.city,
+        state: customer.state,
+        pincode: customer.pincode,
+        isAdmin: customer.isAdmin,
+        customerType: customer.customerType || 'sales person',
+        createdAt: customer.createdAt,
+        updatedAt: customer.updatedAt,
+      };
       next();
     } catch (error) {
       return res.status(401).json({ error: 'Invalid token' });

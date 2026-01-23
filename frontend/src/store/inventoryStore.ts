@@ -113,9 +113,16 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
   updateItem: async (id, item) => {
     try {
       await storageService.updateItem(id, item);
-      set({
-        items: get().items.map((i) => (i.id === id ? { ...i, ...item } : i)),
-      });
+      const currentItems = get().items;
+      // Ensure items is an array before mapping
+      if (Array.isArray(currentItems)) {
+        set({
+          items: currentItems.map((i) => (i.id === id ? { ...i, ...item } : i)),
+        });
+      } else {
+        // If items is not an array, reload from server
+        await get().loadItems();
+      }
     } catch (error) {
       set({ error: (error as Error).message });
       throw error;

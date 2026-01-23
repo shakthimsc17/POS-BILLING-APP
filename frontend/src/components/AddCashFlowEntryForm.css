@@ -1,0 +1,240 @@
+.entry-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  padding: 1rem;
+}
+
+.entry-form-modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.entry-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: #3498db;
+  border-radius: 12px 12px 0 0;
+}
+
+.entry-form-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.entry-form-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+}
+
+.entry-form-header-spacer {
+  width: 32px;
+}
+
+.entry-form-body {
+  padding: 2rem;
+}
+
+.entry-form-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-size: 0.85rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.amount-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.currency-symbol {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-right: 0.5rem;
+}
+
+.amount-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  padding: 0.5rem 0;
+  background: transparent;
+}
+
+.amount-input::placeholder {
+  color: #9ca3af;
+}
+
+.amount-underline {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #3498db;
+}
+
+.amount-input.error + .amount-underline {
+  background: #e74c3c;
+}
+
+.error-message {
+  color: #e74c3c;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.submit-button {
+  width: 100%;
+  padding: 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+}
+
+.submit-button.income {
+  background: #27ae60;
+}
+
+.submit-button.income:hover {
+  background: #229954;
+}
+
+.submit-button.expense {
+  background: #e74c3c;
+}
+
+.submit-button.expense:hover {
+  background: #c0392b;
+}
+
+.date-field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.date-display {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.date-label {
+  font-size: 0.85rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.date-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.notes-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.notes-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.notes-input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #e0e6ed;
+  padding: 0.5rem 0;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.notes-input:focus {
+  border-bottom-color: #3498db;
+}
+
+@media (max-width: 768px) {
+  .entry-form-modal {
+    max-width: 100%;
+    margin: 1rem;
+  }
+
+  .entry-form-body {
+    padding: 1.5rem;
+  }
+
+  .entry-form-card {
+    padding: 1.5rem;
+  }
+
+  .amount-input {
+    font-size: 1.5rem;
+  }
+
+  .currency-symbol {
+    font-size: 1.5rem;
+  }
+}
+

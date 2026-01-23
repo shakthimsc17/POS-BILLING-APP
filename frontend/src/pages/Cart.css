@@ -64,11 +64,29 @@
   flex: 1;
 }
 
+.item-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .cart-item-info h3 {
-  margin: 0 0 0.5rem 0;
+  margin: 0;
   font-size: 1rem;
   font-weight: 600;
   color: #1a1a1a;
+}
+
+.quick-sale-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background: #fff3cd;
+  color: #856404;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .cart-item-info .item-code {
@@ -206,6 +224,110 @@
 .cart-actions .btn-large:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.cart-actions-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.cart-actions-row .btn {
+  flex: 1;
+}
+
+.btn-success {
+  background: #27ae60;
+  color: white;
+  border: none;
+}
+
+.btn-success:hover {
+  background: #229954;
+}
+
+.btn-small {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.875rem;
+}
+
+.price-editor {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.price-editor label {
+  display: block;
+  font-size: 0.85rem;
+  color: #6c757d;
+  margin-bottom: 0.25rem;
+  width: 100%;
+}
+
+.price-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.price-input {
+  width: 120px;
+  padding: 0.5rem;
+  border: 1px solid #e0e6ed;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.price-input.custom-price {
+  border-color: #f39c12;
+  background: #fffbf0;
+}
+
+.custom-price-badge {
+  color: #f39c12;
+  font-weight: 700;
+  font-size: 1.2rem;
+  cursor: help;
+}
+
+.original-price-hint {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.75rem;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.customer-display {
+  margin-top: 0.5rem;
+}
+
+.selected-customer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e6ed;
+}
+
+.customer-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.customer-details strong {
+  color: #1a1a1a;
+  font-size: 1rem;
+}
+
+.customer-details span {
+  color: #6c757d;
+  font-size: 0.85rem;
 }
 
 .customer-selection {

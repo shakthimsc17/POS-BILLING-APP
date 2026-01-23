@@ -80,6 +80,11 @@
   color: #1a1a1a;
   margin-bottom: 0.4rem;
   font-size: 0.9rem;
+  margin-top: 10px;
+}
+
+.form-group:first-child label {
+  margin-top: 0;
 }
 
 .form-group .input {
