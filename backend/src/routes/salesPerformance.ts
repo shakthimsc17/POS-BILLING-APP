@@ -2,6 +2,8 @@ import express from 'express';
 import { query, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { parseTransactionItems } from '../utils/transactionParser.js';
+import { getDayRangeLocal, getLocalHour } from '../utils/dateUtils.js';
 
 const router = express.Router();
 
@@ -86,30 +88,25 @@ router.get('/sales', [
 
       // Calculate profit from items
       try {
-        const items = JSON.parse(tx.itemsJson);
+        const { items } = parseTransactionItems(tx.itemsJson);
         items.forEach((cartItem: any) => {
-          // Items can be stored as { item: {...}, quantity, subtotal } or directly as item
           const item = cartItem.item || cartItem;
           const quantity = cartItem.quantity || item.quantity || 1;
           
-          // Get cost and price - check multiple possible locations
           let itemCost = 0;
-          let itemPrice = 0;
-          
           if (item.cost !== undefined) {
             itemCost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
           }
           
-          // Price might be custom price or original price
-          if (cartItem.customPrice !== undefined) {
-            itemPrice = typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : (cartItem.customPrice || 0);
-          } else if (item.price !== undefined) {
-            itemPrice = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
-          } else if (cartItem.originalPrice !== undefined) {
-            itemPrice = typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : (cartItem.originalPrice || 0);
-          }
+          // Get price - use customPrice if available, otherwise use original price
+          const originalPrice = cartItem.originalPrice !== undefined
+            ? (typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : cartItem.originalPrice)
+            : (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
+          const sellingPrice = cartItem.customPrice !== undefined
+            ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
+            : originalPrice;
           
-          const profit = (itemPrice - itemCost) * quantity;
+          const profit = (sellingPrice - itemCost) * quantity;
           grouped[key].profit += profit;
         });
       } catch (e) {
@@ -196,31 +193,26 @@ router.get('/profit', [
       totalSales += amount;
 
       try {
-        const items = JSON.parse(tx.itemsJson);
+        const { items } = parseTransactionItems(tx.itemsJson);
         items.forEach((cartItem: any) => {
-          // Items can be stored as { item: {...}, quantity, subtotal } or directly as item
           const item = cartItem.item || cartItem;
           const quantity = cartItem.quantity || item.quantity || 1;
           
-          // Get cost and price - check multiple possible locations
           let itemCost = 0;
-          let itemPrice = 0;
-          
           if (item.cost !== undefined) {
             itemCost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
           }
           
-          // Price might be custom price or original price
-          if (cartItem.customPrice !== undefined) {
-            itemPrice = typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : (cartItem.customPrice || 0);
-          } else if (item.price !== undefined) {
-            itemPrice = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
-          } else if (cartItem.originalPrice !== undefined) {
-            itemPrice = typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : (cartItem.originalPrice || 0);
-          }
+          // Get price - use customPrice if available, otherwise use original price
+          const originalPrice = cartItem.originalPrice !== undefined
+            ? (typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : cartItem.originalPrice)
+            : (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
+          const sellingPrice = cartItem.customPrice !== undefined
+            ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
+            : originalPrice;
           
           totalCost += itemCost * quantity;
-          totalProfit += (itemPrice - itemCost) * quantity;
+          totalProfit += (sellingPrice - itemCost) * quantity;
         });
       } catch (e) {
         console.error('Error calculating profit for transaction:', e);
@@ -292,9 +284,8 @@ router.get('/top-items', [
 
     transactions.forEach((tx) => {
       try {
-        const items = JSON.parse(tx.itemsJson);
+        const { items } = parseTransactionItems(tx.itemsJson);
         items.forEach((cartItem: any) => {
-          // Items can be stored as { item: {...}, quantity, subtotal } or directly as item
           const item = cartItem.item || cartItem;
           const quantity = cartItem.quantity || item.quantity || 1;
           
@@ -304,19 +295,15 @@ router.get('/top-items', [
           // Get item name - check multiple possible locations
           const itemName = item.name || item.display_name || cartItem.name || cartItem.display_name || item.item?.name || 'Unknown';
           
-          // Get price - might be custom price or original price
-          let price = 0;
-          if (cartItem.customPrice !== undefined) {
-            price = typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : (cartItem.customPrice || 0);
-          } else if (item.price !== undefined) {
-            price = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
-          } else if (cartItem.originalPrice !== undefined) {
-            price = typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : (cartItem.originalPrice || 0);
-          } else if (cartItem.subtotal !== undefined) {
-            price = typeof cartItem.subtotal === 'string' ? parseFloat(cartItem.subtotal) : (cartItem.subtotal || 0) / quantity;
-          }
+          // Get price - use customPrice if available, otherwise use original price
+          const originalPrice = cartItem.originalPrice !== undefined
+            ? (typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : cartItem.originalPrice)
+            : (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
+          const sellingPrice = cartItem.customPrice !== undefined
+            ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
+            : originalPrice;
           
-          const revenue = price * quantity;
+          const revenue = sellingPrice * quantity;
 
           if (!itemMap[itemId]) {
             itemMap[itemId] = { name: itemName, quantity: 0, revenue: 0 };
@@ -337,7 +324,7 @@ router.get('/top-items', [
         quantity: data.quantity,
         revenue: data.revenue,
       }))
-      .sort((a, b) => b.revenue - a.revenue)
+      .sort((a, b) => b.quantity - a.quantity)
       .slice(0, limit);
 
     res.json(topItems);
@@ -413,9 +400,9 @@ router.get('/payment-methods', [
   }
 });
 
-// Get hourly sales data
+// Get hourly sales data - NEW CLEAN IMPLEMENTATION
 router.get('/hourly', [
-  query('date').isISO8601().withMessage('Date must be a valid ISO8601 date'),
+  query('date').notEmpty().withMessage('Date is required'),
   query('startHour').optional().isInt({ min: 0, max: 23 }),
   query('endHour').optional().isInt({ min: 0, max: 23 }),
 ], async (req: AuthRequest, res) => {
@@ -426,24 +413,20 @@ router.get('/hourly', [
     }
 
     const customerId = req.customerId!;
-    const { date, startHour, endHour } = req.query;
-    
-    const startHourNum = startHour ? parseInt(startHour as string) : 8; // Default 8am
-    const endHourNum = endHour ? parseInt(endHour as string) : 22; // Default 10pm (22:00)
-    
-    const selectedDate = new Date(date as string);
-    const startDateTime = new Date(selectedDate);
-    startDateTime.setHours(startHourNum, 0, 0, 0);
-    
-    const endDateTime = new Date(selectedDate);
-    endDateTime.setHours(endHourNum, 59, 59, 999);
+    const dateParam = req.query.date as string;
+    const startHourNum = req.query.startHour ? parseInt(req.query.startHour as string) : 8;
+    const endHourNum = req.query.endHour ? parseInt(req.query.endHour as string) : 22;
 
+    // Use consistent date utility to get day range in local timezone
+    const { start: dayStart, end: dayEnd } = getDayRangeLocal(dateParam);
+
+    // Fetch all transactions for the entire day
     const transactions = await prisma.transaction.findMany({
       where: {
         customerId,
         createdAt: {
-          gte: startDateTime,
-          lte: endDateTime,
+          gte: dayStart,
+          lte: dayEnd,
         },
       },
       select: {
@@ -454,68 +437,69 @@ router.get('/hourly', [
       orderBy: { createdAt: 'asc' },
     });
 
-    // Initialize hourly data (8am to 10pm)
-    const hourlyData: Record<number, { sales: number; profit: number; count: number }> = {};
-    for (let hour = startHourNum; hour <= endHourNum; hour++) {
-      hourlyData[hour] = { sales: 0, profit: 0, count: 0 };
+    // Initialize hourly buckets
+    const hourlyBuckets: Record<number, { sales: number; profit: number; count: number }> = {};
+    for (let h = startHourNum; h <= endHourNum; h++) {
+      hourlyBuckets[h] = { sales: 0, profit: 0, count: 0 };
     }
 
-    transactions.forEach((tx) => {
-      const txDate = new Date(tx.createdAt);
-      const hour = txDate.getHours();
+    // Process each transaction
+    transactions.forEach((transaction) => {
+      const txDate = new Date(transaction.createdAt);
+      // Use local hour to match local timezone expectations
+      const hour = getLocalHour(txDate);
       
+      // Only process if hour is within range
       if (hour >= startHourNum && hour <= endHourNum) {
-        if (!hourlyData[hour]) {
-          hourlyData[hour] = { sales: 0, profit: 0, count: 0 };
-        }
-        
-        const amount = Number(tx.totalAmount);
-        hourlyData[hour].sales += amount;
-        hourlyData[hour].count += 1;
+        const amount = Number(transaction.totalAmount) || 0;
+        hourlyBuckets[hour].sales += amount;
+        hourlyBuckets[hour].count += 1;
 
-        // Calculate profit
+        // Calculate profit from items
         try {
-          const items = JSON.parse(tx.itemsJson);
+          const { items } = parseTransactionItems(transaction.itemsJson);
           items.forEach((cartItem: any) => {
             const item = cartItem.item || cartItem;
-            const quantity = cartItem.quantity || item.quantity || 1;
+            const quantity = cartItem.quantity || 1;
             
+            // Get cost
             let itemCost = 0;
-            let itemPrice = 0;
-            
             if (item.cost !== undefined) {
               itemCost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
             }
             
-            if (cartItem.customPrice !== undefined) {
-              itemPrice = typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : (cartItem.customPrice || 0);
-            } else if (item.price !== undefined) {
-              itemPrice = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
-            } else if (cartItem.originalPrice !== undefined) {
-              itemPrice = typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : (cartItem.originalPrice || 0);
-            }
+            // Get selling price - use customPrice if available, otherwise original price
+            const originalPrice = cartItem.originalPrice !== undefined
+              ? (typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : cartItem.originalPrice)
+              : (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
             
-            const profit = (itemPrice - itemCost) * quantity;
-            hourlyData[hour].profit += profit;
+            const sellingPrice = cartItem.customPrice !== undefined
+              ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
+              : originalPrice;
+            
+            const profit = (sellingPrice - itemCost) * quantity;
+            hourlyBuckets[hour].profit += profit;
           });
-        } catch (e) {
-          // Skip if itemsJson is invalid
+        } catch (error) {
+          console.error('Error parsing transaction items:', error);
         }
       }
     });
 
-    // Convert to array format for charts
-    const chartData = Object.entries(hourlyData)
-      .map(([hour, data]) => ({
-        hour: parseInt(hour),
-        hourLabel: `${hour.toString().padStart(2, '0')}:00`,
+    // Build response array with all hours in range
+    const result = [];
+    for (let h = startHourNum; h <= endHourNum; h++) {
+      const data = hourlyBuckets[h];
+      result.push({
+        hour: h,
+        hourLabel: `${String(h).padStart(2, '0')}:00`,
         sales: data.sales,
         profit: data.profit,
         count: data.count,
-      }))
-      .sort((a, b) => a.hour - b.hour);
+      });
+    }
 
-    res.json(chartData);
+    res.json(result);
   } catch (error: any) {
     console.error('Error fetching hourly sales data:', error);
     res.status(500).json({ error: error.message || 'Failed to fetch hourly sales data' });

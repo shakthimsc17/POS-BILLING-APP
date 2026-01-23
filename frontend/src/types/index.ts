@@ -21,6 +21,7 @@ export interface Item {
   price: number | string; // Prisma Decimal returns as string
   mrp?: number | string; // Prisma Decimal returns as string
   stock: number;
+  purchase_qty?: number;
   image_url?: string;
   created_at: string;
 }

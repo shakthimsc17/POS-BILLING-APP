@@ -82,6 +82,10 @@ export const storageService = {
     await apiClient.delete(`/transactions/${id}`);
   },
 
+  refreshTransaction: async (id: string): Promise<{ message: string; transaction?: Transaction; updated: boolean }> => {
+    return apiClient.post<{ message: string; transaction?: Transaction; updated: boolean }>(`/transactions/${id}/refresh`);
+  },
+
   // Customers
   getCustomers: async (): Promise<Customer[]> => {
     const response = await apiClient.get<{ customers: Customer[]; pagination?: any } | Customer[]>('/customers');

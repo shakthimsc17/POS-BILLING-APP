@@ -3,6 +3,7 @@ import { storageService } from '../services/storage';
 import { Transaction, Customer } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { printReceipt } from '../utils/printer';
+import { parseTransactionItems } from '../utils/transactionParser';
 import { useCompanyStore } from '../store/companyStore';
 import { useAuthStore } from '../store/authStore';
 import { usePermissions } from '../hooks/usePermissions';
@@ -148,24 +149,40 @@ export default function SalesOrders() {
   // Calculate profit/loss for a single transaction
   const calculateTransactionProfitLoss = (transaction: Transaction) => {
     try {
-      const items = JSON.parse(transaction.items_json);
+      const { items, metadata = {} } = parseTransactionItems(transaction.items_json);
+      
       let totalProfit = 0;
       let totalLoss = 0;
-      let originalSubtotal = 0;
+      let originalSubtotal = 0; // Subtotal with original prices (before item discounts)
+      let itemDiscountTotal = 0; // Total item-wise discounts
+      let subtotalAfterItemDiscount = 0; // Subtotal after item discounts
 
       items.forEach((cartItem: any) => {
         const item = cartItem.item || cartItem; // Handle both CartItem and Item formats
         const quantity = cartItem.quantity || 1;
         
+        // Get original price
+        const originalPrice = cartItem.originalPrice !== undefined
+          ? (typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : cartItem.originalPrice)
+          : (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
+        
         // Get selling price - use customPrice if available, otherwise use item price
         const sellingPrice = cartItem.customPrice !== undefined
           ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
-          : (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
+          : originalPrice;
         
         const cost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
 
-        // Calculate original subtotal (before discount)
-        originalSubtotal += sellingPrice * quantity;
+        // Calculate original subtotal (before item discounts)
+        originalSubtotal += originalPrice * quantity;
+        
+        // Calculate subtotal after item discounts
+        subtotalAfterItemDiscount += sellingPrice * quantity;
+        
+        // Calculate item discount
+        if (cartItem.customPrice !== undefined && sellingPrice < originalPrice) {
+          itemDiscountTotal += (originalPrice - sellingPrice) * quantity;
+        }
 
         if (cost > 0) {
           const difference = sellingPrice - cost;
@@ -179,24 +196,39 @@ export default function SalesOrders() {
         }
       });
 
-      // Calculate discount: original subtotal - actual total amount
-      const totalAmount = typeof transaction.total_amount === 'string' 
-        ? parseFloat(transaction.total_amount) 
-        : transaction.total_amount;
-      const discount = Math.max(0, originalSubtotal - totalAmount);
+      // Get overall discount from metadata if available, otherwise calculate from difference
+      let overallDiscount = 0;
+      if (metadata.discount !== undefined) {
+        overallDiscount = typeof metadata.discount === 'string' ? parseFloat(metadata.discount) : metadata.discount;
+      } else {
+        // Fallback: calculate overall discount from difference (for old transactions)
+        const totalAmount = typeof transaction.total_amount === 'string' 
+          ? parseFloat(transaction.total_amount) 
+          : transaction.total_amount;
+        const tax = metadata.tax || 0;
+        // Overall Discount = (Subtotal After Item Discount + Tax) - Total Amount
+        overallDiscount = Math.max(0, (subtotalAfterItemDiscount + tax) - totalAmount);
+      }
 
-      // Adjust profit by discount (discount reduces profit)
-      const adjustedProfit = Math.max(0, totalProfit - discount);
+      // Adjust profit by overall discount (overall discount reduces profit proportionally)
+      // The overall discount is applied to the total after item discounts
+      const adjustedProfit = overallDiscount > 0 && subtotalAfterItemDiscount > 0
+        ? Math.max(0, totalProfit * (1 - (overallDiscount / subtotalAfterItemDiscount)))
+        : totalProfit;
 
       return { 
         profit: adjustedProfit, 
         loss: totalLoss,
-        discount: discount,
-        originalProfit: totalProfit
+        discount: overallDiscount, // Overall discount
+        itemDiscount: itemDiscountTotal, // Item-wise discount total
+        originalProfit: totalProfit,
+        subtotal: originalSubtotal, // Original subtotal before any discounts
+        subtotalAfterItemDiscount: subtotalAfterItemDiscount, // Subtotal after item discounts
+        tax: metadata.tax || 0
       };
     } catch (error) {
       console.error('Error calculating profit/loss:', error);
-      return { profit: 0, loss: 0, discount: 0, originalProfit: 0 };
+      return { profit: 0, loss: 0, discount: 0, itemDiscount: 0, originalProfit: 0, subtotal: 0, subtotalAfterItemDiscount: 0, tax: 0 };
     }
   };
 
@@ -217,7 +249,7 @@ export default function SalesOrders() {
 
   const handlePrintReceipt = async (transaction: Transaction) => {
     try {
-      const items = JSON.parse(transaction.items_json);
+      const { items } = parseTransactionItems(transaction.items_json);
       await printReceipt({
         items,
         transaction,
@@ -249,7 +281,7 @@ export default function SalesOrders() {
 
     filteredTransactions.forEach((tx) => {
       const date = new Date(tx.created_at);
-      const items = JSON.parse(tx.items_json);
+      const { items } = parseTransactionItems(tx.items_json);
       const customer = tx.transaction_customer_id 
         ? customers.find(c => c.id === tx.transaction_customer_id)?.name || 'Walk-in'
         : 'Walk-in';
@@ -334,7 +366,7 @@ export default function SalesOrders() {
             <tbody>
               ${filteredTransactions.map(tx => {
                 const date = new Date(tx.created_at);
-                const items = JSON.parse(tx.items_json);
+                const { items } = parseTransactionItems(tx.items_json);
                 const customer = tx.transaction_customer_id 
                   ? customers.find(c => c.id === tx.transaction_customer_id)?.name || 'Walk-in'
                   : 'Walk-in';
@@ -572,13 +604,21 @@ export default function SalesOrders() {
               </thead>
               <tbody>
                 {filteredTransactions.map((transaction) => {
-                  const items = JSON.parse(transaction.items_json);
+                  const { items } = parseTransactionItems(transaction.items_json);
+                  
                   // transaction_customer_id is the buyer (customer who made the purchase)
                   const customer = transaction.transaction_customer_id 
                     ? customers.find(c => c.id === transaction.transaction_customer_id)
                     : null;
                   const profitLoss = canViewProfitData ? calculateTransactionProfitLoss(transaction) : null;
                   const netProfit = profitLoss ? profitLoss.profit - profitLoss.loss : null;
+                  
+                  // Check if transaction has quick sale items
+                  const hasQuickSaleItems = items.some((cartItem: any) => {
+                    const item = cartItem.item || cartItem;
+                    return item.id && typeof item.id === 'string' && item.id.startsWith('quick-sale-');
+                  });
+                  
                   return (
                     <tr key={transaction.id}>
                       <td>{formatDate(transaction.created_at)}</td>
@@ -596,16 +636,55 @@ export default function SalesOrders() {
                       <td>
                         <div className="items-details">
                           <div className="items-count">
-                            {items.length} item{items.length !== 1 ? 's' : ''}
+                            {items.length} item{items.length !== 1 ? 's' : ''} ({items.reduce((sum: number, cartItem: any) => sum + (cartItem.quantity || 1), 0)} qty)
                           </div>
                           <div className="items-list">
                             {items.slice(0, 3).map((cartItem: any, idx: number) => {
                               const item = cartItem.item || cartItem;
+                              const quantity = cartItem.quantity || 1;
+                              
+                              // Get original price
+                              const originalPrice = cartItem.originalPrice !== undefined
+                                ? (typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : cartItem.originalPrice)
+                                : (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
+                              
+                              // Get selling price - use customPrice if available, otherwise use item price
+                              const sellingPrice = cartItem.customPrice !== undefined
+                                ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
+                                : originalPrice;
+                              
+                              // Calculate item discount
+                              const itemDiscount = cartItem.customPrice !== undefined && cartItem.customPrice < originalPrice
+                                ? (originalPrice - sellingPrice) * quantity
+                                : 0;
+                              
+                              const itemTotal = sellingPrice * quantity;
+                              const originalTotal = originalPrice * quantity;
+                              
                               return (
                                 <div key={idx} className="item-detail">
-                                  <span className="item-name">{item.name}</span>
-                                  {item.code && <span className="item-code">({item.code})</span>}
-                                  <span className="item-qty">x{cartItem.quantity || 1}</span>
+                                  <div className="item-name-row">
+                                    <span className="item-name">{item.name}</span>
+                                    {item.code && <span className="item-code">({item.code})</span>}
+                                    <span className="item-qty">x{quantity}</span>
+                                  </div>
+                                  <div className="item-price-row">
+                                    {itemDiscount > 0 ? (
+                                      <>
+                                        <span className="item-price-original" style={{ textDecoration: 'line-through', color: '#999', marginRight: '8px' }}>
+                                          @ {formatCurrency(originalPrice)} = {formatCurrency(originalTotal)}
+                                        </span>
+                                        <span className="item-price-discounted" style={{ color: '#e74c3c', fontWeight: 'bold' }}>
+                                          @ {formatCurrency(sellingPrice)} = {formatCurrency(itemTotal)}
+                                        </span>
+                                        <span className="item-discount-badge" style={{ color: '#27ae60', marginLeft: '8px', fontSize: '0.85em' }}>
+                                          (-{formatCurrency(itemDiscount)})
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <span className="item-price">@ {formatCurrency(sellingPrice)} = {formatCurrency(itemTotal)}</span>
+                                    )}
+                                  </div>
                                 </div>
                               );
                             })}
@@ -625,16 +704,22 @@ export default function SalesOrders() {
                       {canViewProfitData && profitLoss && (
                         <td>
                           <div className="profit-loss-cell">
-                            {profitLoss.profit > 0 && (
-                              <div className="profit-badge">
-                                <span className="profit-label">Profit:</span>
-                                <span className="profit-amount">+{formatCurrency(profitLoss.profit)}</span>
+                            {(profitLoss.itemDiscount || 0) > 0 && (
+                              <div className="item-discount-badge" style={{ fontSize: '0.85em', color: '#27ae60' }}>
+                                <span className="discount-label">Item Disc:</span>
+                                <span className="discount-amount">-{formatCurrency(profitLoss.itemDiscount || 0)}</span>
                               </div>
                             )}
                             {profitLoss.discount > 0 && (
                               <div className="discount-badge">
-                                <span className="discount-label">Discount:</span>
+                                <span className="discount-label">Overall Disc:</span>
                                 <span className="discount-amount">-{formatCurrency(profitLoss.discount)}</span>
+                              </div>
+                            )}
+                            {profitLoss.profit > 0 && (
+                              <div className="profit-badge">
+                                <span className="profit-label">Profit:</span>
+                                <span className="profit-amount">+{formatCurrency(profitLoss.profit)}</span>
                               </div>
                             )}
                             {profitLoss.loss > 0 && (
@@ -643,7 +728,7 @@ export default function SalesOrders() {
                                 <span className="loss-amount">-{formatCurrency(profitLoss.loss)}</span>
                               </div>
                             )}
-                            {profitLoss.profit === 0 && profitLoss.loss === 0 && profitLoss.discount === 0 && (
+                            {profitLoss.profit === 0 && profitLoss.loss === 0 && profitLoss.discount === 0 && (profitLoss.itemDiscount || 0) === 0 && (
                               <span className="no-profit-loss">-</span>
                             )}
                             {netProfit !== null && netProfit !== 0 && (
@@ -663,6 +748,27 @@ export default function SalesOrders() {
                           >
                             🖨️ Print
                           </button>
+                          {hasQuickSaleItems && (
+                            <button
+                              className="btn btn-info btn-sm"
+                              onClick={async () => {
+                                try {
+                                  const result = await storageService.refreshTransaction(transaction.id);
+                                  if (result.updated) {
+                                    alert('Transaction refreshed! Cost information updated.');
+                                    loadTransactions();
+                                  } else {
+                                    alert('Items not yet added to inventory. Please add quick sale items to inventory first.');
+                                  }
+                                } catch (error: any) {
+                                  alert(`Failed to refresh transaction: ${error.message || 'Unknown error'}`);
+                                }
+                              }}
+                              title="Refresh with cost info (for quick sale items)"
+                            >
+                              🔄
+                            </button>
+                          )}
                           {(isAdmin || transaction.customer_id === currentUser?.id) && (
                             <button
                               className="btn btn-danger btn-sm"

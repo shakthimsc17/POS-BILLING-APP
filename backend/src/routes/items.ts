@@ -47,6 +47,7 @@ router.get('/', [
       price: item.price,
       mrp: item.mrp,
       stock: item.stock,
+      purchase_qty: item.purchaseQty || 0,
       image_url: item.imageUrl,
       created_at: item.createdAt.toISOString(),
     }));
@@ -102,6 +103,7 @@ router.get('/search', [query('q').notEmpty()], async (req: AuthRequest, res) => 
       price: item.price,
       mrp: item.mrp,
       stock: item.stock,
+      purchase_qty: item.purchase_qty || 0,
       image_url: item.image_url,
       created_at: item.created_at ? new Date(item.created_at).toISOString() : new Date().toISOString(),
     }));
@@ -151,6 +153,7 @@ router.get('/by-categories', [query('categoryIds').notEmpty()], async (req: Auth
       price: item.price,
       mrp: item.mrp,
       stock: item.stock,
+      purchase_qty: item.purchaseQty || 0,
       image_url: item.imageUrl,
       created_at: item.createdAt.toISOString(),
     }));
@@ -191,6 +194,7 @@ router.get('/barcode/:barcode', async (req: AuthRequest, res) => {
       price: item.price,
       mrp: item.mrp,
       stock: item.stock,
+      purchase_qty: item.purchaseQty || 0,
       image_url: item.imageUrl,
       created_at: item.createdAt.toISOString(),
     });
