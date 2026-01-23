@@ -632,30 +632,39 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
 
       {modalVisible && (
         <div className="modal-overlay" onClick={() => setModalVisible(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>{editingItem ? 'Edit Item' : 'Add Item'}</h2>
-            <label>
-              Name *:
-              <input
-                type="text"
-                className="input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </label>
-            <label>
-              Display Name (for receipt):
-              <input
-                type="text"
-                className="input"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Auto-filled from name, can be modified"
-              />
-              <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
-                This name will be shown on receipts. Leave empty to use item name.
-              </small>
-            </label>
+          <div className="modal-content items-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editingItem ? 'Edit Item' : 'Add Item'}</h2>
+              <button className="modal-close" onClick={() => setModalVisible(false)}>×</button>
+            </div>
+            <div className="modal-body">
+            {/* Basic Information */}
+            <div className="form-row">
+              <label>
+                Name *:
+                <input
+                  type="text"
+                  className="input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </label>
+              <label>
+                Display Name (for receipt):
+                <input
+                  type="text"
+                  className="input"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Auto-filled from name, can be modified"
+                />
+                <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                  This name will be shown on receipts. Leave empty to use item name.
+                </small>
+              </label>
+            </div>
+
+            {/* Code Entry Method */}
             <div style={{ marginBottom: '10px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                 <input
@@ -683,8 +692,9 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
               </label>
             </div>
 
+            {/* Code Information */}
             {!useManualCode ? (
-              <>
+              <div className="form-row">
                 <label>
                   Item Code Prefix *:
                   <select
@@ -720,7 +730,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                     </small>
                   </label>
                 )}
-              </>
+              </div>
             ) : (
               <label>
                 Item Code * (Manual Entry):
@@ -740,72 +750,101 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                 </small>
               </label>
             )}
-            <label>
-              Barcode:
-              <input
-                type="text"
-                className="input"
-                value={barcode}
-                onChange={(e) => setBarcode(e.target.value)}
-                placeholder="Auto-filled from prefix + product code-size"
-              />
-            </label>
-            <label>
-              Category:
-              <select
-                className="input"
-                value={categoryId}
-                onChange={(e) => {
-                  setCategoryId(e.target.value);
-                  setSubcategory(''); // Reset subcategory when category changes
-                }}
-              >
-                <option value="">None</option>
-                {categories.length === 0 ? (
-                  <option value="" disabled>Loading categories...</option>
-                ) : (
-                  getUniqueMainCategories().map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))
-                )}
-              </select>
-              {categories.length === 0 && (
-                <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
-                  No categories available. Create categories first.
-                </small>
-              )}
-            </label>
-            {categoryId && getSubcategories().length > 0 && (
+            
+            <div className="form-row">
               <label>
-                Subcategory:
-                <select
-                  className="input"
-                  value={subcategory}
-                  onChange={(e) => setSubcategory(e.target.value)}
-                >
-                  <option value="">None</option>
-                  {getSubcategories().map((subcat, idx) => (
-                    <option key={idx} value={subcat}>
-                      {subcat}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            {categoryId && getSubcategories().length === 0 && (
-              <label>
-                Subcategory (Optional):
+                Barcode:
                 <input
                   type="text"
                   className="input"
-                  placeholder="Enter subcategory"
-                  value={subcategory}
-                  onChange={(e) => setSubcategory(e.target.value)}
+                  value={barcode}
+                  onChange={(e) => setBarcode(e.target.value)}
+                  placeholder="Auto-filled from prefix + product code-size"
                 />
               </label>
-            )}
+              <label>
+                Stock:
+                <input
+                  type="number"
+                  className="input"
+                  value={stock}
+                  onChange={(e) => setStock(e.target.value)}
+                  min="0"
+                />
+              </label>
+            </div>
+
+            {/* Category Information */}
+            <div className="form-row">
+              <label>
+                Category:
+                <select
+                  className="input"
+                  value={categoryId}
+                  onChange={(e) => {
+                    setCategoryId(e.target.value);
+                    setSubcategory(''); // Reset subcategory when category changes
+                  }}
+                >
+                  <option value="">None</option>
+                  {categories.length === 0 ? (
+                    <option value="" disabled>Loading categories...</option>
+                  ) : (
+                    getUniqueMainCategories().map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+                {categories.length === 0 && (
+                  <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                    No categories available. Create categories first.
+                  </small>
+                )}
+              </label>
+              {categoryId && getSubcategories().length > 0 ? (
+                <label>
+                  Subcategory:
+                  <select
+                    className="input"
+                    value={subcategory}
+                    onChange={(e) => setSubcategory(e.target.value)}
+                  >
+                    <option value="">None</option>
+                    {getSubcategories().map((subcat, idx) => (
+                      <option key={idx} value={subcat}>
+                        {subcat}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : categoryId && getSubcategories().length === 0 ? (
+                <label>
+                  Subcategory (Optional):
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Enter subcategory"
+                    value={subcategory}
+                    onChange={(e) => setSubcategory(e.target.value)}
+                  />
+                </label>
+              ) : (
+                <label>
+                  Subcategory:
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Select category first"
+                    value={subcategory}
+                    disabled
+                  />
+                </label>
+              )}
+            </div>
+
+            {/* Pricing Information */}
             <div className="form-row">
               <label>
                 Cost (₹) *:
@@ -844,16 +883,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                 placeholder="Maximum Retail Price"
               />
             </label>
-            <label>
-              Stock:
-              <input
-                type="number"
-                className="input"
-                value={stock}
-                onChange={(e) => setStock(e.target.value)}
-                min="0"
-              />
-            </label>
+            </div>
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setModalVisible(false)}>
                 Cancel

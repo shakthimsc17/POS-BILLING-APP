@@ -4,6 +4,7 @@ export interface Category {
   name: string;
   subcategory?: string;
   brand?: string;
+  icon?: string;
   created_at: string;
 }
 
@@ -28,6 +29,9 @@ export interface CartItem {
   item: Item;
   quantity: number;
   subtotal: number;
+  customPrice?: number;
+  originalPrice: number;
+  quickSaleItemId?: string;
 }
 
 export interface ItemCodePrefix {
@@ -48,15 +52,38 @@ export interface Customer {
   state?: string;
   pincode?: string;
   isAdmin?: boolean;
+  customer_type?: string;
   password_hash?: string; // For authentication (not returned to client)
   created_at: string;
   updated_at: string;
 }
 
+export interface Permission {
+  id: string;
+  customer_type: string;
+  page: string;
+  can_view: boolean;
+  can_edit: boolean;
+  can_delete: boolean;
+  can_view_profit: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PagePermission {
+  page: string;
+  label: string;
+  can_view: boolean;
+  can_edit: boolean;
+  can_delete: boolean;
+  can_view_profit: boolean;
+}
+
 export interface Transaction {
   id: string;
   customer_id: string; // The customer who owns this transaction (the seller/store owner)
-  transaction_customer_id?: string; // The customer who made the purchase (buyer)
+  transaction_customer_id?: string; // The customer who made the purchase (buyer) - system user
+  sales_customer_id?: string; // The sales customer who made the purchase (buyer) - sales customer
   total_amount: number | string; // Prisma Decimal returns as string
   payment_method: 'cash' | 'card' | 'upi';
   received_amount?: number | string; // Prisma Decimal returns as string
@@ -104,4 +131,97 @@ export interface Settings {
   created_at: string;
   updated_at: string;
 }
+
+export interface SalesCustomer {
+  id: string;
+  name: string;
+  mobile: string;
+  email?: string;
+  place?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuickSaleItem {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number | string;
+  total_amount: number | string;
+  sold_at: string;
+  added_to_inventory: boolean;
+  inventory_item_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CashFlowEntry {
+  id: string;
+  customer_id: string;
+  type: 'income' | 'expense';
+  category: string;
+  amount: number | string;
+  description?: string;
+  entry_date: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CashFlowSummary {
+  total_income: number;
+  total_sales: number;
+  manual_income: number;
+  total_expense: number;
+  total_profit?: number; // Profit from transactions for filtered date range
+  net_cash_flow: number;
+}
+
+export interface CashFlowCategory {
+  name: string;
+  icon: string; // Emoji or icon identifier
+  type: 'income' | 'expense';
+}
+
+export const INCOME_CATEGORIES: CashFlowCategory[] = [
+  { name: 'Profit', icon: '💰', type: 'income' },
+  { name: 'Salary', icon: '💵', type: 'income' },
+  { name: 'Awards', icon: '🏆', type: 'income' },
+  { name: 'Rental', icon: '🏠', type: 'income' },
+  { name: 'Sale', icon: '🛒', type: 'income' },
+  { name: 'Refund', icon: '↩️', type: 'income' },
+  { name: 'Lottery', icon: '🎰', type: 'income' },
+  { name: 'Dividend', icon: '📈', type: 'income' },
+  { name: 'Investment', icon: '💼', type: 'income' },
+  { name: 'Interest', icon: '💳', type: 'income' },
+  { name: 'Commission', icon: '🤝', type: 'income' },
+  { name: 'Fee', icon: '💸', type: 'income' },
+  { name: 'Loan', icon: '🏦', type: 'income' },
+  { name: 'Miscellaneous', icon: '📦', type: 'income' },
+  { name: 'Custom', icon: '➕', type: 'income' }
+];
+
+export const EXPENSE_CATEGORIES: CashFlowCategory[] = [
+  { name: 'Tax', icon: '📋', type: 'expense' },
+  { name: 'Fuel', icon: '⛽', type: 'expense' },
+  { name: 'Food', icon: '🍔', type: 'expense' },
+  { name: 'Bill', icon: '📄', type: 'expense' },
+  { name: 'Transportation', icon: '🚗', type: 'expense' },
+  { name: 'Insurance', icon: '🛡️', type: 'expense' },
+  { name: 'Salary', icon: '👔', type: 'expense' },
+  { name: 'Rent', icon: '🏢', type: 'expense' },
+  { name: 'Repairs', icon: '🔧', type: 'expense' },
+  { name: 'Commissions', icon: '💼', type: 'expense' },
+  { name: 'Advertising', icon: '📢', type: 'expense' },
+  { name: 'Fee', icon: '💳', type: 'expense' },
+  { name: 'Interest', icon: '📊', type: 'expense' },
+  { name: 'Loan', icon: '🏦', type: 'expense' },
+  { name: 'Supplies', icon: '📦', type: 'expense' },
+  { name: 'Transfer', icon: '💸', type: 'expense' },
+  { name: 'Contract', icon: '📝', type: 'expense' },
+  { name: 'Miscellaneous', icon: '📋', type: 'expense' },
+  { name: 'Stock Investment', icon: '📊', type: 'expense' },
+  { name: 'Employee Salary', icon: '👥', type: 'expense' },
+  { name: 'Daily Expenses', icon: '☕', type: 'expense' },
+  { name: 'Custom', icon: '➕', type: 'expense' }
+];
 

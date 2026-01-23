@@ -14,6 +14,7 @@ export default function Customers() {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [pincode, setPincode] = useState('');
+  const [customerType, setCustomerType] = useState('sales person');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,10 +25,13 @@ export default function Customers() {
     try {
       setLoading(true);
       const data = await storageService.getCustomers();
-      setCustomers(data);
+      // Ensure data is an array
+      const customersArray = Array.isArray(data) ? data : [];
+      setCustomers(customersArray);
     } catch (error) {
       console.error('Error loading customers:', error);
       alert('Failed to load customers');
+      setCustomers([]);
     } finally {
       setLoading(false);
     }
@@ -48,6 +52,7 @@ export default function Customers() {
     setCity(customer.city || '');
     setState(customer.state || '');
     setPincode(customer.pincode || '');
+    setCustomerType(customer.customer_type || 'sales person');
     setModalVisible(true);
   };
 
@@ -67,6 +72,7 @@ export default function Customers() {
           city: city || undefined,
           state: state || undefined,
           pincode: pincode || undefined,
+          customer_type: customerType,
         });
       } else {
         await storageService.addCustomer({
@@ -77,6 +83,7 @@ export default function Customers() {
           city: city || undefined,
           state: state || undefined,
           pincode: pincode || undefined,
+          customer_type: customerType,
         });
       }
       setModalVisible(false);
@@ -108,6 +115,7 @@ export default function Customers() {
     setCity('');
     setState('');
     setPincode('');
+    setCustomerType('sales person');
   };
 
   if (loading) {
@@ -138,6 +146,7 @@ export default function Customers() {
                   <th>Name</th>
                   <th>Phone</th>
                   <th>Email</th>
+                  <th>Customer Type</th>
                   <th>Address</th>
                   <th>Actions</th>
                 </tr>
@@ -148,6 +157,11 @@ export default function Customers() {
                     <td className="customer-name">{customer.name}</td>
                     <td>{customer.phone || '-'}</td>
                     <td>{customer.email || '-'}</td>
+                    <td>
+                      <span className={`customer-type-badge ${customer.customer_type?.toLowerCase().replace(' ', '-') || 'sales-person'}`}>
+                        {customer.customer_type || 'sales person'}
+                      </span>
+                    </td>
                     <td>
                       {customer.address && (
                         <div className="customer-address">
@@ -188,8 +202,12 @@ export default function Customers() {
 
       {modalVisible && (
         <div className="modal-overlay" onClick={() => setModalVisible(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>{editingCustomer ? 'Edit Customer' : 'Add Customer'}</h2>
+          <div className="modal-content customers-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editingCustomer ? 'Edit Customer' : 'Add Customer'}</h2>
+              <button className="modal-close" onClick={() => setModalVisible(false)}>×</button>
+            </div>
+            <div className="modal-body">
             <label>
               Name *:
               <input
@@ -221,6 +239,18 @@ export default function Customers() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
+              </label>
+              <label>
+                Customer Type:
+                <select
+                  className="input"
+                  value={customerType}
+                  onChange={(e) => setCustomerType(e.target.value)}
+                >
+                  <option value="sales person">Sales Person</option>
+                  <option value="manager">Manager</option>
+                  <option value="Admin">Admin</option>
+                </select>
               </label>
             </div>
             <label>
@@ -264,6 +294,7 @@ export default function Customers() {
                   onChange={(e) => setPincode(e.target.value)}
                 />
               </label>
+            </div>
             </div>
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setModalVisible(false)}>

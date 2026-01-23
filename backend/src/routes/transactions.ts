@@ -1,4 +1,5 @@
 import express from 'express';
+import { query, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { logActivity } from '../utils/activityLogger.js';
@@ -9,23 +10,41 @@ const router = express.Router();
 router.use(authenticate);
 
 // Get all transactions
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', [
+  query('page').optional().isInt({ min: 1 }),
+  query('limit').optional().isInt({ min: 1, max: 1000 }),
+], async (req: AuthRequest, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const skip = (page - 1) * limit;
+
     const isAdmin = req.customer?.isAdmin || false;
     
     // If admin, return all transactions; otherwise filter by customerId
     const whereClause = isAdmin ? {} : { customerId: req.customerId! };
     
-    const transactions = await prisma.transaction.findMany({
+    const [transactions, totalCount] = await Promise.all([
+      prisma.transaction.findMany({
       where: whereClause,
+        skip,
+        take: limit,
       orderBy: { createdAt: 'desc' },
-    });
+      }),
+      prisma.transaction.count({ where: whereClause }),
+    ]);
 
     // Transform Prisma camelCase to snake_case for frontend compatibility
     const transformedTransactions = transactions.map((tx) => ({
       id: tx.id,
       customer_id: tx.customerId,
       transaction_customer_id: tx.transactionCustomerId,
+      sales_customer_id: tx.salesCustomerId,
       total_amount: tx.totalAmount.toString(),
       payment_method: tx.paymentMethod,
       received_amount: tx.receivedAmount ? tx.receivedAmount.toString() : null,
@@ -34,7 +53,16 @@ router.get('/', async (req: AuthRequest, res) => {
       created_at: tx.createdAt.toISOString(),
     }));
 
-    res.json(transformedTransactions);
+    res.json({
+      transactions: transformedTransactions,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasMore: skip + limit < totalCount,
+      },
+    });
   } catch (error: any) {
     console.error('Error fetching transactions:', error);
     res.status(500).json({ error: error.message || 'Failed to fetch transactions' });
@@ -51,6 +79,7 @@ router.post(
       const paymentMethod = req.body.paymentMethod || req.body.payment_method;
       const itemsJson = req.body.itemsJson || req.body.items_json;
       const transactionCustomerId = req.body.transactionCustomerId || req.body.transaction_customer_id;
+      const salesCustomerId = req.body.salesCustomerId || req.body.sales_customer_id;
       const receivedAmount = req.body.receivedAmount || req.body.received_amount;
       const changeAmount = req.body.changeAmount || req.body.change_amount;
 
@@ -93,6 +122,7 @@ router.post(
         data: {
           customerId: req.customerId!,
           transactionCustomerId,
+          salesCustomerId,
           totalAmount: parseFloat(totalAmount),
           paymentMethod,
           receivedAmount: receivedAmount ? parseFloat(receivedAmount) : null,
@@ -135,6 +165,7 @@ router.post(
         id: transaction.id,
         customer_id: transaction.customerId,
         transaction_customer_id: transaction.transactionCustomerId,
+        sales_customer_id: transaction.salesCustomerId,
         total_amount: transaction.totalAmount.toString(),
         payment_method: transaction.paymentMethod,
         received_amount: transaction.receivedAmount ? transaction.receivedAmount.toString() : null,
