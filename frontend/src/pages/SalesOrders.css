@@ -337,7 +337,8 @@
 }
 
 .profit-badge,
-.loss-badge {
+.loss-badge,
+.discount-badge {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -353,13 +354,24 @@
 }
 
 .profit-label,
-.loss-label {
+.loss-label,
+.discount-label {
   font-size: 0.75rem;
   opacity: 0.8;
 }
 
 .profit-amount {
   color: #27ae60;
+  font-weight: 700;
+}
+
+.discount-badge {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.discount-amount {
+  color: #f57c00;
   font-weight: 700;
 }
 

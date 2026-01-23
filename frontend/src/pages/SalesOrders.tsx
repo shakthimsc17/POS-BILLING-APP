@@ -151,12 +151,21 @@ export default function SalesOrders() {
       const items = JSON.parse(transaction.items_json);
       let totalProfit = 0;
       let totalLoss = 0;
+      let originalSubtotal = 0;
 
       items.forEach((cartItem: any) => {
         const item = cartItem.item || cartItem; // Handle both CartItem and Item formats
         const quantity = cartItem.quantity || 1;
-        const sellingPrice = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
+        
+        // Get selling price - use customPrice if available, otherwise use item price
+        const sellingPrice = cartItem.customPrice !== undefined
+          ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
+          : (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
+        
         const cost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
+
+        // Calculate original subtotal (before discount)
+        originalSubtotal += sellingPrice * quantity;
 
         if (cost > 0) {
           const difference = sellingPrice - cost;
@@ -164,16 +173,30 @@ export default function SalesOrders() {
             // Profit: selling price is higher than cost
             totalProfit += difference * quantity;
           } else if (difference < 0) {
-            // Loss: selling price is lower than cost
+            // Loss: selling price is lower than cost (selling at a loss)
             totalLoss += Math.abs(difference) * quantity;
           }
         }
       });
 
-      return { profit: totalProfit, loss: totalLoss };
+      // Calculate discount: original subtotal - actual total amount
+      const totalAmount = typeof transaction.total_amount === 'string' 
+        ? parseFloat(transaction.total_amount) 
+        : transaction.total_amount;
+      const discount = Math.max(0, originalSubtotal - totalAmount);
+
+      // Adjust profit by discount (discount reduces profit)
+      const adjustedProfit = Math.max(0, totalProfit - discount);
+
+      return { 
+        profit: adjustedProfit, 
+        loss: totalLoss,
+        discount: discount,
+        originalProfit: totalProfit
+      };
     } catch (error) {
       console.error('Error calculating profit/loss:', error);
-      return { profit: 0, loss: 0 };
+      return { profit: 0, loss: 0, discount: 0, originalProfit: 0 };
     }
   };
 
@@ -608,13 +631,19 @@ export default function SalesOrders() {
                                 <span className="profit-amount">+{formatCurrency(profitLoss.profit)}</span>
                               </div>
                             )}
+                            {profitLoss.discount > 0 && (
+                              <div className="discount-badge">
+                                <span className="discount-label">Discount:</span>
+                                <span className="discount-amount">-{formatCurrency(profitLoss.discount)}</span>
+                              </div>
+                            )}
                             {profitLoss.loss > 0 && (
                               <div className="loss-badge">
                                 <span className="loss-label">Loss:</span>
                                 <span className="loss-amount">-{formatCurrency(profitLoss.loss)}</span>
                               </div>
                             )}
-                            {profitLoss.profit === 0 && profitLoss.loss === 0 && (
+                            {profitLoss.profit === 0 && profitLoss.loss === 0 && profitLoss.discount === 0 && (
                               <span className="no-profit-loss">-</span>
                             )}
                             {netProfit !== null && netProfit !== 0 && (
