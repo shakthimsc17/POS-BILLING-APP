@@ -87,14 +87,20 @@ export default function CashFlow() {
       setEntries(entriesData);
       setStockInvestment(stockInvestmentData.total_investment);
       
-      // Net Cash Flow uses all-time data (already calculated in backend)
+      // Net Cash Flow for selected day/range: profit + manual income - expense
       // Income/Expense cards use filtered data
+      const dayProfit = summaryData.total_profit || 0;
+      const dayManualIncome = summaryData.manual_income || 0;
+      const dayExpense = summaryData.total_expense || 0;
+      const dayNetFlow = dayProfit + dayManualIncome - dayExpense;
+      
       setSummary({
         total_income: summaryData.total_income,
         total_sales: summaryData.total_sales || 0,
         manual_income: summaryData.manual_income || 0,
         total_expense: summaryData.total_expense,
-        net_cash_flow: summaryData.net_cash_flow || 0,
+        total_profit: dayProfit,
+        net_cash_flow: dayNetFlow, // Use day-specific calculation
       });
     } catch (error) {
       console.error('Error loading cash flow data:', error);
@@ -331,9 +337,9 @@ export default function CashFlow() {
           <div className={`net-cash-flow-amount ${summary.net_cash_flow >= 0 ? 'positive' : 'negative'}`}>
             {formatCurrency(summary.net_cash_flow)}
           </div>
-          <div className="net-cash-flow-hint">(All-time Sales + Manual Income - All-time Expenses - Stock Investment)</div>
+          <div className="net-cash-flow-hint">(Day Profit + Manual Income - Day Expense)</div>
           <div className="net-cash-flow-description">
-            Shows remaining investment in stock and expenses. Use this to track overall cash position.
+            Shows net cash flow for the selected period. Profit is calculated from sales transactions.
           </div>
         </div>
         <div className="summary-cards-row">
@@ -354,18 +360,12 @@ export default function CashFlow() {
           <div className="summary-card expense">
             <div className="summary-card-label">Expense</div>
             <div className="summary-card-amount expense">{formatCurrency(summary.total_expense)}</div>
-            {stockInvestment > 0 && (
-              <div className="expense-breakdown">
-                <div className="expense-item">
-                  <span>Manual Expenses:</span>
-                  <span>{formatCurrency(summary.total_expense - stockInvestment)}</span>
-                </div>
-                <div className="expense-item stock">
-                  <span>Stock Investment:</span>
-                  <span>{formatCurrency(stockInvestment)}</span>
-                </div>
+            <div className="expense-breakdown">
+              <div className="expense-item">
+                <span>Manual Expenses:</span>
+                <span>{formatCurrency(summary.total_expense)}</span>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

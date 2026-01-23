@@ -70,6 +70,19 @@ export default function AddToInventoryModal({ isOpen, onClose, quickSaleItem, on
     }
   };
 
+  // Get unique main categories (same logic as Items.tsx)
+  const getUniqueMainCategories = () => {
+    if (!categories || categories.length === 0) {
+      return [];
+    }
+    const mainCategoryNames = [...new Set(categories.map(c => c.name))];
+    return mainCategoryNames.map(name => {
+      // Find the main category (without subcategory) or first category with this name
+      return categories.find(c => c.name === name && !c.subcategory) || 
+             categories.find(c => c.name === name);
+    }).filter((cat): cat is Category => !!cat);
+  };
+
   const loadItems = async () => {
     try {
       const data = await storageService.getItems();
@@ -191,6 +204,60 @@ export default function AddToInventoryModal({ isOpen, onClose, quickSaleItem, on
         </div>
 
         <div className="modal-body">
+        <div className="form-row">
+          <div className="form-group">
+              <label>
+                Category <span className="required">*</span>
+              </label>
+              <select
+                className={`input ${errors.category_id ? 'error' : ''}`}
+                value={formData.category_id}
+                onChange={(e) => {
+                  setFormData({ 
+                    ...formData, 
+                    category_id: e.target.value,
+                    subcategory: '' // Reset subcategory when category changes
+                  });
+                }}
+              >
+                <option value="">Select Category</option>
+                {getUniqueMainCategories().map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+              {errors.category_id && <span className="error-message">{errors.category_id}</span>}
+            </div>
+
+            <div className="form-group">
+              <label>Subcategory (Optional)</label>
+              {formData.category_id && subcategories.length > 0 ? (
+                <select
+                  className="input"
+                  value={formData.subcategory}
+                  onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+                >
+                  <option value="">Select Subcategory (Optional)</option>
+                  {subcategories.map((subcat) => (
+                    <option key={subcat} value={subcat}>
+                      {subcat}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  className="input"
+                  value={formData.subcategory}
+                  onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+                  placeholder={formData.category_id ? "No subcategories available. Enter manually" : "Select category first"}
+                  disabled={!formData.category_id}
+                />
+              )}
+            </div>
+          </div>
+        <div className="form-row">
           <div className="form-group">
             <label>
               Item Name <span className="required">*</span>
@@ -214,30 +281,18 @@ export default function AddToInventoryModal({ isOpen, onClose, quickSaleItem, on
             />
             {errors.name && <span className="error-message">{errors.name}</span>}
           </div>
+          <div className="form-group">
+              <label>Display Name (Optional)</label>
+              <input
+                type="text"
+                className="input"
+                value={formData.display_name}
+                onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+                placeholder="Optional display name"
+              />
+            </div>
 
-            <div className="form-group">
-              <label>
-                Category <span className="required">*</span>
-              </label>
-              <select
-                className={`input ${errors.category_id ? 'error' : ''}`}
-                value={formData.category_id}
-                onChange={(e) => {
-                  setFormData({ 
-                    ...formData, 
-                    category_id: e.target.value,
-                    subcategory: '' // Reset subcategory when category changes
-                  });
-                }}
-              >
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-              {errors.category_id && <span className="error-message">{errors.category_id}</span>}
+            
             </div>
 
           <div className="form-row">
@@ -301,7 +356,7 @@ export default function AddToInventoryModal({ isOpen, onClose, quickSaleItem, on
               {errors.price && <span className="error-message">{errors.price}</span>}
             </div>
           </div>
-
+          <div className="form-row">
           <div className="form-group">
             <label>MRP (₹) (Optional)</label>
             <input
@@ -316,45 +371,7 @@ export default function AddToInventoryModal({ isOpen, onClose, quickSaleItem, on
             {errors.mrp && <span className="error-message">{errors.mrp}</span>}
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Display Name (Optional)</label>
-              <input
-                type="text"
-                className="input"
-                value={formData.display_name}
-                onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-                placeholder="Optional display name"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Subcategory (Optional)</label>
-              {formData.category_id && subcategories.length > 0 ? (
-                <select
-                  className="input"
-                  value={formData.subcategory}
-                  onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
-                >
-                  <option value="">Select Subcategory (Optional)</option>
-                  {subcategories.map((subcat) => (
-                    <option key={subcat} value={subcat}>
-                      {subcat}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type="text"
-                  className="input"
-                  value={formData.subcategory}
-                  onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
-                  placeholder={formData.category_id ? "No subcategories available. Enter manually" : "Select category first"}
-                  disabled={!formData.category_id}
-                />
-              )}
-            </div>
-          </div>
+          
 
           <div className="form-group">
             <label>Barcode (Optional)</label>
@@ -365,6 +382,7 @@ export default function AddToInventoryModal({ isOpen, onClose, quickSaleItem, on
               onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
               placeholder="Optional barcode"
             />
+          </div>
           </div>
         </div>
 

@@ -52,7 +52,9 @@ export default function SalesOrders() {
       setLoading(true);
       const data = await storageService.getTransactions();
       console.log('Loaded transactions:', data);
-      setTransactions(data || []);
+      // Ensure data is an array
+      const transactionsArray = Array.isArray(data) ? data : [];
+      setTransactions(transactionsArray);
     } catch (error) {
       console.error('Error loading transactions:', error);
       alert('Failed to load sales orders. Please check console for details.');
@@ -79,6 +81,9 @@ export default function SalesOrders() {
   };
 
   const applyFilter = () => {
+    // Ensure transactions is an array before filtering
+    const transactionsArray = Array.isArray(transactions) ? transactions : [];
+    
     const now = new Date();
     let startDate: Date | null = null;
     let endDate: Date | null = null;
@@ -112,11 +117,11 @@ export default function SalesOrders() {
         break;
       case 'all':
       default:
-        setFilteredTransactions(transactions);
+        setFilteredTransactions(transactionsArray);
         return;
     }
 
-    const filtered = transactions.filter((tx) => {
+    const filtered = transactionsArray.filter((tx) => {
       const txDate = new Date(tx.created_at);
       if (startDate && endDate) {
         return txDate >= startDate && txDate <= endDate;

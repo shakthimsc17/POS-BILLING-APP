@@ -1,30 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useInventoryStore } from './store/inventoryStore';
 import { useAuthStore } from './store/authStore';
 import { useCartStore } from './store/cartStore';
 import { usePermissions } from './hooks/usePermissions';
-import Dashboard from './pages/Dashboard';
-import Cart from './pages/Cart';
-import Categories from './pages/Categories';
-import Items from './pages/Items';
-import SalesOrders from './pages/SalesOrders';
-import Customers from './pages/Customers';
-import Import from './pages/Import';
-import Reports from './pages/Reports';
-import Calculators from './pages/Calculators';
-import CompanySettings from './pages/CompanySettings';
-import Settings from './pages/Settings';
-import ActivityLogs from './pages/ActivityLogs';
-import BulkOperations from './pages/BulkOperations';
-import QuickSaleItems from './pages/QuickSaleItems';
-import CashFlow from './pages/CashFlow';
-import SalesPerformance from './pages/SalesPerformance';
-import ACLPermissions from './pages/ACLPermissions';
+import LoadingSpinner from './components/LoadingSpinner';
+import ErrorBoundary from './components/ErrorBoundary';
 import AccessDenied from './components/AccessDenied';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import { useCompanyStore } from './store/companyStore';
 import './App.css';
+
+// Lazy load pages for code splitting
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Cart = lazy(() => import('./pages/Cart'));
+const Categories = lazy(() => import('./pages/Categories'));
+const Items = lazy(() => import('./pages/Items'));
+const SalesOrders = lazy(() => import('./pages/SalesOrders'));
+const Customers = lazy(() => import('./pages/Customers'));
+const Import = lazy(() => import('./pages/Import'));
+const Reports = lazy(() => import('./pages/Reports'));
+const Calculators = lazy(() => import('./pages/Calculators'));
+const CompanySettings = lazy(() => import('./pages/CompanySettings'));
+const Settings = lazy(() => import('./pages/Settings'));
+const ActivityLogs = lazy(() => import('./pages/ActivityLogs'));
+const BulkOperations = lazy(() => import('./pages/BulkOperations'));
+const QuickSaleItems = lazy(() => import('./pages/QuickSaleItems'));
+const CashFlow = lazy(() => import('./pages/CashFlow'));
+const SalesPerformance = lazy(() => import('./pages/SalesPerformance'));
+const ACLPermissions = lazy(() => import('./pages/ACLPermissions'));
 
 type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'sales' | 'sales-performance' | 'customers' | 'import' | 'reports' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items' | 'cash-flow' | 'acl-permissions';
 type AuthPage = 'signin' | 'signup';
@@ -82,6 +86,7 @@ function App() {
   }
 
   return (
+    <ErrorBoundary>
     <div className="app">
       <div 
         className="sidebar-trigger"
@@ -109,31 +114,31 @@ function App() {
           <div className="nav-section">
             <div className="nav-section-label">Main</div>
             {canView('dashboard') && (
-              <button
-                className={currentPage === 'dashboard' ? 'active' : ''}
-                onClick={() => setCurrentPage('dashboard')}
-              >
-                <span className="nav-icon">🏠</span>
-                <span className="nav-text">Dashboard</span>
-              </button>
+            <button
+              className={currentPage === 'dashboard' ? 'active' : ''}
+              onClick={() => setCurrentPage('dashboard')}
+            >
+              <span className="nav-icon">🏠</span>
+              <span className="nav-text">Dashboard</span>
+            </button>
             )}
             {canView('cart') && (
-              <button
-                className={currentPage === 'cart' ? 'active' : ''}
-                onClick={() => setCurrentPage('cart')}
-              >
-                <span className="nav-icon">🛒</span>
-                <span className="nav-text">Cart</span>
-              </button>
+            <button
+              className={currentPage === 'cart' ? 'active' : ''}
+              onClick={() => setCurrentPage('cart')}
+            >
+              <span className="nav-icon">🛒</span>
+              <span className="nav-text">Cart</span>
+            </button>
             )}
             {canView('sales') && (
-              <button
-                className={currentPage === 'sales' ? 'active' : ''}
-                onClick={() => setCurrentPage('sales')}
-              >
-                <span className="nav-icon">💼</span>
-                <span className="nav-text">Sales</span>
-              </button>
+            <button
+              className={currentPage === 'sales' ? 'active' : ''}
+              onClick={() => setCurrentPage('sales')}
+            >
+              <span className="nav-icon">💼</span>
+              <span className="nav-text">Sales</span>
+            </button>
             )}
             {canView('sales-performance') && (
               <button
@@ -158,31 +163,31 @@ function App() {
           <div className="nav-section">
             <div className="nav-section-label">Inventory</div>
             {canView('items') && (
-              <button
-                className={currentPage === 'items' ? 'active' : ''}
-                onClick={() => setCurrentPage('items')}
-              >
-                <span className="nav-icon">📦</span>
-                <span className="nav-text">Items</span>
-              </button>
+            <button
+              className={currentPage === 'items' ? 'active' : ''}
+              onClick={() => setCurrentPage('items')}
+            >
+              <span className="nav-icon">📦</span>
+              <span className="nav-text">Items</span>
+            </button>
             )}
             {canView('categories') && (
-              <button
-                className={currentPage === 'categories' ? 'active' : ''}
-                onClick={() => setCurrentPage('categories')}
-              >
-                <span className="nav-icon">📁</span>
-                <span className="nav-text">Categories</span>
-              </button>
+            <button
+              className={currentPage === 'categories' ? 'active' : ''}
+              onClick={() => setCurrentPage('categories')}
+            >
+              <span className="nav-icon">📁</span>
+              <span className="nav-text">Categories</span>
+            </button>
             )}
             {canView('import') && (
-              <button
-                className={currentPage === 'import' ? 'active' : ''}
-                onClick={() => setCurrentPage('import')}
-              >
-                <span className="nav-icon">📥</span>
-                <span className="nav-text">Import</span>
-              </button>
+            <button
+              className={currentPage === 'import' ? 'active' : ''}
+              onClick={() => setCurrentPage('import')}
+            >
+              <span className="nav-icon">📥</span>
+              <span className="nav-text">Import</span>
+            </button>
             )}
             {canView('quick-sale-items') && (
               <button
@@ -199,31 +204,31 @@ function App() {
             <div className="nav-section">
               <div className="nav-section-label">Admin</div>
               {(customer?.isAdmin || canView('customers')) && (
-                <button
-                  className={currentPage === 'customers' ? 'active' : ''}
-                  onClick={() => setCurrentPage('customers')}
-                >
-                  <span className="nav-icon">👥</span>
-                  <span className="nav-text">Customers</span>
-                </button>
+              <button
+                className={currentPage === 'customers' ? 'active' : ''}
+                onClick={() => setCurrentPage('customers')}
+              >
+                <span className="nav-icon">👥</span>
+                <span className="nav-text">Customers</span>
+              </button>
               )}
               {(customer?.isAdmin || canView('reports')) && (
-                <button
-                  className={currentPage === 'reports' ? 'active' : ''}
-                  onClick={() => setCurrentPage('reports')}
-                >
-                  <span className="nav-icon">📊</span>
-                  <span className="nav-text">Reports</span>
-                </button>
+              <button
+                className={currentPage === 'reports' ? 'active' : ''}
+                onClick={() => setCurrentPage('reports')}
+              >
+                <span className="nav-icon">📊</span>
+                <span className="nav-text">Reports</span>
+              </button>
               )}
               {(customer?.isAdmin || canView('activity-logs')) && (
-                <button
-                  className={currentPage === 'activity-logs' ? 'active' : ''}
-                  onClick={() => setCurrentPage('activity-logs')}
-                >
-                  <span className="nav-icon">📋</span>
-                  <span className="nav-text">Activity Logs</span>
-                </button>
+              <button
+                className={currentPage === 'activity-logs' ? 'active' : ''}
+                onClick={() => setCurrentPage('activity-logs')}
+              >
+                <span className="nav-icon">📋</span>
+                <span className="nav-text">Activity Logs</span>
+              </button>
               )}
             </div>
           )}
@@ -231,40 +236,40 @@ function App() {
           <div className="nav-section">
             <div className="nav-section-label">Tools</div>
             {canView('bulk-operations') && (
-              <button
-                className={currentPage === 'bulk-operations' ? 'active' : ''}
-                onClick={() => setCurrentPage('bulk-operations')}
-              >
-                <span className="nav-icon">⚡</span>
-                <span className="nav-text">Bulk Operations</span>
-              </button>
+            <button
+              className={currentPage === 'bulk-operations' ? 'active' : ''}
+              onClick={() => setCurrentPage('bulk-operations')}
+            >
+              <span className="nav-icon">⚡</span>
+              <span className="nav-text">Bulk Operations</span>
+            </button>
             )}
             {canView('calculators') && (
-              <button
-                className={currentPage === 'calculators' ? 'active' : ''}
-                onClick={() => setCurrentPage('calculators')}
-              >
-                <span className="nav-icon">🧮</span>
-                <span className="nav-text">Calculators</span>
-              </button>
+            <button
+              className={currentPage === 'calculators' ? 'active' : ''}
+              onClick={() => setCurrentPage('calculators')}
+            >
+              <span className="nav-icon">🧮</span>
+              <span className="nav-text">Calculators</span>
+            </button>
             )}
             {canView('company') && (
-              <button
-                className={currentPage === 'company' ? 'active' : ''}
-                onClick={() => setCurrentPage('company')}
-              >
-                <span className="nav-icon">🏢</span>
-                <span className="nav-text">Company</span>
-              </button>
+            <button
+              className={currentPage === 'company' ? 'active' : ''}
+              onClick={() => setCurrentPage('company')}
+            >
+              <span className="nav-icon">🏢</span>
+              <span className="nav-text">Company</span>
+            </button>
             )}
             {canView('settings') && (
-              <button
-                className={currentPage === 'settings' ? 'active' : ''}
-                onClick={() => setCurrentPage('settings')}
-              >
-                <span className="nav-icon">⚙️</span>
-                <span className="nav-text">Settings</span>
-              </button>
+            <button
+              className={currentPage === 'settings' ? 'active' : ''}
+              onClick={() => setCurrentPage('settings')}
+            >
+              <span className="nav-icon">⚙️</span>
+              <span className="nav-text">Settings</span>
+            </button>
             )}
             {customer?.isAdmin && (
               <button
@@ -290,23 +295,25 @@ function App() {
 
       <main className={`main-content ${sidebarOpen ? 'sidebar-open' : ''}`}>
         <div className="page-content-wrapper">
-          {currentPage === 'dashboard' && (canView('dashboard') ? <Dashboard onNavigate={setCurrentPage} /> : <AccessDenied />)}
-          {currentPage === 'cart' && (canView('cart') ? <Cart onNavigate={setCurrentPage} /> : <AccessDenied />)}
-          {currentPage === 'categories' && (canView('categories') ? <Categories onNavigate={setCurrentPage} /> : <AccessDenied />)}
-          {currentPage === 'items' && (canView('items') ? <Items onNavigate={setCurrentPage} /> : <AccessDenied />)}
-          {currentPage === 'sales' && (canView('sales') ? <SalesOrders /> : <AccessDenied />)}
-          {currentPage === 'sales-performance' && (canView('sales-performance') ? <SalesPerformance /> : <AccessDenied />)}
-          {currentPage === 'cash-flow' && (canView('cash-flow') ? <CashFlow /> : <AccessDenied />)}
-          {currentPage === 'customers' && ((customer?.isAdmin || canView('customers')) ? <Customers /> : <AccessDenied />)}
-          {currentPage === 'import' && (canView('import') ? <Import /> : <AccessDenied />)}
-          {currentPage === 'quick-sale-items' && (canView('quick-sale-items') ? <QuickSaleItems /> : <AccessDenied />)}
-          {currentPage === 'reports' && ((customer?.isAdmin || canView('reports')) ? <Reports /> : <AccessDenied />)}
-          {currentPage === 'activity-logs' && ((customer?.isAdmin || canView('activity-logs')) ? <ActivityLogs /> : <AccessDenied />)}
-          {currentPage === 'bulk-operations' && (canView('bulk-operations') ? <BulkOperations /> : <AccessDenied />)}
-          {currentPage === 'calculators' && (canView('calculators') ? <Calculators /> : <AccessDenied />)}
-          {currentPage === 'company' && (canView('company') ? <CompanySettings /> : <AccessDenied />)}
-          {currentPage === 'settings' && (canView('settings') ? <Settings /> : <AccessDenied />)}
-          {currentPage === 'acl-permissions' && customer?.isAdmin && <ACLPermissions />}
+          <Suspense fallback={<LoadingSpinner message="Loading page..." />}>
+            {currentPage === 'dashboard' && (canView('dashboard') ? <Dashboard onNavigate={setCurrentPage} /> : <AccessDenied />)}
+            {currentPage === 'cart' && (canView('cart') ? <Cart onNavigate={setCurrentPage} /> : <AccessDenied />)}
+            {currentPage === 'categories' && (canView('categories') ? <Categories onNavigate={setCurrentPage} /> : <AccessDenied />)}
+            {currentPage === 'items' && (canView('items') ? <Items onNavigate={setCurrentPage} /> : <AccessDenied />)}
+            {currentPage === 'sales' && (canView('sales') ? <SalesOrders /> : <AccessDenied />)}
+            {currentPage === 'sales-performance' && (canView('sales-performance') ? <SalesPerformance /> : <AccessDenied />)}
+            {currentPage === 'cash-flow' && (canView('cash-flow') ? <CashFlow /> : <AccessDenied />)}
+            {currentPage === 'customers' && ((customer?.isAdmin || canView('customers')) ? <Customers /> : <AccessDenied />)}
+            {currentPage === 'import' && (canView('import') ? <Import /> : <AccessDenied />)}
+            {currentPage === 'quick-sale-items' && (canView('quick-sale-items') ? <QuickSaleItems /> : <AccessDenied />)}
+            {currentPage === 'reports' && ((customer?.isAdmin || canView('reports')) ? <Reports /> : <AccessDenied />)}
+            {currentPage === 'activity-logs' && ((customer?.isAdmin || canView('activity-logs')) ? <ActivityLogs /> : <AccessDenied />)}
+            {currentPage === 'bulk-operations' && (canView('bulk-operations') ? <BulkOperations /> : <AccessDenied />)}
+            {currentPage === 'calculators' && (canView('calculators') ? <Calculators /> : <AccessDenied />)}
+            {currentPage === 'company' && (canView('company') ? <CompanySettings /> : <AccessDenied />)}
+            {currentPage === 'settings' && (canView('settings') ? <Settings /> : <AccessDenied />)}
+            {currentPage === 'acl-permissions' && customer?.isAdmin && <ACLPermissions />}
+          </Suspense>
         </div>
 
         {/* Show footer for all pages except dashboard and sales-related pages */}
@@ -319,6 +326,7 @@ function App() {
         )}
       </main>
     </div>
+    </ErrorBoundary>
   );
 }
 
