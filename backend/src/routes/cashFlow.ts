@@ -126,7 +126,7 @@ router.get('/summary', [
       }),
       prisma.transaction.findMany({
         where: transactionWhere,
-        select: { totalAmount: true, createdAt: true },
+        select: { totalAmount: true, createdAt: true, itemsJson: true },
       }),
       // All-time data
       prisma.cashFlowEntry.findMany({
@@ -153,6 +153,37 @@ router.get('/summary', [
     const totalSales = transactions.reduce((sum, tx) => sum + Number(tx.totalAmount), 0);
     const totalIncome = manualIncome + totalSales;
     const totalExpense = expenseEntries.reduce((sum, entry) => sum + Number(entry.amount), 0);
+    
+    // Calculate profit from transactions for filtered date range
+    let totalProfit = 0;
+    transactions.forEach((tx) => {
+      try {
+        const items = JSON.parse(tx.itemsJson);
+        items.forEach((cartItem: any) => {
+          const item = cartItem.item || cartItem;
+          const quantity = cartItem.quantity || item.quantity || 1;
+          
+          let itemCost = 0;
+          let itemPrice = 0;
+          
+          if (item.cost !== undefined) {
+            itemCost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
+          }
+          
+          if (cartItem.customPrice !== undefined) {
+            itemPrice = typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : (cartItem.customPrice || 0);
+          } else if (item.price !== undefined) {
+            itemPrice = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
+          } else if (cartItem.originalPrice !== undefined) {
+            itemPrice = typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : (cartItem.originalPrice || 0);
+          }
+          
+          totalProfit += (itemPrice - itemCost) * quantity;
+        });
+      } catch (e) {
+        // Skip if itemsJson is invalid
+      }
+    });
 
     // All-time totals (for net cash flow)
     const allTimeManualIncome = allTimeIncomeEntries.reduce((sum, entry) => sum + Number(entry.amount), 0);
@@ -168,6 +199,7 @@ router.get('/summary', [
       total_sales: totalSales,
       manual_income: manualIncome,
       total_expense: totalExpense,
+      total_profit: totalProfit, // Profit from transactions for filtered date range
       net_cash_flow: netCashFlow,
       // Include all-time data for reference
       all_time_sales: allTimeTotalSales,

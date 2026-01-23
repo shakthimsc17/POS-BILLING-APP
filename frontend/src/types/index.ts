@@ -172,6 +172,7 @@ export interface CashFlowSummary {
   total_sales: number;
   manual_income: number;
   total_expense: number;
+  total_profit?: number; // Profit from transactions for filtered date range
   net_cash_flow: number;
 }
 

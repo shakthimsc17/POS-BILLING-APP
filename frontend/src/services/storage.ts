@@ -4,7 +4,9 @@ import apiClient from '../lib/apiClient';
 export const storageService = {
   // Categories
   getCategories: async (): Promise<Category[]> => {
-    return apiClient.get<Category[]>('/categories');
+    const response = await apiClient.get<{ categories: Category[]; pagination?: any } | Category[]>('/categories');
+    // Handle both response formats: { categories: [...], pagination: {...} } or array
+    return Array.isArray(response) ? response : (response?.categories || []);
   },
 
   addCategory: async (category: Omit<Category, 'id' | 'created_at' | 'customer_id'>): Promise<Category> => {
@@ -25,7 +27,9 @@ export const storageService = {
 
   // Items
   getItems: async (): Promise<Item[]> => {
-    return apiClient.get<Item[]>('/items');
+    const response = await apiClient.get<{ items: Item[]; pagination?: any } | Item[]>('/items');
+    // Handle both response formats: { items: [...], pagination: {...} } or array
+    return Array.isArray(response) ? response : (response?.items || []);
   },
 
   addItem: async (item: Omit<Item, 'id' | 'created_at' | 'customer_id'>): Promise<Item> => {
@@ -65,7 +69,9 @@ export const storageService = {
 
   // Transactions
   getTransactions: async (): Promise<Transaction[]> => {
-    return apiClient.get<Transaction[]>('/transactions');
+    const response = await apiClient.get<{ transactions: Transaction[]; pagination?: any } | Transaction[]>('/transactions');
+    // Handle both response formats: { transactions: [...], pagination: {...} } or array
+    return Array.isArray(response) ? response : (response?.transactions || []);
   },
 
   addTransaction: async (transaction: Omit<Transaction, 'id' | 'created_at' | 'customer_id'>): Promise<Transaction> => {
@@ -78,7 +84,9 @@ export const storageService = {
 
   // Customers
   getCustomers: async (): Promise<Customer[]> => {
-    return apiClient.get<Customer[]>('/customers');
+    const response = await apiClient.get<{ customers: Customer[]; pagination?: any } | Customer[]>('/customers');
+    // Handle both response formats: { customers: [...], pagination: {...} } or array
+    return Array.isArray(response) ? response : (response?.customers || []);
   },
 
   addCustomer: async (customer: Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'password_hash'>): Promise<Customer> => {

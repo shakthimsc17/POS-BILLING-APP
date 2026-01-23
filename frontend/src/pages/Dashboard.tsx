@@ -6,7 +6,7 @@ import ItemCard from '../components/ItemCard';
 import CategoryFilter from '../components/CategoryFilter';
 import QuickSaleModal from '../components/QuickSaleModal';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { Item } from '../types';
+import { Item, Category } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { storageService } from '../services/storage';
 import './Dashboard.css';
@@ -20,8 +20,8 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [displayItems, setDisplayItems] = useState<Item[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [allCategories, setAllCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [showQuickSaleModal, setShowQuickSaleModal] = useState(false);
 
   const { items: cartItems, addItem, getTotal, getItemCount } = useCartStore();
@@ -57,23 +57,30 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
   const loadCategories = async () => {
     try {
       const data = await storageService.getCategories();
-      setAllCategories(data);
+      // getCategories now always returns an array
+      const categoriesArray: Category[] = Array.isArray(data) ? data : [];
+      setAllCategories(categoriesArray);
 
-      const uniqueCategories = data.filter(
-        (category, index, self) =>
+      const uniqueCategories = categoriesArray.filter(
+        (category: Category, index: number, self: Category[]) =>
           index ===
           self.findIndex(
-            (c) => c.name.toLowerCase() === category.name.toLowerCase()
+            (c: Category) => c.name.toLowerCase() === category.name.toLowerCase()
           )
       );
       setCategories(uniqueCategories);
     } catch (error) {
       console.error('Error loading categories:', error);
+      setAllCategories([]);
+      setCategories([]);
     }
   };
 
   const filterItems = async () => {
     let filtered: Item[] = [];
+
+    // Ensure items is an array
+    const itemsArray = Array.isArray(items) ? items : [];
 
     if (selectedCategories.length > 0) {
       const selectedCategoryNames = categories
@@ -92,13 +99,15 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
           const categoryItems =
             await storageService.getItemsByCategories(categoryIds);
 
-          filtered = categoryItems.filter(
-            (item, index, self) =>
-              index === self.findIndex((i) => i.id === item.id)
-          );
+          filtered = Array.isArray(categoryItems) 
+            ? categoryItems.filter(
+                (item, index, self) =>
+                  index === self.findIndex((i) => i.id === item.id)
+              )
+            : [];
         } catch (error) {
           console.error('Error fetching items by categories:', error);
-          filtered = items.filter(
+          filtered = itemsArray.filter(
             (item) =>
               item.category_id &&
               allMatchingCategoryIds.includes(item.category_id)
@@ -106,7 +115,7 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
         }
       }
     } else {
-      filtered = items;
+      filtered = itemsArray;
     }
 
     if (searchQuery.trim()) {
@@ -120,9 +129,14 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
       );
     }
 
-    filtered.sort((a, b) =>
-      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
-    );
+    // Ensure filtered is an array before sorting
+    if (Array.isArray(filtered)) {
+      filtered.sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+      );
+    } else {
+      filtered = [];
+    }
 
     setDisplayItems(filtered);
   };

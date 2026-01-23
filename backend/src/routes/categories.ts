@@ -3,6 +3,7 @@ import { body, query, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { logActivity } from '../utils/activityLogger.js';
+import { cache } from '../utils/cache.js';
 
 const router = express.Router();
 

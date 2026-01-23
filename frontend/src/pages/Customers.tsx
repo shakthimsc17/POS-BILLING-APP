@@ -25,10 +25,13 @@ export default function Customers() {
     try {
       setLoading(true);
       const data = await storageService.getCustomers();
-      setCustomers(data);
+      // Ensure data is an array
+      const customersArray = Array.isArray(data) ? data : [];
+      setCustomers(customersArray);
     } catch (error) {
       console.error('Error loading customers:', error);
       alert('Failed to load customers');
+      setCustomers([]);
     } finally {
       setLoading(false);
     }
@@ -199,8 +202,12 @@ export default function Customers() {
 
       {modalVisible && (
         <div className="modal-overlay" onClick={() => setModalVisible(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>{editingCustomer ? 'Edit Customer' : 'Add Customer'}</h2>
+          <div className="modal-content customers-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editingCustomer ? 'Edit Customer' : 'Add Customer'}</h2>
+              <button className="modal-close" onClick={() => setModalVisible(false)}>×</button>
+            </div>
+            <div className="modal-body">
             <label>
               Name *:
               <input
@@ -287,6 +294,7 @@ export default function Customers() {
                   onChange={(e) => setPincode(e.target.value)}
                 />
               </label>
+            </div>
             </div>
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setModalVisible(false)}>
