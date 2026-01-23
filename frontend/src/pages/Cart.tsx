@@ -4,7 +4,9 @@ import { useInventoryStore } from '../store/inventoryStore';
 import { storageService } from '../services/storage';
 import { formatCurrency } from '../utils/formatters';
 import { printReceipt } from '../utils/printer';
-import { Customer } from '../types';
+import { SalesCustomer } from '../types';
+import QuickAddItemModal from '../components/QuickAddItemModal';
+import CustomerSelectModal from '../components/CustomerSelectModal';
 import './Cart.css';
 
 interface CartProps {
@@ -31,20 +33,34 @@ export default function Cart({ onNavigate }: CartProps) {
 
   const [receivedAmount, setReceivedAmount] = useState('');
   const [processing, setProcessing] = useState(false);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+  const [selectedSalesCustomer, setSelectedSalesCustomer] = useState<SalesCustomer | null>(null);
+  const [showQuickAddModal, setShowQuickAddModal] = useState(false);
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [editingPrice, setEditingPrice] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    loadCustomers();
-  }, []);
+  const {
+    setCustomPrice,
+    getItemPrice,
+    hasCustomPrice,
+  } = useCartStore();
 
-  const loadCustomers = async () => {
-    try {
-      const data = await storageService.getCustomers();
-      setCustomers(data);
-    } catch (error) {
-      console.error('Error loading customers:', error);
+  const handlePriceChange = (itemId: string, newPrice: string) => {
+    setEditingPrice(prev => ({ ...prev, [itemId]: newPrice }));
+  };
+
+  const handlePriceBlur = (itemId: string) => {
+    const priceStr = editingPrice[itemId];
+    if (priceStr) {
+      const price = parseFloat(priceStr);
+      if (!isNaN(price) && price > 0) {
+        setCustomPrice(itemId, price);
+      }
     }
+    setEditingPrice(prev => {
+      const newState = { ...prev };
+      delete newState[itemId];
+      return newState;
+    });
   };
 
   const handlePayment = async () => {
@@ -65,15 +81,22 @@ export default function Cart({ onNavigate }: CartProps) {
       const changeAmount = paymentMethod === 'cash' ? received - total : 0;
       const actualChange = changeAmount > 0 ? changeAmount : 0;
 
+      // Prepare items with custom prices for transaction
+      const itemsWithPrices = items.map(cartItem => ({
+        ...cartItem,
+        originalPrice: cartItem.originalPrice ?? (typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price),
+        customPrice: cartItem.customPrice,
+      }));
+
       // Save transaction
       // If change is negative, it means discount was applied
       const savedTransaction = await storageService.addTransaction({
-        customer_id: selectedCustomerId || undefined,
+        sales_customer_id: selectedSalesCustomer?.id || undefined,
         total_amount: total,
         payment_method: paymentMethod,
         received_amount: received,
         change_amount: actualChange, // Only positive change, discount is handled separately
-        items_json: JSON.stringify(items),
+        items_json: JSON.stringify(itemsWithPrices),
       });
 
       // Update item stock
@@ -168,39 +191,72 @@ export default function Cart({ onNavigate }: CartProps) {
         <div className="cart-items">
           <div className="card">
             <h2>Items ({items.length})</h2>
-            {items.map((cartItem) => (
-              <div key={cartItem.item.id} className="cart-item">
-                <div className="cart-item-info">
-                  <h3>{cartItem.item.name}</h3>
-                  <p className="item-code">Code: {cartItem.item.code}</p>
-                  <p className="item-price">{formatCurrency(cartItem.item.price)} each</p>
-                </div>
-                <div className="cart-item-controls">
-                  <button
-                    className="qty-btn"
-                    onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity - 1)}
-                  >
-                    −
-                  </button>
-                  <span className="qty-value">{cartItem.quantity}</span>
-                  <button
-                    className="qty-btn"
-                    onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity + 1)}
-                  >
-                    +
-                  </button>
-                  <div className="cart-item-total">
-                    {formatCurrency(cartItem.subtotal)}
+            {items.map((cartItem) => {
+              const itemPrice = getItemPrice(cartItem.item.id);
+              const isCustomPrice = hasCustomPrice(cartItem.item.id);
+              const originalPrice = cartItem.originalPrice ?? (typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price);
+              const editingPriceValue = editingPrice[cartItem.item.id];
+              
+              const isQuickSaleItem = cartItem.item.id.startsWith('quick-sale-');
+              
+              return (
+                <div key={cartItem.item.id} className="cart-item">
+                  <div className="cart-item-info">
+                    <div className="item-name-row">
+                      <h3>{cartItem.item.name}</h3>
+                      {isQuickSaleItem && (
+                        <span className="quick-sale-badge" title="Quick Sale Item">⚡ Quick Sale</span>
+                      )}
+                    </div>
+                    <p className="item-code">Code: {cartItem.item.code}</p>
+                    <div className="price-editor">
+                      <label>Price:</label>
+                      <div className="price-input-wrapper">
+                        <input
+                          type="number"
+                          className={`price-input ${isCustomPrice ? 'custom-price' : ''}`}
+                          value={editingPriceValue !== undefined ? editingPriceValue : itemPrice.toFixed(2)}
+                          onChange={(e) => handlePriceChange(cartItem.item.id, e.target.value)}
+                          onBlur={() => handlePriceBlur(cartItem.item.id)}
+                          min="0"
+                          step="0.01"
+                        />
+                        {isCustomPrice && (
+                          <span className="custom-price-badge" title="Custom price">*</span>
+                        )}
+                      </div>
+                      {isCustomPrice && (
+                        <p className="original-price-hint">Original: {formatCurrency(originalPrice)}</p>
+                      )}
+                    </div>
                   </div>
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => removeItem(cartItem.item.id)}
-                  >
-                    🗑️
-                  </button>
+                  <div className="cart-item-controls">
+                    <button
+                      className="qty-btn"
+                      onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity - 1)}
+                    >
+                      −
+                    </button>
+                    <span className="qty-value">{cartItem.quantity}</span>
+                    <button
+                      className="qty-btn"
+                      onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity + 1)}
+                    >
+                      +
+                    </button>
+                    <div className="cart-item-total">
+                      {formatCurrency(cartItem.quantity * itemPrice)}
+                    </div>
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => removeItem(cartItem.item.id)}
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -246,21 +302,30 @@ export default function Cart({ onNavigate }: CartProps) {
 
           <div className="card customer-selection">
             <h2>Customer (Optional)</h2>
-            <label>
-              Select Customer:
-              <select
-                className="input"
-                value={selectedCustomerId}
-                onChange={(e) => setSelectedCustomerId(e.target.value)}
-              >
-                <option value="">Walk-in Customer</option>
-                {customers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name} {customer.phone && `(${customer.phone})`}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="customer-display">
+              {selectedSalesCustomer ? (
+                <div className="selected-customer">
+                  <div className="customer-details">
+                    <strong>{selectedSalesCustomer.name}</strong>
+                    <span>{selectedSalesCustomer.mobile}</span>
+                    {selectedSalesCustomer.place && <span>{selectedSalesCustomer.place}</span>}
+                  </div>
+                  <button
+                    className="btn btn-small btn-secondary"
+                    onClick={() => setSelectedSalesCustomer(null)}
+                  >
+                    Change
+                  </button>
+                </div>
+              ) : (
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowCustomerModal(true)}
+                >
+                  Select or Add Customer
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="card payment-methods">
@@ -328,12 +393,33 @@ export default function Cart({ onNavigate }: CartProps) {
             >
               {processing ? 'Processing...' : 'Complete Payment'}
             </button>
-            <button className="btn btn-secondary" onClick={clearCart}>
-              Clear Cart
-            </button>
+            <div className="cart-actions-row">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowQuickAddModal(true)}
+              >
+                + Quick Add Item
+              </button>
+              <button className="btn btn-secondary" onClick={clearCart}>
+                Clear Cart
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <QuickAddItemModal
+        isOpen={showQuickAddModal}
+        onClose={() => setShowQuickAddModal(false)}
+      />
+
+      <CustomerSelectModal
+        isOpen={showCustomerModal}
+        onClose={() => setShowCustomerModal(false)}
+        onSelect={(customer) => setSelectedSalesCustomer(customer)}
+        selectedCustomerId={selectedSalesCustomer?.id}
+      />
     </div>
   );
 }

@@ -1,0 +1,306 @@
+/* Quick Sale Modal - Scoped Styles */
+.modal-content.quick-sale-modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content.quick-sale-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e0e6ed;
+  flex-shrink: 0;
+}
+
+.modal-content.quick-sale-modal .modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.modal-content.quick-sale-modal .modal-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.modal-content.quick-sale-modal .modal-close:hover {
+  background: #f1f1f1;
+  color: #1a1a1a;
+}
+
+.modal-content.quick-sale-modal .modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-content.quick-sale-modal .items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.quick-sale-item-card {
+  padding: 1.5rem;
+  border: 2px solid #e0e6ed;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+.item-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.item-card-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.btn-remove-item {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  line-height: 1;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.btn-remove-item:hover {
+  background: #c0392b;
+  transform: scale(1.1);
+}
+
+.modal-content.quick-sale-modal .form-group {
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.modal-content.quick-sale-modal .form-row .form-group {
+  margin-bottom: 0;
+}
+
+.modal-content.quick-sale-modal .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.modal-content.quick-sale-modal .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  font-size: 0.9rem;
+  text-align: left;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.modal-content.quick-sale-modal .form-row .form-group label {
+  margin-top: 0;
+}
+
+.modal-content.quick-sale-modal .required {
+  color: #e74c3c;
+  margin-left: 2px;
+}
+
+.quick-sale-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background: #ffffff;
+  color: #1a1a1a;
+  box-sizing: border-box;
+  text-align: left;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.quick-sale-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.quick-sale-input.error {
+  border-color: #e74c3c;
+  background: #fff5f5;
+}
+
+.modal-content.quick-sale-modal .error-message {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  color: #e74c3c;
+  line-height: 1.4;
+}
+
+.modal-content.quick-sale-modal .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.modal-content.quick-sale-modal .form-row .form-group {
+  margin-top: 13px;
+}
+
+.item-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #e8f5e9;
+  border-radius: 6px;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.item-total-value {
+  font-size: 1.1rem;
+  color: #27ae60;
+}
+
+.add-item-section {
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+.btn-add-item {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+}
+
+.total-amount-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  background: #e3f2fd;
+  border-radius: 8px;
+  margin-top: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  border: 2px solid #3498db;
+}
+
+.total-value {
+  font-size: 1.5rem;
+  color: #27ae60;
+  font-weight: 700;
+}
+
+.modal-content.quick-sale-modal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-top: 1px solid #e0e6ed;
+  flex-shrink: 0;
+}
+
+.modal-content.quick-sale-modal .btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  white-space: nowrap;
+}
+
+.modal-content.quick-sale-modal .btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.modal-content.quick-sale-modal .btn-secondary:hover {
+  background: #5a6268;
+}
+
+.modal-content.quick-sale-modal .btn-primary {
+  background: #3498db;
+  color: white;
+}
+
+.modal-content.quick-sale-modal .btn-primary:hover {
+  background: #2980b9;
+}
+
+.modal-content.quick-sale-modal .btn-success {
+  background: #27ae60;
+  color: white;
+}
+
+.modal-content.quick-sale-modal .btn-success:hover {
+  background: #229954;
+}
+
+.modal-content.quick-sale-modal .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .modal-content.quick-sale-modal {
+    max-width: 100%;
+    margin: 1rem;
+    max-height: 95vh;
+  }
+
+  .modal-content.quick-sale-modal .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content.quick-sale-modal .modal-footer {
+    flex-direction: column;
+  }
+
+  .modal-content.quick-sale-modal .modal-footer .btn {
+    width: 100%;
+  }
+}
+

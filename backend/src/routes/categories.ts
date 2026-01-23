@@ -1,8 +1,9 @@
 import express from 'express';
-import { body, validationResult } from 'express-validator';
+import { body, query, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { logActivity } from '../utils/activityLogger.js';
+import { cache } from '../utils/cache.js';
 
 const router = express.Router();
 
@@ -10,11 +11,35 @@ const router = express.Router();
 router.use(authenticate);
 
 // Get all categories - show all categories to all authenticated users (shared inventory)
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', [
+  query('page').optional().isInt({ min: 1 }),
+  query('limit').optional().isInt({ min: 1, max: 1000 }),
+], async (req: AuthRequest, res) => {
   try {
-    const categories = await prisma.category.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 100;
+    const skip = (page - 1) * limit;
+
+    // Check cache first
+    const cacheKey = `categories:${page}:${limit}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    const [categories, totalCount] = await Promise.all([
+      prisma.category.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.category.count(),
+    ]);
 
     // Transform to snake_case for frontend
     const transformedCategories = categories.map(category => ({
@@ -23,10 +48,24 @@ router.get('/', async (req: AuthRequest, res) => {
       name: category.name,
       subcategory: category.subcategory,
       brand: category.brand,
+      icon: category.icon,
       created_at: category.createdAt.toISOString(),
     }));
 
-    res.json(transformedCategories);
+    const response = {
+      categories: transformedCategories,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasMore: skip + limit < totalCount,
+      },
+    };
+
+    // Cache for 2 minutes
+    cache.set(cacheKey, response, 2 * 60 * 1000);
+    res.json(response);
   } catch (error: any) {
     console.error('Error fetching categories:', error);
     res.status(500).json({ error: error.message || 'Failed to fetch categories' });
@@ -40,6 +79,7 @@ router.post(
     body('name').notEmpty().trim(),
     body('subcategory').optional().isString().trim(),
     body('brand').optional().isString().trim(),
+    body('icon').optional().isString().trim(),
   ],
   async (req: AuthRequest, res) => {
     try {
@@ -48,7 +88,7 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { name, subcategory, brand } = req.body;
+      const { name, subcategory, brand, icon } = req.body;
 
       const category = await prisma.category.create({
         data: {
@@ -56,6 +96,7 @@ router.post(
           name,
           subcategory,
           brand,
+          icon,
         },
       });
 
@@ -71,6 +112,9 @@ router.post(
         },
       });
 
+      // Clear cache on create
+      cache.clear();
+      
       // Transform to snake_case for frontend
       res.status(201).json({
         id: category.id,
@@ -78,6 +122,7 @@ router.post(
         name: category.name,
         subcategory: category.subcategory,
         brand: category.brand,
+        icon: category.icon,
         created_at: category.createdAt.toISOString(),
       });
     } catch (error: any) {
@@ -94,6 +139,7 @@ router.put(
     body('name').optional().notEmpty().trim(),
     body('subcategory').optional().isString().trim(),
     body('brand').optional().isString().trim(),
+    body('icon').optional().isString().trim(),
   ],
   async (req: AuthRequest, res) => {
     try {
@@ -103,7 +149,7 @@ router.put(
       }
 
       const { id } = req.params;
-      const { name, subcategory, brand } = req.body;
+      const { name, subcategory, brand, icon } = req.body;
 
       // Verify ownership
       const existing = await prisma.category.findFirst({
@@ -127,6 +173,7 @@ router.put(
           ...(name && { name }),
           ...(subcategory !== undefined && { subcategory }),
           ...(brand !== undefined && { brand }),
+          ...(icon !== undefined && { icon }),
         },
       });
 
@@ -146,6 +193,9 @@ router.put(
         },
       });
 
+      // Clear cache on update
+      cache.clear();
+
       // Transform to snake_case for frontend
       res.json({
         id: category.id,
@@ -153,6 +203,7 @@ router.put(
         name: category.name,
         subcategory: category.subcategory,
         brand: category.brand,
+        icon: category.icon,
         created_at: category.createdAt.toISOString(),
       });
     } catch (error: any) {
@@ -209,6 +260,8 @@ router.delete('/:id', async (req: AuthRequest, res) => {
       where: { id },
     });
 
+    // Clear cache on delete
+    cache.clear();
     res.json({ message: 'Category deleted successfully' });
   } catch (error: any) {
     console.error('Error deleting category:', error);

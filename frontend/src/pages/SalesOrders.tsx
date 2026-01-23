@@ -5,19 +5,24 @@ import { formatCurrency } from '../utils/formatters';
 import { printReceipt } from '../utils/printer';
 import { useCompanyStore } from '../store/companyStore';
 import { useAuthStore } from '../store/authStore';
+import { usePermissions } from '../hooks/usePermissions';
 import './SalesOrders.css';
 
-type FilterPeriod = 'today' | 'week' | 'month' | 'year' | 'all';
+type FilterPeriod = 'today' | 'week' | 'month' | 'year' | 'all' | 'custom';
 
 export default function SalesOrders() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [filter, setFilter] = useState<FilterPeriod>('today');
+  const [customStartDate, setCustomStartDate] = useState<string>('');
+  const [customEndDate, setCustomEndDate] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const { customer: currentUser } = useAuthStore();
   const { company, loadCompany } = useCompanyStore();
+  const { canViewProfit } = usePermissions();
   const isAdmin = currentUser?.isAdmin || false;
+  const canViewProfitData = isAdmin || canViewProfit('sales');
 
   useEffect(() => {
     loadTransactions();
@@ -40,14 +45,16 @@ export default function SalesOrders() {
 
   useEffect(() => {
     applyFilter();
-  }, [filter, transactions]);
+  }, [filter, transactions, customStartDate, customEndDate]);
 
   const loadTransactions = async () => {
     try {
       setLoading(true);
       const data = await storageService.getTransactions();
       console.log('Loaded transactions:', data);
-      setTransactions(data || []);
+      // Ensure data is an array
+      const transactionsArray = Array.isArray(data) ? data : [];
+      setTransactions(transactionsArray);
     } catch (error) {
       console.error('Error loading transactions:', error);
       alert('Failed to load sales orders. Please check console for details.');
@@ -74,32 +81,54 @@ export default function SalesOrders() {
   };
 
   const applyFilter = () => {
+    // Ensure transactions is an array before filtering
+    const transactionsArray = Array.isArray(transactions) ? transactions : [];
+    
     const now = new Date();
-    let startDate: Date;
+    let startDate: Date | null = null;
+    let endDate: Date | null = null;
 
     switch (filter) {
       case 'today':
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        endDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 - 1);
         break;
       case 'week':
         startDate = new Date(now);
         startDate.setDate(now.getDate() - 7);
+        endDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 - 1);
         break;
       case 'month':
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 - 1);
         break;
       case 'year':
         startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 - 1);
+        break;
+      case 'custom':
+        if (customStartDate && customEndDate) {
+          startDate = new Date(customStartDate);
+          endDate = new Date(customEndDate + 'T23:59:59');
+        } else {
+          setFilteredTransactions([]);
+          return;
+        }
         break;
       case 'all':
       default:
-        setFilteredTransactions(transactions);
+        setFilteredTransactions(transactionsArray);
         return;
     }
 
-    const filtered = transactions.filter((tx) => {
+    const filtered = transactionsArray.filter((tx) => {
       const txDate = new Date(tx.created_at);
-      return txDate >= startDate;
+      if (startDate && endDate) {
+        return txDate >= startDate && txDate <= endDate;
+      } else if (startDate) {
+        return txDate >= startDate;
+      }
+      return true;
     });
 
     setFilteredTransactions(filtered);
@@ -183,7 +212,7 @@ export default function SalesOrders() {
       await companyStore.loadCompany();
     }
     const company = companyStore.getCompany();
-    const headers = isAdmin 
+    const headers = canViewProfitData 
       ? ['Date', 'Time', 'Order ID', 'Customer', 'Items Count', 'Payment Method', 'Amount', 'Profit/Loss']
       : ['Date', 'Time', 'Order ID', 'Customer', 'Items Count', 'Payment Method', 'Amount'];
     
@@ -211,7 +240,7 @@ export default function SalesOrders() {
         formatCurrency(tx.total_amount),
       ];
       
-      if (isAdmin) {
+      if (canViewProfitData) {
         const { profit, loss } = calculateTransactionProfitLoss(tx);
         const netProfit = profit - loss;
         row.push(formatCurrency(netProfit));
@@ -276,7 +305,7 @@ export default function SalesOrders() {
                 <th>Items</th>
                 <th>Payment</th>
                 <th>Amount</th>
-                {isAdmin && <th>Profit/Loss</th>}
+                {canViewProfitData && <th>Profit/Loss</th>}
               </tr>
             </thead>
             <tbody>
@@ -287,7 +316,7 @@ export default function SalesOrders() {
                   ? customers.find(c => c.id === tx.transaction_customer_id)?.name || 'Walk-in'
                   : 'Walk-in';
                 let profitLossCell = '';
-                if (isAdmin) {
+                if (canViewProfitData) {
                   const { profit, loss } = calculateTransactionProfitLoss(tx);
                   const netProfit = profit - loss;
                   profitLossCell = `<td>${formatCurrency(netProfit)}</td>`;
@@ -309,7 +338,7 @@ export default function SalesOrders() {
           <div class="summary">
             <div class="summary-row"><strong>Total Orders:</strong> ${getTotalTransactions()}</div>
             <div class="summary-row"><strong>Total Sales:</strong> ${formatCurrency(getTotalSales())}</div>
-            ${isAdmin ? `<div class="summary-row"><strong>Total Profit:</strong> ${formatCurrency(getTotalProfitLoss().profit - getTotalProfitLoss().loss)}</div>` : ''}
+            ${canViewProfitData ? `<div class="summary-row"><strong>Total Profit:</strong> ${formatCurrency(getTotalProfitLoss().profit - getTotalProfitLoss().loss)}</div>` : ''}
           </div>
         </body>
       </html>
@@ -412,7 +441,33 @@ export default function SalesOrders() {
           >
             All Time
           </button>
+          <button
+            className={`filter-btn ${filter === 'custom' ? 'active' : ''}`}
+            onClick={() => setFilter('custom')}
+          >
+            Custom Range
+          </button>
         </div>
+        {filter === 'custom' && (
+          <div className="custom-date-filter">
+            <div className="date-input-group">
+              <label>Start Date:</label>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+              />
+            </div>
+            <div className="date-input-group">
+              <label>End Date:</label>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Summary Cards */}
@@ -442,7 +497,7 @@ export default function SalesOrders() {
             </p>
           </div>
         </div>
-        {isAdmin && (
+        {canViewProfitData && (
           <>
             <div className="summary-card profit-card">
               <div className="summary-icon">📊</div>
@@ -488,7 +543,7 @@ export default function SalesOrders() {
                   <th>Items</th>
                   <th>Payment</th>
                   <th>Amount</th>
-                  {isAdmin && <th>Profit/Loss</th>}
+                  {canViewProfitData && <th>Profit/Loss</th>}
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -499,8 +554,8 @@ export default function SalesOrders() {
                   const customer = transaction.transaction_customer_id 
                     ? customers.find(c => c.id === transaction.transaction_customer_id)
                     : null;
-                  const { profit, loss } = calculateTransactionProfitLoss(transaction);
-                  const netProfit = profit - loss;
+                  const profitLoss = canViewProfitData ? calculateTransactionProfitLoss(transaction) : null;
+                  const netProfit = profitLoss ? profitLoss.profit - profitLoss.loss : null;
                   return (
                     <tr key={transaction.id}>
                       <td>{formatDate(transaction.created_at)}</td>
@@ -544,25 +599,25 @@ export default function SalesOrders() {
                         </span>
                       </td>
                       <td className="amount">{formatCurrency(transaction.total_amount)}</td>
-                      {isAdmin && (
+                      {canViewProfitData && profitLoss && (
                         <td>
                           <div className="profit-loss-cell">
-                            {profit > 0 && (
+                            {profitLoss.profit > 0 && (
                               <div className="profit-badge">
                                 <span className="profit-label">Profit:</span>
-                                <span className="profit-amount">+{formatCurrency(profit)}</span>
+                                <span className="profit-amount">+{formatCurrency(profitLoss.profit)}</span>
                               </div>
                             )}
-                            {loss > 0 && (
+                            {profitLoss.loss > 0 && (
                               <div className="loss-badge">
                                 <span className="loss-label">Loss:</span>
-                                <span className="loss-amount">-{formatCurrency(loss)}</span>
+                                <span className="loss-amount">-{formatCurrency(profitLoss.loss)}</span>
                               </div>
                             )}
-                            {profit === 0 && loss === 0 && (
+                            {profitLoss.profit === 0 && profitLoss.loss === 0 && (
                               <span className="no-profit-loss">-</span>
                             )}
-                            {netProfit !== 0 && (
+                            {netProfit !== null && netProfit !== 0 && (
                               <div className={`net-badge ${netProfit > 0 ? 'net-profit' : 'net-loss'}`}>
                                 Net: {formatCurrency(netProfit)}
                               </div>
