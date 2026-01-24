@@ -23,6 +23,7 @@ export default function SalesOrders() {
   const { canViewProfit } = usePermissions();
   const isAdmin = currentUser?.isAdmin || false;
   const canViewProfitData = isAdmin || canViewProfit('sales');
+  const canExport = currentUser?.customer_type === 'admin' && currentUser?.isAdmin === true;
 
   useEffect(() => {
     loadTransactions();
@@ -421,14 +422,16 @@ export default function SalesOrders() {
         <div className="header-content">
           <h1>{company.logo ? '' : '📊 '}Sales Orders</h1>
         </div>
-        <div className="export-buttons">
-          <button className="btn btn-secondary" onClick={handleExportCSV} title="Export to CSV">
-            📥 CSV
-          </button>
-          <button className="btn btn-secondary" onClick={handleExportPDF} title="Export to PDF">
-            📄 PDF
-          </button>
-        </div>
+        {canExport && (
+          <div className="export-buttons">
+            <button className="btn btn-secondary" onClick={handleExportCSV} title="Export to CSV">
+              📥 CSV
+            </button>
+            <button className="btn btn-secondary" onClick={handleExportPDF} title="Export to PDF">
+              📄 PDF
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Filter Buttons */}

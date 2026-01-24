@@ -319,6 +319,17 @@ export default function AddToInventoryModal({ isOpen, onClose, quickSaleItem, on
                 className={`input ${errors.stock ? 'error' : ''}`}
                 value={formData.stock}
                 onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
+                onFocus={(e) => {
+                  if (e.target.value === '0') {
+                    e.target.value = '';
+                    setFormData({ ...formData, stock: 0 });
+                  }
+                }}
+                onBlur={(e) => {
+                  if (e.target.value === '') {
+                    setFormData({ ...formData, stock: 0 });
+                  }
+                }}
                 min="0"
               />
               {errors.stock && <span className="error-message">{errors.stock}</span>}
@@ -335,6 +346,17 @@ export default function AddToInventoryModal({ isOpen, onClose, quickSaleItem, on
                 className={`input ${errors.cost ? 'error' : ''}`}
                 value={formData.cost}
                 onChange={(e) => setFormData({ ...formData, cost: parseFloat(e.target.value) || 0 })}
+                onFocus={(e) => {
+                  if (e.target.value === '0') {
+                    e.target.value = '';
+                    setFormData({ ...formData, cost: 0 });
+                  }
+                }}
+                onBlur={(e) => {
+                  if (e.target.value === '') {
+                    setFormData({ ...formData, cost: 0 });
+                  }
+                }}
                 min="0"
                 step="0.01"
               />

@@ -337,7 +337,7 @@ router.get('/top-items', [
         quantity: data.quantity,
         revenue: data.revenue,
       }))
-      .sort((a, b) => b.revenue - a.revenue)
+      .sort((a, b) => b.quantity - a.quantity)
       .slice(0, limit);
 
     res.json(topItems);

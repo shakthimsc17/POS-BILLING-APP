@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useInventoryStore } from '../store/inventoryStore';
 import { useCompanyStore } from '../store/companyStore';
+import { useAuthStore } from '../store/authStore';
 import { Category } from '../types';
 import './Categories.css';
 
@@ -29,6 +30,8 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
   const { categories, loadCategories, addCategory, updateCategory, deleteCategory, deleteAllCategories } =
     useInventoryStore();
   const { company, loadCompany } = useCompanyStore();
+  const { customer } = useAuthStore();
+  const isAdmin = customer?.isAdmin || false;
 
   useEffect(() => {
     loadCategories();
@@ -239,7 +242,7 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
           <h1>{company.logo ? '' : '📁 '}Categories</h1>
         </div>
         <div className="header-actions">
-          {categories.length > 0 && (
+          {categories.length > 0 && isAdmin && (
             <button 
               className="btn btn-danger" 
               onClick={() => setDeleteAllModalVisible(true)}

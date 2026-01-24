@@ -281,9 +281,9 @@ export default function SalesPerformance() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
                 <YAxis dataKey="name" type="category" width={150} />
-                <Tooltip formatter={(value: any) => formatCurrency(value)} />
+                <Tooltip formatter={(value: any) => value} />
                 <Legend />
-                <Bar dataKey="revenue" fill="#3498db" name="Revenue" />
+                <Bar dataKey="quantity" fill="#3498db" name="Quantity" />
               </BarChart>
             </ResponsiveContainer>
           ) : (

@@ -953,6 +953,17 @@ export default function BulkOperations() {
                               className="input"
                               value={row.stock}
                               onChange={(e) => updateItemRow(row.id, 'stock', e.target.value)}
+                              onFocus={(e) => {
+                                if (e.target.value === '0') {
+                                  e.target.value = '';
+                                  updateItemRow(row.id, 'stock', '');
+                                }
+                              }}
+                              onBlur={(e) => {
+                                if (e.target.value === '') {
+                                  updateItemRow(row.id, 'stock', '0');
+                                }
+                              }}
                               placeholder="0"
                             />
                           </td>
