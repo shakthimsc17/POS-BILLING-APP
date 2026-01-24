@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Response } from 'express';
 import { body, query, param, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
@@ -13,7 +13,7 @@ router.get('/', [
   query('startDate').optional().isISO8601(),
   query('endDate').optional().isISO8601(),
   query('type').optional().isIn(['income', 'expense']),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -70,7 +70,7 @@ router.get('/', [
 router.get('/summary', [
   query('startDate').optional().isISO8601(),
   query('endDate').optional().isISO8601(),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -294,7 +294,7 @@ router.post('/', [
   body('amount').isFloat({ min: 0 }).withMessage('Amount must be a positive number'),
   body('entry_date').isISO8601().withMessage('Entry date must be a valid date'),
   body('description').optional().isString(),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -341,7 +341,7 @@ router.put('/:id', [
   body('amount').optional().isFloat({ min: 0 }),
   body('entry_date').optional().isISO8601(),
   body('description').optional().isString(),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -394,7 +394,7 @@ router.put('/:id', [
 // Delete cash flow entry
 router.delete('/:id', [
   param('id').isUUID().withMessage('Invalid entry ID'),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

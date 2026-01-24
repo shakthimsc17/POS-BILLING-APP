@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Response } from 'express';
 import { query, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
@@ -11,7 +11,7 @@ router.use(authenticate);
 // Get sales data for charts
 router.get('/sales', [
   query('period').isIn(['7days', 'week', 'month', 'year', 'overall']).withMessage('Invalid period'),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -138,7 +138,7 @@ router.get('/sales', [
 // Get profit data
 router.get('/profit', [
   query('period').isIn(['7days', 'week', 'month', 'year', 'overall']).withMessage('Invalid period'),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -244,7 +244,7 @@ router.get('/profit', [
 router.get('/top-items', [
   query('period').optional().isIn(['7days', 'week', 'month', 'year', 'overall']),
   query('limit').optional().isInt({ min: 1, max: 50 }),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -350,7 +350,7 @@ router.get('/top-items', [
 // Get sales by payment method
 router.get('/payment-methods', [
   query('period').optional().isIn(['7days', 'week', 'month', 'year', 'overall']),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -418,7 +418,7 @@ router.get('/hourly', [
   query('date').isISO8601().withMessage('Date must be a valid ISO8601 date'),
   query('startHour').optional().isInt({ min: 0, max: 23 }),
   query('endHour').optional().isInt({ min: 0, max: 23 }),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

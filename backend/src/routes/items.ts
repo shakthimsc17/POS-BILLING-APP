@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Response } from 'express';
 import { body, query, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
@@ -13,7 +13,7 @@ router.use(authenticate);
 router.get('/', [
   query('page').optional().isInt({ min: 1 }),
   query('limit').optional().isInt({ min: 1, max: 1000 }),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -68,7 +68,7 @@ router.get('/', [
 });
 
 // Search items
-router.get('/search', [query('q').notEmpty()], async (req: AuthRequest, res) => {
+router.get('/search', [query('q').notEmpty()], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -114,7 +114,7 @@ router.get('/search', [query('q').notEmpty()], async (req: AuthRequest, res) => 
 });
 
 // Get items by categories
-router.get('/by-categories', [query('categoryIds').notEmpty()], async (req: AuthRequest, res) => {
+router.get('/by-categories', [query('categoryIds').notEmpty()], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -210,7 +210,7 @@ router.post(
     body('price').isFloat({ min: 0 }),
     body('stock').optional().isInt({ min: 0 }),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -321,7 +321,7 @@ router.put(
     body('price').optional().isFloat({ min: 0 }),
     body('stock').optional().isInt({ min: 0 }),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {

@@ -217,15 +217,22 @@
   position: sticky;
   top: 100px;
   height: fit-content;
+  max-height: calc(100vh - 120px);
   display: flex;
   flex-direction: column;
   gap: 0;
+  overflow: visible;
 }
 
 .cart-summary-content {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  max-height: calc(100vh - 300px);
+  padding-bottom: 0.5rem;
 }
 
 .cart-summary .card {
@@ -333,11 +340,15 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  margin-top: 0.75rem;
+  margin-top: auto;
   padding: 0.85rem 1rem;
   flex-shrink: 0;
   background: white;
   border-top: 2px solid #e0e6ed;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .cart-actions .btn {

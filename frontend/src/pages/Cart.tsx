@@ -54,8 +54,14 @@ export default function Cart({ onNavigate }: CartProps) {
     hasCustomPrice,
   } = useCartStore();
 
-  // Load cart on mount
+  const { loadItems } = useInventoryStore();
+
+  // Load items and cart on mount
   useEffect(() => {
+    // Ensure items are loaded for quick add functionality
+    loadItems();
+    
+    // Load saved cart
     loadCart().then((result) => {
       if (result?.salesCustomerId) {
         // Load the sales customer if it was saved
@@ -66,8 +72,8 @@ export default function Cart({ onNavigate }: CartProps) {
           }
         }).catch(console.error);
       }
-    });
-  }, [loadCart]);
+    }).catch(console.error);
+  }, [loadCart, loadItems]);
 
   // Auto-save cart when items, tax, discount, or payment method changes (debounced)
   useEffect(() => {

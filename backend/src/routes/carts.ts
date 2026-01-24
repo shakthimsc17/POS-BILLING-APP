@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
@@ -9,7 +9,7 @@ const router = express.Router();
 router.use(authenticate);
 
 // Get current user's saved cart
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', async (req: AuthRequest, res: Response) => {
   try {
     const cart = await prisma.cart.findUnique({
       where: { customerId: req.customerId! },
@@ -47,7 +47,7 @@ router.post(
     body('payment_method').optional().isIn(['cash', 'card', 'upi']),
     body('sales_customer_id').optional().isUUID(),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -114,7 +114,7 @@ router.post(
 );
 
 // Delete saved cart
-router.delete('/', async (req: AuthRequest, res) => {
+router.delete('/', async (req: AuthRequest, res: Response) => {
   try {
     const cart = await prisma.cart.findUnique({
       where: { customerId: req.customerId! },

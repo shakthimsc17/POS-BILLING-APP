@@ -38,7 +38,7 @@ export default function SalesPerformance() {
   const [endHour, setEndHour] = useState<number>(22);
   const [loading, setLoading] = useState(true);
 
-  // Check if user can view profit data
+  // Check if user can view profit data - moved after hooks
   if (!canViewProfit('sales-performance')) {
     return <AccessDenied />;
   }
