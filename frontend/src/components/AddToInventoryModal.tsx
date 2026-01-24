@@ -24,6 +24,8 @@ export default function AddToInventoryModal({ isOpen, onClose, quickSaleItem, on
     subcategory: '',
     barcode: '',
   });
+  const [stockDisplay, setStockDisplay] = useState<string>('0');
+  const [costDisplay, setCostDisplay] = useState<string>('0');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -47,6 +49,8 @@ export default function AddToInventoryModal({ isOpen, onClose, quickSaleItem, on
         subcategory: '',
         barcode: '',
       });
+      setStockDisplay('0');
+      setCostDisplay('0');
       setErrors({});
       setSubcategories([]);
     }
@@ -317,17 +321,27 @@ export default function AddToInventoryModal({ isOpen, onClose, quickSaleItem, on
               <input
                 type="number"
                 className={`input ${errors.stock ? 'error' : ''}`}
-                value={formData.stock}
-                onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
+                value={stockDisplay}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setStockDisplay(value);
+                  const numValue = value === '' ? 0 : parseInt(value) || 0;
+                  setFormData({ ...formData, stock: numValue });
+                }}
                 onFocus={(e) => {
                   if (e.target.value === '0') {
-                    e.target.value = '';
-                    setFormData({ ...formData, stock: 0 });
+                    setStockDisplay('');
                   }
                 }}
                 onBlur={(e) => {
-                  if (e.target.value === '') {
+                  const value = e.target.value;
+                  if (value === '' || value === '0') {
+                    setStockDisplay('0');
                     setFormData({ ...formData, stock: 0 });
+                  } else {
+                    const numValue = parseInt(value) || 0;
+                    setStockDisplay(numValue.toString());
+                    setFormData({ ...formData, stock: numValue });
                   }
                 }}
                 min="0"
@@ -344,17 +358,27 @@ export default function AddToInventoryModal({ isOpen, onClose, quickSaleItem, on
               <input
                 type="number"
                 className={`input ${errors.cost ? 'error' : ''}`}
-                value={formData.cost}
-                onChange={(e) => setFormData({ ...formData, cost: parseFloat(e.target.value) || 0 })}
+                value={costDisplay}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setCostDisplay(value);
+                  const numValue = value === '' ? 0 : parseFloat(value) || 0;
+                  setFormData({ ...formData, cost: numValue });
+                }}
                 onFocus={(e) => {
                   if (e.target.value === '0') {
-                    e.target.value = '';
-                    setFormData({ ...formData, cost: 0 });
+                    setCostDisplay('');
                   }
                 }}
                 onBlur={(e) => {
-                  if (e.target.value === '') {
+                  const value = e.target.value;
+                  if (value === '' || value === '0') {
+                    setCostDisplay('0');
                     setFormData({ ...formData, cost: 0 });
+                  } else {
+                    const numValue = parseFloat(value) || 0;
+                    setCostDisplay(numValue.toString());
+                    setFormData({ ...formData, cost: numValue });
                   }
                 }}
                 min="0"
