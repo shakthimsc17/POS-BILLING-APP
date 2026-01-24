@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCartStore } from '../store/cartStore';
 import { useInventoryStore } from '../store/inventoryStore';
 import { storageService } from '../services/storage';
@@ -7,6 +7,7 @@ import { printReceipt } from '../utils/printer';
 import { SalesCustomer } from '../types';
 import QuickAddItemModal from '../components/QuickAddItemModal';
 import CustomerSelectModal from '../components/CustomerSelectModal';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import './Cart.css';
 
 interface CartProps {
@@ -38,6 +39,11 @@ export default function Cart({ onNavigate }: CartProps) {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [editingPrice, setEditingPrice] = useState<Record<string, string>>({});
 
+  // Refs for input fields that need to be focused
+  const discountInputRef = useRef<HTMLInputElement>(null);
+  const taxInputRef = useRef<HTMLInputElement>(null);
+  const receivedAmountInputRef = useRef<HTMLInputElement>(null);
+
   const {
     setCustomPrice,
     getItemPrice,
@@ -62,6 +68,74 @@ export default function Cart({ onNavigate }: CartProps) {
       return newState;
     });
   };
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    handlers: {
+      onF2: () => {
+        // F2 - Discount: Focus discount input
+        discountInputRef.current?.focus();
+        discountInputRef.current?.select();
+      },
+      onF3: () => {
+        // F3 - Quick Add Item: Open Quick Add modal
+        if (!processing && !showQuickAddModal && !showCustomerModal) {
+          setShowQuickAddModal(true);
+        }
+      },
+      onF5: () => {
+        // F5 - Customer: Open customer selection modal
+        if (!processing && !showQuickAddModal && !showCustomerModal) {
+          setShowCustomerModal(true);
+        }
+      },
+      onF6: () => {
+        // F6 - Tax: Focus tax rate input
+        taxInputRef.current?.focus();
+        taxInputRef.current?.select();
+      },
+      onF8: () => {
+        // F8 - New Sale/Clear Cart: Clear cart
+        if (!processing && !showQuickAddModal && !showCustomerModal) {
+          if (confirm('Clear cart and start a new sale?')) {
+            clearCart();
+          }
+        }
+      },
+      onF10: () => {
+        // F10 - Complete Payment: Process payment
+        if (!processing && paymentMethod && !showQuickAddModal && !showCustomerModal) {
+          handlePayment();
+        }
+      },
+      onF12: () => {
+        // F12 - Cash Payment: Set payment method to Cash and focus received amount
+        if (!processing && !showQuickAddModal && !showCustomerModal) {
+          setPaymentMethod('cash');
+          // Focus received amount input after a short delay to ensure it's rendered
+          setTimeout(() => {
+            receivedAmountInputRef.current?.focus();
+            receivedAmountInputRef.current?.select();
+          }, 100);
+        }
+      },
+      onEscape: () => {
+        // Escape - Close modals
+        if (showQuickAddModal) {
+          setShowQuickAddModal(false);
+        }
+        if (showCustomerModal) {
+          setShowCustomerModal(false);
+        }
+      },
+    },
+    enabled: true,
+    disabledWhen: {
+      modalsOpen: showQuickAddModal || showCustomerModal,
+      processing: processing,
+      inputFocused: false, // We handle input focus check in the hook itself
+    },
+  });
 
   const handlePayment = async () => {
     if (!paymentMethod) {
@@ -269,8 +343,9 @@ export default function Cart({ onNavigate }: CartProps) {
             </div>
             <div className="summary-row">
               <div>
-                <label>Tax Rate (%):</label>
+                <label>Tax Rate (%): <span className="function-key-hint">F6</span></label>
                 <input
+                  ref={taxInputRef}
                   type="number"
                   className="input"
                   value={taxRate}
@@ -283,8 +358,9 @@ export default function Cart({ onNavigate }: CartProps) {
             </div>
             <div className="summary-row">
               <div>
-                <label>Discount (₹):</label>
+                <label>Discount (₹): <span className="function-key-hint">F2</span></label>
                 <input
+                  ref={discountInputRef}
                   type="number"
                   className="input"
                   value={discount}
@@ -322,7 +398,7 @@ export default function Cart({ onNavigate }: CartProps) {
                   className="btn btn-secondary"
                   onClick={() => setShowCustomerModal(true)}
                 >
-                  Select or Add Customer
+                  Select or Add Customer <span className="function-key-hint">F5</span>
                 </button>
               )}
             </div>
@@ -335,7 +411,7 @@ export default function Cart({ onNavigate }: CartProps) {
                 className={`payment-option ${paymentMethod === 'cash' ? 'active' : ''}`}
                 onClick={() => setPaymentMethod('cash')}
               >
-                💵 Cash
+                💵 Cash <span className="function-key-hint">F12</span>
               </button>
               <button
                 className={`payment-option ${paymentMethod === 'card' ? 'active' : ''}`}
@@ -358,6 +434,7 @@ export default function Cart({ onNavigate }: CartProps) {
               <label>
                 Received Amount (₹) <span style={{fontSize: '0.85rem', color: '#6c757d', fontWeight: 'normal'}}>(Optional - leave empty for exact payment)</span>:
                 <input
+                  ref={receivedAmountInputRef}
                   type="number"
                   className="input"
                   value={receivedAmount}
@@ -391,17 +468,17 @@ export default function Cart({ onNavigate }: CartProps) {
               onClick={handlePayment}
               disabled={processing || !paymentMethod}
             >
-              {processing ? 'Processing...' : 'Complete Payment'}
+              {processing ? 'Processing...' : 'Complete Payment'} <span className="function-key-hint">F10</span>
             </button>
             <div className="cart-actions-row">
               <button
                 className="btn btn-secondary"
                 onClick={() => setShowQuickAddModal(true)}
               >
-                + Quick Add Item
+                + Quick Add Item <span className="function-key-hint">F3</span>
               </button>
               <button className="btn btn-secondary" onClick={clearCart}>
-                Clear Cart
+                Clear Cart <span className="function-key-hint">F8</span>
               </button>
             </div>
           </div>
