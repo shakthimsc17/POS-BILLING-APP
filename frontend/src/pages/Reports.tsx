@@ -145,34 +145,50 @@ export default function Reports() {
     const transactions = filteredTx.length;
     const averageOrderValue = transactions > 0 ? revenue / transactions : 0;
 
-    let totalCost = 0;
-    let totalProfit = 0;
+    // Net Profit = grossProfit - loss - billDiscount
+    let grossProfit = 0;
+    let grossLoss = 0;
+    let totalBillDiscount = 0;
 
     filteredTx.forEach((tx) => {
       try {
         const cartItems = JSON.parse(tx.items_json);
+        let subtotal = 0;
         cartItems.forEach((cartItem: any) => {
           const item = cartItem.item || cartItem;
           const quantity = cartItem.quantity || 1;
+
           const cost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
-          const price = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
+          const price = cartItem.customPrice !== undefined
+            ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
+            : (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
+
           const validCost = isNaN(cost) ? 0 : cost;
           const validPrice = isNaN(price) ? 0 : price;
-          totalCost += validCost * quantity;
-          totalProfit += (validPrice - validCost) * quantity;
+
+          subtotal += validPrice * quantity;
+          const diff = (validPrice - validCost) * quantity;
+          if (diff >= 0) grossProfit += diff;
+          else grossLoss += Math.abs(diff);
         });
+
+        const totalAmount = typeof tx.total_amount === 'string' ? parseFloat(tx.total_amount) : tx.total_amount;
+        const validTotalAmount = isNaN(totalAmount) ? 0 : totalAmount;
+        const billDiscount = Math.max(0, subtotal - validTotalAmount);
+        totalBillDiscount += billDiscount;
       } catch (e) {
         console.error('Error parsing transaction items:', e);
       }
     });
 
-    const profitMargin = revenue > 0 ? (totalProfit / revenue) * 100 : 0;
+    const netProfit = grossProfit - grossLoss - totalBillDiscount;
+    const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
 
     return {
       revenue,
       transactions,
       averageOrderValue,
-      profit: totalProfit,
+      profit: netProfit,
       profitMargin,
     };
   };
@@ -666,7 +682,7 @@ export default function Reports() {
                 {showPrices ? formatCurrency(sales.profit) : '••••••'}
               </div>
               <div className="stat-description">
-                {showPrices ? `${sales.profitMargin.toFixed(1)}% margin` : 'Click eye icon to view'}
+                {showPrices ? `Net Profit: grossProfit - loss - billDiscount (${sales.profitMargin.toFixed(1)}% margin)` : 'Click eye icon to view'}
               </div>
             </div>
           </div>

@@ -108,6 +108,13 @@
   color: #27ae60;
 }
 
+.profit-subtext {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #6c757d;
+  line-height: 1.3;
+}
+
 .top-items-list {
   margin-top: 2rem;
   display: grid;

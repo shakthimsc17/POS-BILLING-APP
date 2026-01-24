@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { storageService } from '../services/storage';
 import { useCompanyStore } from '../store/companyStore';
-import { Transaction, Customer, Item } from '../types';
+import { Transaction, Customer, SalesCustomer, Item } from '../types';
 import { formatCurrency, formatOrderId, numberToWords } from '../utils/formatters';
 import './OrderDetails.css';
 
@@ -21,6 +21,7 @@ interface CartItem {
 export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
+  const [salesCustomer, setSalesCustomer] = useState<SalesCustomer | null>(null);
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<CartItem[]>([]);
   const { company, loadCompany } = useCompanyStore();
@@ -41,17 +42,32 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
       const parsedItems = JSON.parse(tx.items_json);
       setItems(parsedItems);
 
-      // Load customer if exists
-      if (tx.transaction_customer_id) {
+      // Prefer sales_customer_id (SalesCustomer used in Cart) then fallback to transaction_customer_id (Customer)
+      if (tx.sales_customer_id) {
+        try {
+          const salesCustomers = await storageService.getSalesCustomers();
+          const foundSalesCustomer = salesCustomers.find((c) => c.id === tx.sales_customer_id);
+          if (foundSalesCustomer) {
+            setSalesCustomer(foundSalesCustomer);
+            setCustomer(null);
+          }
+        } catch (error) {
+          console.error('Error loading sales customer:', error);
+        }
+      } else if (tx.transaction_customer_id) {
         try {
           const customers = await storageService.getCustomers();
           const foundCustomer = customers.find(c => c.id === tx.transaction_customer_id);
           if (foundCustomer) {
             setCustomer(foundCustomer);
+            setSalesCustomer(null);
           }
         } catch (error) {
           console.error('Error loading customer:', error);
         }
+      } else {
+        setCustomer(null);
+        setSalesCustomer(null);
       }
     } catch (error) {
       console.error('Error loading order details:', error);
@@ -75,7 +91,8 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
     let totalQuantity = 0;
     let subtotal = 0;
     let totalItemDiscount = 0;
-    let totalProfit = 0;
+    let grossProfit = 0;
+    let grossLoss = 0;
 
     items.forEach((cartItem) => {
       const item = cartItem.item || cartItem;
@@ -93,9 +110,14 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
       const itemDiscount = calculateItemDiscount(cartItem);
       totalItemDiscount += itemDiscount;
 
-      // Calculate profit: (sellingPrice - cost) * quantity
+      // Calculate profit/loss: (sellingPrice - cost) * quantity
       const cost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
-      totalProfit += (sellingPrice - cost) * quantity;
+      const diff = (sellingPrice - cost) * quantity;
+      if (diff >= 0) {
+        grossProfit += diff;
+      } else {
+        grossLoss += Math.abs(diff);
+      }
     });
 
     const totalAmount = typeof transaction?.total_amount === 'string' 
@@ -111,13 +133,19 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
     const tax = totalAmount > subtotal ? totalAmount - subtotal : 0;
     const grandTotal = totalAmount;
 
+    // Net Profit = grossProfit - grossLoss - overallDiscount
+    // (item-level discounts are already reflected in sellingPrice via customPrice)
+    const netProfit = grossProfit - grossLoss - overallDiscount;
+
     return {
       totalQuantity,
       subtotal,
       discount: overallDiscount,
       tax,
       grandTotal,
-      totalProfit,
+      grossProfit,
+      grossLoss,
+      netProfit,
       totalDiscount,
     };
   };
@@ -128,6 +156,14 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
     const invoiceNumber = formatOrderId(transaction?.id || '');
     const amountInWords = numberToWords(Math.floor(totals.grandTotal));
     const formattedDate = date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' });
+
+    const customerName = salesCustomer?.name || customer?.name || 'Walk-in Customer';
+    const customerMobile = salesCustomer?.mobile || customer?.phone || '';
+    const customerEmail = salesCustomer?.email || customer?.email || '';
+    const customerAddress =
+      (customer?.address || [customer?.city, customer?.state, customer?.pincode].filter(Boolean).join(', ')) ||
+      salesCustomer?.place ||
+      '';
     
     const printHTML = `
       <!DOCTYPE html>
@@ -424,23 +460,19 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
               <div class="customer-box">
                 <h4>Billing Details</h4>
                 <div class="customer-info">
-                  ${customer 
-                    ? `<div><strong>Name:</strong> ${customer.name}</div>
-                       ${customer.phone ? `<div><strong>Mobile:</strong> ${customer.phone}</div>` : ''}
-                       ${customer.email ? `<div><strong>Email:</strong> ${customer.email}</div>` : ''}
-                       ${customer.address ? `<div><strong>Address:</strong> ${customer.address}</div>` : '<div>Add Address</div>'}`
-                    : '<div><strong>Walk-in Customer</strong></div>'}
+                  <div><strong>Name:</strong> ${customerName}</div>
+                  ${customerMobile ? `<div><strong>Mobile:</strong> ${customerMobile}</div>` : ''}
+                  ${customerEmail ? `<div><strong>Email:</strong> ${customerEmail}</div>` : ''}
+                  ${customerAddress ? `<div><strong>Address:</strong> ${customerAddress}</div>` : '<div>Add Address</div>'}
                 </div>
               </div>
               <div class="customer-box">
                 <h4>Shipping Details</h4>
                 <div class="customer-info">
-                  ${customer 
-                    ? `<div><strong>Name:</strong> ${customer.name}</div>
-                       ${customer.phone ? `<div><strong>Mobile:</strong> ${customer.phone}</div>` : ''}
-                       ${customer.email ? `<div><strong>Email:</strong> ${customer.email}</div>` : ''}
-                       ${customer.address ? `<div><strong>Address:</strong> ${customer.address}</div>` : '<div>Add Address</div>'}`
-                    : '<div><strong>Walk-in Customer</strong></div>'}
+                  <div><strong>Name:</strong> ${customerName}</div>
+                  ${customerMobile ? `<div><strong>Mobile:</strong> ${customerMobile}</div>` : ''}
+                  ${customerEmail ? `<div><strong>Email:</strong> ${customerEmail}</div>` : ''}
+                  ${customerAddress ? `<div><strong>Address:</strong> ${customerAddress}</div>` : '<div>Add Address</div>'}
                 </div>
               </div>
             </div>
@@ -658,10 +690,19 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
 
         <div className="customer-section">
           <h3>Customer Details</h3>
-          {customer ? (
+        {salesCustomer ? (
+          <div className="customer-info">
+            <div><strong>Name:</strong> {salesCustomer.name}</div>
+            {salesCustomer.mobile && <div><strong>Mobile:</strong> {salesCustomer.mobile}</div>}
+            {salesCustomer.email && <div><strong>Email:</strong> {salesCustomer.email}</div>}
+            {salesCustomer.place && <div><strong>Place:</strong> {salesCustomer.place}</div>}
+          </div>
+        ) : customer ? (
             <div className="customer-info">
               <div><strong>Name:</strong> {customer.name}</div>
               {customer.phone && <div><strong>Mobile:</strong> {customer.phone}</div>}
+            {customer.email && <div><strong>Email:</strong> {customer.email}</div>}
+            {customer.address && <div><strong>Address:</strong> {customer.address}</div>}
             </div>
           ) : (
             <div className="customer-info">
@@ -737,8 +778,20 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
 
         <div className="profit-discount-box">
           <div className="profit-discount-item">
-            <span className="label">Total Profit:</span>
-            <span className="value profit">{formatCurrency(totals.totalProfit)}</span>
+            <span className="label">Gross Profit:</span>
+            <span className="value profit">{formatCurrency(totals.grossProfit)}</span>
+          </div>
+          <div className="profit-discount-item">
+            <span className="label">Loss:</span>
+            <span className="value discount">{formatCurrency(totals.grossLoss)}</span>
+          </div>
+          <div className="profit-discount-item">
+            <span className="label">Bill Discount:</span>
+            <span className="value discount">{formatCurrency(totals.discount || 0)}</span>
+          </div>
+          <div className="profit-discount-item">
+            <span className="label">Net Profit (grossProfit - loss - billDiscount):</span>
+            <span className="value profit">{formatCurrency(totals.netProfit)}</span>
           </div>
           <div className="profit-discount-item">
             <span className="label">Total Discount:</span>

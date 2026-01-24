@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { storageService } from '../services/storage';
-import { Transaction, Customer } from '../types';
+import { Transaction, Customer, SalesCustomer } from '../types';
 import { formatCurrency, formatOrderId } from '../utils/formatters';
 import { printReceipt } from '../utils/printer';
 import { useCompanyStore } from '../store/companyStore';
@@ -18,6 +18,7 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [salesCustomers, setSalesCustomers] = useState<SalesCustomer[]>([]);
   const [filter, setFilter] = useState<FilterPeriod>('today');
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
@@ -32,6 +33,7 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
   useEffect(() => {
     loadTransactions();
     loadCustomers();
+    loadSalesCustomers();
   }, []);
 
   useEffect(() => {
@@ -45,6 +47,16 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
       setCustomers(data);
     } catch (error) {
       console.error('Error loading customers:', error);
+    }
+  };
+
+  const loadSalesCustomers = async () => {
+    try {
+      const data = await storageService.getSalesCustomers();
+      setSalesCustomers(data);
+    } catch (error) {
+      // Keep orders page functional even if sales customers fail to load
+      console.error('Error loading sales customers:', error);
     }
   };
 
@@ -578,8 +590,11 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
               </thead>
               <tbody>
                 {filteredTransactions.map((transaction, index) => {
-                  // transaction_customer_id is the buyer (customer who made the purchase)
-                  const customer = transaction.transaction_customer_id 
+                  // Prefer sales_customer_id (SalesCustomer used in Cart) then fallback to transaction_customer_id (Customer)
+                  const salesCustomer = transaction.sales_customer_id
+                    ? salesCustomers.find((c) => c.id === transaction.sales_customer_id)
+                    : null;
+                  const customer = !salesCustomer && transaction.transaction_customer_id
                     ? customers.find(c => c.id === transaction.transaction_customer_id)
                     : null;
                   return (
@@ -601,7 +616,12 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
                         </a>
                       </td>
                       <td>
-                        {customer ? (
+                        {salesCustomer ? (
+                          <div className="customer-info">
+                            <div className="customer-name">{salesCustomer.name}</div>
+                            {salesCustomer.mobile && <div className="customer-phone">{salesCustomer.mobile}</div>}
+                          </div>
+                        ) : customer ? (
                           <div className="customer-info">
                             <div className="customer-name">{customer.name}</div>
                             {customer.phone && <div className="customer-phone">{customer.phone}</div>}

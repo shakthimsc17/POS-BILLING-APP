@@ -154,32 +154,46 @@ router.get('/summary', [
     const totalIncome = manualIncome + totalSales;
     const totalExpense = expenseEntries.reduce((sum, entry) => sum + Number(entry.amount), 0);
     
-    // Calculate profit from transactions for filtered date range
+    // Calculate NET profit from transactions for filtered date range:
+    // netProfit = grossProfit - grossLoss - billDiscount
+    // - grossProfit/grossLoss are based on sellingPrice (customPrice if present, else item price) vs cost
+    // - billDiscount is derived from subtotal vs totalAmount (keeps consistent with frontend)
     let totalProfit = 0;
     transactions.forEach((tx) => {
       try {
         const items = JSON.parse(tx.itemsJson);
+        let grossProfit = 0;
+        let grossLoss = 0;
+        let subtotal = 0;
+
         items.forEach((cartItem: any) => {
           const item = cartItem.item || cartItem;
           const quantity = cartItem.quantity || item.quantity || 1;
-          
-          let itemCost = 0;
-          let itemPrice = 0;
-          
-          if (item.cost !== undefined) {
-            itemCost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
-          }
-          
-          if (cartItem.customPrice !== undefined) {
-            itemPrice = typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : (cartItem.customPrice || 0);
-          } else if (item.price !== undefined) {
-            itemPrice = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
-          } else if (cartItem.originalPrice !== undefined) {
-            itemPrice = typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : (cartItem.originalPrice || 0);
-          }
-          
-          totalProfit += (itemPrice - itemCost) * quantity;
+
+          const itemCost =
+            item.cost !== undefined
+              ? (typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0))
+              : 0;
+
+          const itemPrice =
+            cartItem.customPrice !== undefined
+              ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : (cartItem.customPrice || 0))
+              : item.price !== undefined
+                  ? (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0))
+                  : cartItem.originalPrice !== undefined
+                      ? (typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : (cartItem.originalPrice || 0))
+                      : 0;
+
+          subtotal += itemPrice * quantity;
+          const diff = (itemPrice - itemCost) * quantity;
+          if (diff >= 0) grossProfit += diff;
+          else grossLoss += Math.abs(diff);
         });
+
+        const totalAmount = Number(tx.totalAmount);
+        const billDiscount = Math.max(0, subtotal - totalAmount);
+        const netProfit = grossProfit - grossLoss - billDiscount;
+        totalProfit += netProfit;
       } catch (e) {
         // Skip if itemsJson is invalid
       }
