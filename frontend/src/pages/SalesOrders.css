@@ -230,6 +230,19 @@
   background: #f8f9fa;
 }
 
+.order-id-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.order-id-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
 .order-id {
   font-family: 'Courier New', monospace;
   font-size: 0.85rem;

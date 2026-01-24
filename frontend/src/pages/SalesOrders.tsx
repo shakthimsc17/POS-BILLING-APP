@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { storageService } from '../services/storage';
 import { Transaction, Customer } from '../types';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency, formatOrderId } from '../utils/formatters';
 import { printReceipt } from '../utils/printer';
 import { useCompanyStore } from '../store/companyStore';
 import { useAuthStore } from '../store/authStore';
@@ -10,7 +10,11 @@ import './SalesOrders.css';
 
 type FilterPeriod = 'today' | 'week' | 'month' | 'year' | 'all' | 'custom';
 
-export default function SalesOrders() {
+interface SalesOrdersProps {
+  onNavigate?: (page: string, orderId?: string) => void;
+}
+
+export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavigate: undefined }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -563,29 +567,39 @@ export default function SalesOrders() {
             <table>
               <thead>
                 <tr>
-                  <th>Date & Time</th>
+                  <th>S.No</th>
                   <th>Order ID</th>
                   <th>Customer</th>
-                  <th>Items</th>
-                  <th>Payment</th>
                   <th>Amount</th>
-                  {canViewProfitData && <th>Profit/Loss</th>}
+                  <th>Payment</th>
+                  <th>Date</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredTransactions.map((transaction) => {
-                  const items = JSON.parse(transaction.items_json);
+                {filteredTransactions.map((transaction, index) => {
                   // transaction_customer_id is the buyer (customer who made the purchase)
                   const customer = transaction.transaction_customer_id 
                     ? customers.find(c => c.id === transaction.transaction_customer_id)
                     : null;
-                  const profitLoss = canViewProfitData ? calculateTransactionProfitLoss(transaction) : null;
-                  const netProfit = profitLoss ? profitLoss.profit - profitLoss.loss : null;
                   return (
                     <tr key={transaction.id}>
-                      <td>{formatDate(transaction.created_at)}</td>
-                      <td className="order-id">{transaction.id.substring(0, 8)}...</td>
+                      <td>{index + 1}</td>
+                      <td>
+                        <a
+                          href="#"
+                          className="order-id-link"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (onNavigate) {
+                              onNavigate('order-details', transaction.id);
+                            }
+                          }}
+                          title={transaction.id}
+                        >
+                          {formatOrderId(transaction.id)}
+                        </a>
+                      </td>
                       <td>
                         {customer ? (
                           <div className="customer-info">
@@ -596,67 +610,14 @@ export default function SalesOrders() {
                           <span className="walk-in">Walk-in</span>
                         )}
                       </td>
-                      <td>
-                        <div className="items-details">
-                          <div className="items-count">
-                            {items.length} item{items.length !== 1 ? 's' : ''}
-                          </div>
-                          <div className="items-list">
-                            {items.slice(0, 3).map((cartItem: any, idx: number) => {
-                              const item = cartItem.item || cartItem;
-                              return (
-                                <div key={idx} className="item-detail">
-                                  <span className="item-name">{item.name}</span>
-                                  {item.code && <span className="item-code">({item.code})</span>}
-                                  <span className="item-qty">x{cartItem.quantity || 1}</span>
-                                </div>
-                              );
-                            })}
-                            {items.length > 3 && (
-                              <div className="item-more">+{items.length - 3} more</div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
+                      <td className="amount">{formatCurrency(transaction.total_amount)}</td>
                       <td>
                         <span className="payment-method">
                           {getPaymentMethodIcon(transaction.payment_method)}{' '}
                           {transaction.payment_method.toUpperCase()}
                         </span>
                       </td>
-                      <td className="amount">{formatCurrency(transaction.total_amount)}</td>
-                      {canViewProfitData && profitLoss && (
-                        <td>
-                          <div className="profit-loss-cell">
-                            {profitLoss.profit > 0 && (
-                              <div className="profit-badge">
-                                <span className="profit-label">Profit:</span>
-                                <span className="profit-amount">+{formatCurrency(profitLoss.profit)}</span>
-                              </div>
-                            )}
-                            {profitLoss.discount > 0 && (
-                              <div className="discount-badge">
-                                <span className="discount-label">Discount:</span>
-                                <span className="discount-amount">-{formatCurrency(profitLoss.discount)}</span>
-                              </div>
-                            )}
-                            {profitLoss.loss > 0 && (
-                              <div className="loss-badge">
-                                <span className="loss-label">Loss:</span>
-                                <span className="loss-amount">-{formatCurrency(profitLoss.loss)}</span>
-                              </div>
-                            )}
-                            {profitLoss.profit === 0 && profitLoss.loss === 0 && profitLoss.discount === 0 && (
-                              <span className="no-profit-loss">-</span>
-                            )}
-                            {netProfit !== null && netProfit !== 0 && (
-                              <div className={`net-badge ${netProfit > 0 ? 'net-profit' : 'net-loss'}`}>
-                                Net: {formatCurrency(netProfit)}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      )}
+                      <td>{formatDate(transaction.created_at)}</td>
                       <td>
                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                           <button
@@ -664,7 +625,7 @@ export default function SalesOrders() {
                             onClick={() => handlePrintReceipt(transaction)}
                             title="Print Receipt"
                           >
-                            🖨️ Print
+                            🖨️
                           </button>
                           {(isAdmin || transaction.customer_id === currentUser?.id) && (
                             <button

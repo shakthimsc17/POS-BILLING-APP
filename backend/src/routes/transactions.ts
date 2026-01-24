@@ -198,6 +198,47 @@ router.post(
   }
 );
 
+// Get transaction by ID
+router.get('/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const isAdmin = req.customer?.isAdmin || false;
+
+    // Find transaction
+    const transaction = await prisma.transaction.findUnique({
+      where: { id },
+    });
+
+    if (!transaction) {
+      return res.status(404).json({ error: 'Transaction not found' });
+    }
+
+    // Check if user is admin or owner
+    if (!isAdmin && transaction.customerId !== req.customerId) {
+      return res.status(403).json({ error: 'You can only view your own transactions, or you must be an admin' });
+    }
+
+    // Transform Prisma camelCase to snake_case for frontend compatibility
+    const transformedTransaction = {
+      id: transaction.id,
+      customer_id: transaction.customerId,
+      transaction_customer_id: transaction.transactionCustomerId,
+      sales_customer_id: transaction.salesCustomerId,
+      total_amount: transaction.totalAmount.toString(),
+      payment_method: transaction.paymentMethod,
+      received_amount: transaction.receivedAmount ? transaction.receivedAmount.toString() : null,
+      change_amount: transaction.changeAmount ? transaction.changeAmount.toString() : null,
+      items_json: transaction.itemsJson,
+      created_at: transaction.createdAt.toISOString(),
+    };
+
+    res.json(transformedTransaction);
+  } catch (error: any) {
+    console.error('Error fetching transaction:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch transaction' });
+  }
+});
+
 // Delete transaction
 router.delete('/:id', async (req: AuthRequest, res) => {
   try {

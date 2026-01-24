@@ -74,6 +74,10 @@ export const storageService = {
     return Array.isArray(response) ? response : (response?.transactions || []);
   },
 
+  getTransaction: async (id: string): Promise<Transaction> => {
+    return apiClient.get<Transaction>(`/transactions/${id}`);
+  },
+
   addTransaction: async (transaction: Omit<Transaction, 'id' | 'created_at' | 'customer_id'>): Promise<Transaction> => {
     return apiClient.post<Transaction>('/transactions', transaction);
   },
