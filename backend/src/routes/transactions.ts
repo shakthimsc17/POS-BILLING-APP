@@ -150,7 +150,10 @@ router.post(
             if (existingItem && existingItem.stock >= quantity) {
               await prisma.item.update({
                 where: { id: itemId },
-                data: { stock: existingItem.stock - quantity },
+                data: { 
+                  stock: existingItem.stock - quantity,
+                  purchaseQty: { increment: quantity },
+                },
               });
             }
           }
@@ -231,9 +234,16 @@ router.delete('/:id', async (req: AuthRequest, res) => {
           });
 
           if (existingItem) {
+            // Ensure purchaseQty doesn't go below 0
+            const currentPurchaseQty = existingItem.purchaseQty || 0;
+            const newPurchaseQty = Math.max(0, currentPurchaseQty - quantity);
+            
             await prisma.item.update({
               where: { id: itemId },
-              data: { stock: existingItem.stock + quantity },
+              data: { 
+                stock: existingItem.stock + quantity,
+                purchaseQty: newPurchaseQty,
+              },
             });
           }
         }

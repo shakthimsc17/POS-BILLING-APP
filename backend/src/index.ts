@@ -18,6 +18,7 @@ import settingsRoutes from './routes/settings.js';
 import itemCodePrefixesRoutes from './routes/itemCodePrefixes.js';
 import activityLogsRoutes from './routes/activityLogs.js';
 import permissionsRoutes from './routes/permissions.js';
+import cartsRoutes from './routes/carts.js';
 
 dotenv.config();
 
@@ -111,6 +112,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/item-code-prefixes', itemCodePrefixesRoutes);
 app.use('/api/activity-logs', activityLogsRoutes);
 app.use('/api/permissions', permissionsRoutes);
+app.use('/api/carts', cartsRoutes);
 
 // Error handling
 app.use(errorHandler);

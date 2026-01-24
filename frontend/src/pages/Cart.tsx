@@ -30,6 +30,9 @@ export default function Cart({ onNavigate }: CartProps) {
     clearCart,
     paymentMethod,
     setPaymentMethod,
+    saveCart,
+    loadCart,
+    isLoading,
   } = useCartStore();
 
   const [receivedAmount, setReceivedAmount] = useState('');
@@ -38,6 +41,7 @@ export default function Cart({ onNavigate }: CartProps) {
   const [showQuickAddModal, setShowQuickAddModal] = useState(false);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [editingPrice, setEditingPrice] = useState<Record<string, string>>({});
+  const [cartSavedNotification, setCartSavedNotification] = useState(false);
 
   // Refs for input fields that need to be focused
   const discountInputRef = useRef<HTMLInputElement>(null);
@@ -49,6 +53,40 @@ export default function Cart({ onNavigate }: CartProps) {
     getItemPrice,
     hasCustomPrice,
   } = useCartStore();
+
+  // Load cart on mount
+  useEffect(() => {
+    loadCart().then((result) => {
+      if (result?.salesCustomerId) {
+        // Load the sales customer if it was saved
+        storageService.getSalesCustomers().then((customers) => {
+          const customer = customers.find(c => c.id === result.salesCustomerId);
+          if (customer) {
+            setSelectedSalesCustomer(customer);
+          }
+        }).catch(console.error);
+      }
+    });
+  }, [loadCart]);
+
+  // Auto-save cart when items, tax, discount, or payment method changes (debounced)
+  useEffect(() => {
+    if (isLoading) return; // Don't save while loading
+
+    const timeoutId = setTimeout(async () => {
+      if (items.length > 0 || taxRate > 0 || discount > 0 || paymentMethod) {
+        try {
+          await saveCart(selectedSalesCustomer?.id);
+          setCartSavedNotification(true);
+          setTimeout(() => setCartSavedNotification(false), 2000);
+        } catch (error) {
+          console.error('Error auto-saving cart:', error);
+        }
+      }
+    }, 2000); // Debounce: save 2 seconds after last change
+
+    return () => clearTimeout(timeoutId);
+  }, [items, taxRate, discount, paymentMethod, selectedSalesCustomer, isLoading, saveCart]);
 
   const handlePriceChange = (itemId: string, newPrice: string) => {
     setEditingPrice(prev => ({ ...prev, [itemId]: newPrice }));
@@ -83,8 +121,8 @@ export default function Cart({ onNavigate }: CartProps) {
           setShowQuickAddModal(true);
         }
       },
-      onF5: () => {
-        // F5 - Customer: Open customer selection modal
+      onF4: () => {
+        // F4 - Customer: Open customer selection modal
         if (!processing && !showQuickAddModal && !showCustomerModal) {
           setShowCustomerModal(true);
         }
@@ -99,7 +137,21 @@ export default function Cart({ onNavigate }: CartProps) {
         if (!processing && !showQuickAddModal && !showCustomerModal) {
           if (confirm('Clear cart and start a new sale?')) {
             clearCart();
+            // Delete saved cart
+            storageService.deleteCart().catch(console.error);
           }
+        }
+      },
+      onF9: () => {
+        // F9 - Save Cart: Manually save cart
+        if (!processing && !showQuickAddModal && !showCustomerModal) {
+          saveCart(selectedSalesCustomer?.id).then(() => {
+            setCartSavedNotification(true);
+            setTimeout(() => setCartSavedNotification(false), 3000);
+          }).catch((error) => {
+            console.error('Error saving cart:', error);
+            alert('Failed to save cart');
+          });
         }
       },
       onF10: () => {
@@ -109,14 +161,9 @@ export default function Cart({ onNavigate }: CartProps) {
         }
       },
       onF12: () => {
-        // F12 - Cash Payment: Set payment method to Cash and focus received amount
+        // F12 - Cash Payment: Set payment method to Cash only
         if (!processing && !showQuickAddModal && !showCustomerModal) {
           setPaymentMethod('cash');
-          // Focus received amount input after a short delay to ensure it's rendered
-          setTimeout(() => {
-            receivedAmountInputRef.current?.focus();
-            receivedAmountInputRef.current?.select();
-          }, 100);
         }
       },
       onEscape: () => {
@@ -195,8 +242,9 @@ export default function Cart({ onNavigate }: CartProps) {
         // Don't block payment if print fails
       }
 
-      // Clear cart
+      // Clear cart and delete saved cart
       clearCart();
+      await storageService.deleteCart().catch(console.error);
 
       // Show success with print option
       const discountAmount = changeAmount < 0 ? Math.abs(changeAmount) : 0;
@@ -254,6 +302,11 @@ export default function Cart({ onNavigate }: CartProps) {
 
   return (
     <div className="cart">
+      {cartSavedNotification && (
+        <div className="cart-saved-notification">
+          💾 Cart saved
+        </div>
+      )}
       <div className="cart-header">
         <h1>Sales Invoice</h1>
         <button className="btn btn-secondary" onClick={() => onNavigate('dashboard')}>
@@ -398,7 +451,7 @@ export default function Cart({ onNavigate }: CartProps) {
                   className="btn btn-secondary"
                   onClick={() => setShowCustomerModal(true)}
                 >
-                  Select or Add Customer <span className="function-key-hint">F5</span>
+                  Select or Add Customer <span className="function-key-hint">F4</span>
                 </button>
               )}
             </div>
@@ -476,6 +529,16 @@ export default function Cart({ onNavigate }: CartProps) {
                 onClick={() => setShowQuickAddModal(true)}
               >
                 + Quick Add Item <span className="function-key-hint">F3</span>
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={async () => {
+                  await saveCart(selectedSalesCustomer?.id);
+                  setCartSavedNotification(true);
+                  setTimeout(() => setCartSavedNotification(false), 3000);
+                }}
+              >
+                💾 Save Cart <span className="function-key-hint">F9</span>
               </button>
               <button className="btn btn-secondary" onClick={clearCart}>
                 Clear Cart <span className="function-key-hint">F8</span>
