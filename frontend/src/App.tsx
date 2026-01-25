@@ -29,14 +29,16 @@ const QuickSaleItems = lazy(() => import('./pages/QuickSaleItems'));
 const CashFlow = lazy(() => import('./pages/CashFlow'));
 const SalesPerformance = lazy(() => import('./pages/SalesPerformance'));
 const ACLPermissions = lazy(() => import('./pages/ACLPermissions'));
+const OrderDetails = lazy(() => import('./pages/OrderDetails'));
 
-type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'sales' | 'sales-performance' | 'customers' | 'import' | 'reports' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items' | 'cash-flow' | 'acl-permissions';
+type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'sales' | 'sales-performance' | 'customers' | 'import' | 'reports' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items' | 'cash-flow' | 'acl-permissions' | 'order-details';
 type AuthPage = 'signin' | 'signup';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [authPage, setAuthPage] = useState<AuthPage>('signin');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const { loadCategories, loadItems } = useInventoryStore();
   const { customer, initialized, initialize, signOut } = useAuthStore();
   const { items: cartItems } = useCartStore();
@@ -300,7 +302,8 @@ function App() {
             {currentPage === 'cart' && (canView('cart') ? <Cart onNavigate={setCurrentPage} /> : <AccessDenied />)}
             {currentPage === 'categories' && (canView('categories') ? <Categories onNavigate={setCurrentPage} /> : <AccessDenied />)}
             {currentPage === 'items' && (canView('items') ? <Items onNavigate={setCurrentPage} /> : <AccessDenied />)}
-            {currentPage === 'sales' && (canView('sales') ? <SalesOrders /> : <AccessDenied />)}
+            {currentPage === 'sales' && (canView('sales') ? <SalesOrders onNavigate={(page, orderId) => { if (page === 'order-details' && orderId) { setSelectedOrderId(orderId); setCurrentPage('order-details'); } }} /> : <AccessDenied />)}
+            {currentPage === 'order-details' && selectedOrderId && (canView('sales') ? <OrderDetails orderId={selectedOrderId} onBack={() => { setCurrentPage('sales'); setSelectedOrderId(null); }} /> : <AccessDenied />)}
             {currentPage === 'sales-performance' && (canView('sales-performance') ? <SalesPerformance /> : <AccessDenied />)}
             {currentPage === 'cash-flow' && (canView('cash-flow') ? <CashFlow /> : <AccessDenied />)}
             {currentPage === 'customers' && ((customer?.isAdmin || canView('customers')) ? <Customers /> : <AccessDenied />)}

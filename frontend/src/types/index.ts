@@ -21,6 +21,7 @@ export interface Item {
   price: number | string; // Prisma Decimal returns as string
   mrp?: number | string; // Prisma Decimal returns as string
   stock: number;
+  purchase_qty?: number;
   image_url?: string;
   created_at: string;
 }
@@ -174,6 +175,18 @@ export interface CashFlowSummary {
   total_expense: number;
   total_profit?: number; // Profit from transactions for filtered date range
   net_cash_flow: number;
+}
+
+export interface Cart {
+  id: string;
+  customer_id: string;
+  items_json: string;
+  tax_rate: number | string;
+  discount: number | string;
+  payment_method?: 'cash' | 'card' | 'upi';
+  sales_customer_id?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CashFlowCategory {

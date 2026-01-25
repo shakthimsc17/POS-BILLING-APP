@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Response } from 'express';
 import { body, query, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
@@ -11,7 +11,7 @@ router.use(authenticate);
 // Get all permissions for a customer type
 router.get('/', [
   query('customerType').optional().isString(),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -114,7 +114,7 @@ router.get('/pages', async (req: AuthRequest, res) => {
 router.post('/', [
   body('customerType').notEmpty().isIn(['sales person', 'manager', 'Admin']),
   body('permissions').isArray(),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -177,8 +177,8 @@ router.post('/', [
       code: error.code,
       meta: error.meta,
       message: error.message,
-      customerType,
-      permissionsCount: permissions?.length,
+      customerType: req.body.customerType,
+      permissionsCount: req.body.permissions?.length,
     });
     
     // Provide more detailed error messages
@@ -213,7 +213,7 @@ router.put('/:id', [
   body('can_edit').optional().isBoolean(),
   body('can_delete').optional().isBoolean(),
   body('can_view_profit').optional().isBoolean(),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

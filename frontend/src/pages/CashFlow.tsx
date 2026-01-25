@@ -94,8 +94,11 @@ export default function CashFlow() {
       const dayExpense = summaryData.total_expense || 0;
       const dayNetFlow = dayProfit + dayManualIncome - dayExpense;
       
+      // Income = Profit + Manual Income (not Total Sales + Manual Income)
+      const totalIncome = dayProfit + dayManualIncome;
+      
       setSummary({
-        total_income: summaryData.total_income,
+        total_income: totalIncome,
         total_sales: summaryData.total_sales || 0,
         manual_income: summaryData.manual_income || 0,
         total_expense: summaryData.total_expense,
@@ -348,8 +351,8 @@ export default function CashFlow() {
             <div className="summary-card-amount income">{formatCurrency(summary.total_income)}</div>
             <div className="income-breakdown">
               <div className="income-item">
-                <span>Total Sales:</span>
-                <span className="income-sales">{formatCurrency(summary.total_sales)}</span>
+                <span>Profit:</span>
+                <span className="income-profit">{formatCurrency(summary.total_profit || 0)}</span>
               </div>
               <div className="income-item">
                 <span>Manual Income:</span>

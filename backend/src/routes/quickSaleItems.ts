@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
@@ -55,7 +55,7 @@ router.post(
     body('quantity').isInt({ min: 1 }),
     body('price').isFloat({ min: 0 }),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -102,7 +102,7 @@ router.put(
     body('quantity').optional().isInt({ min: 1 }),
     body('price').optional().isFloat({ min: 0 }),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -197,7 +197,7 @@ router.post(
     body('price').optional().isFloat({ min: 0 }),
     body('mrp').optional().isFloat({ min: 0 }),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
