@@ -344,21 +344,29 @@
 }
 
 .summary-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  display: grid;
+  grid-template-columns: max-content max-content;
+  align-items: baseline;
+  column-gap: 0.4rem;
+  row-gap: 0.25rem;
+  justify-content: start;
 }
 
 .summary-label {
   font-size: 0.85rem;
   color: #6c757d;
   font-weight: 500;
+  grid-column: 1;
 }
 
 .summary-value {
   font-size: 1.1rem;
   font-weight: 700;
   color: #1a1a1a;
+  grid-column: 2;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .summary-value.positive {
