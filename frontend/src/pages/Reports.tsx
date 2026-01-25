@@ -145,34 +145,50 @@ export default function Reports() {
     const transactions = filteredTx.length;
     const averageOrderValue = transactions > 0 ? revenue / transactions : 0;
 
-    let totalCost = 0;
-    let totalProfit = 0;
+    // Net Profit = grossProfit - loss - billDiscount
+    let grossProfit = 0;
+    let grossLoss = 0;
+    let totalBillDiscount = 0;
 
     filteredTx.forEach((tx) => {
       try {
         const cartItems = JSON.parse(tx.items_json);
+        let subtotal = 0;
         cartItems.forEach((cartItem: any) => {
           const item = cartItem.item || cartItem;
           const quantity = cartItem.quantity || 1;
+
           const cost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
-          const price = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
+          const price = cartItem.customPrice !== undefined
+            ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
+            : (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
+
           const validCost = isNaN(cost) ? 0 : cost;
           const validPrice = isNaN(price) ? 0 : price;
-          totalCost += validCost * quantity;
-          totalProfit += (validPrice - validCost) * quantity;
+
+          subtotal += validPrice * quantity;
+          const diff = (validPrice - validCost) * quantity;
+          if (diff >= 0) grossProfit += diff;
+          else grossLoss += Math.abs(diff);
         });
+
+        const totalAmount = typeof tx.total_amount === 'string' ? parseFloat(tx.total_amount) : tx.total_amount;
+        const validTotalAmount = isNaN(totalAmount) ? 0 : totalAmount;
+        const billDiscount = Math.max(0, subtotal - validTotalAmount);
+        totalBillDiscount += billDiscount;
       } catch (e) {
         console.error('Error parsing transaction items:', e);
       }
     });
 
-    const profitMargin = revenue > 0 ? (totalProfit / revenue) * 100 : 0;
+    const netProfit = grossProfit - grossLoss - totalBillDiscount;
+    const profitMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
 
     return {
       revenue,
       transactions,
       averageOrderValue,
-      profit: totalProfit,
+      profit: netProfit,
       profitMargin,
     };
   };
@@ -326,6 +342,55 @@ export default function Reports() {
     return Array.from(categoryMap.values()).sort((a, b) => b.value - a.value);
   };
 
+  const calculateInvestmentDetails = () => {
+    // Total selling amount = sum of (item.stock × item.price) for all items
+    const totalSellingAmount = items.reduce((sum, item) => {
+      const price = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
+      return sum + item.stock * (isNaN(price) ? 0 : price);
+    }, 0);
+
+    // Sales ordered selling amount = sum of (qty × price) from all transactions
+    let salesOrderedSellingAmount = 0;
+    transactions.forEach((tx) => {
+      try {
+        const cartItems = JSON.parse(tx.items_json);
+        cartItems.forEach((cartItem: any) => {
+          const item = cartItem.item || cartItem;
+          const quantity = cartItem.quantity || 1;
+          
+          // Get selling price - use customPrice if available, otherwise use item price
+          const sellingPrice = cartItem.customPrice !== undefined
+            ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
+            : (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
+          
+          salesOrderedSellingAmount += (isNaN(sellingPrice) ? 0 : sellingPrice) * quantity;
+        });
+      } catch (e) {
+        console.error('Error parsing transaction items:', e);
+      }
+    });
+
+    // Remaining amount = Total selling amount - Sales ordered selling amount
+    const remainingAmount = totalSellingAmount - salesOrderedSellingAmount;
+
+    // Remaining investment = sum of (item.stock × item.cost) for all items (current inventory)
+    const remainingInvestment = items.reduce((sum, item) => {
+      const cost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
+      return sum + item.stock * (isNaN(cost) ? 0 : cost);
+    }, 0);
+
+    // Remaining profit = Remaining amount - Remaining investment
+    const remainingProfit = remainingAmount - remainingInvestment;
+
+    return {
+      totalSellingAmount,
+      salesOrderedSellingAmount,
+      remainingAmount,
+      remainingInvestment,
+      remainingProfit,
+    };
+  };
+
   const handleExportPDF = async () => {
     const companyStore = useCompanyStore.getState();
     // Ensure company data is loaded from database
@@ -441,6 +506,7 @@ export default function Reports() {
 
   const investment = calculateInvestment();
   const sales = calculateSales();
+  const investmentDetails = calculateInvestmentDetails();
   const topItems = getTopSellingItems();
   const categoryPerformance = getCategoryPerformance();
   const paymentStats = getPaymentMethodStats();
@@ -545,6 +611,49 @@ export default function Reports() {
         </div>
       </div>
 
+      {/* Investment Details */}
+      <div className="report-section">
+        <h2>💼 Investment Details</h2>
+        <div className="investment-cards">
+          <div className="stat-card investment">
+            <div className="stat-icon">💰</div>
+            <div className="stat-content">
+              <div className="stat-label">Total Selling Amount</div>
+              <div className="stat-value">
+                {showPrices ? formatCurrency(investmentDetails.totalSellingAmount) : '••••••'}
+              </div>
+              <div className="stat-description">
+                {showPrices ? 'Based on items qty × price (all inventory)' : 'Click eye icon to view'}
+              </div>
+            </div>
+          </div>
+          <div className="stat-card investment">
+            <div className="stat-icon">📊</div>
+            <div className="stat-content">
+              <div className="stat-label">Remaining Amount After Sales</div>
+              <div className="stat-value">
+                {showPrices ? formatCurrency(investmentDetails.remainingAmount) : '••••••'}
+              </div>
+              <div className="stat-description">
+                {showPrices ? 'Total selling amount - Sales ordered selling amount' : 'Click eye icon to view'}
+              </div>
+            </div>
+          </div>
+          <div className="stat-card investment total">
+            <div className="stat-icon">✅</div>
+            <div className="stat-content">
+              <div className="stat-label">Remaining Profit</div>
+              <div className="stat-value">
+                {showPrices ? formatCurrency(investmentDetails.remainingProfit) : '••••••'}
+              </div>
+              <div className="stat-description">
+                {showPrices ? 'Remaining sales amount - Remaining investment' : 'Click eye icon to view'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Sales Performance */}
       <div className="report-section">
         <h2>📈 Sales Performance</h2>
@@ -573,7 +682,7 @@ export default function Reports() {
                 {showPrices ? formatCurrency(sales.profit) : '••••••'}
               </div>
               <div className="stat-description">
-                {showPrices ? `${sales.profitMargin.toFixed(1)}% margin` : 'Click eye icon to view'}
+                {showPrices ? `Net Profit: grossProfit - loss - billDiscount (${sales.profitMargin.toFixed(1)}% margin)` : 'Click eye icon to view'}
               </div>
             </div>
           </div>

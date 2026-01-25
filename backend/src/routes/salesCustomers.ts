@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Response } from 'express';
 import { body, validationResult, query } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
@@ -23,7 +23,7 @@ router.get('/', async (req: AuthRequest, res) => {
 });
 
 // Search sales customers by name, mobile, or place
-router.get('/search', [query('q').notEmpty()], async (req: AuthRequest, res) => {
+router.get('/search', [query('q').notEmpty()], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -61,7 +61,7 @@ router.post(
     body('email').optional().isEmail().normalizeEmail(),
     body('place').optional().isString().trim(),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -96,7 +96,7 @@ router.put(
     body('email').optional().isEmail().normalizeEmail(),
     body('place').optional().isString().trim(),
   ],
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { CartItem, Item } from '../types';
 import { calculateSubtotal, calculateTax, calculateDiscount, calculateTotal } from '../utils/calculations';
+import { storageService } from '../services/storage';
 
 interface CartStore {
   items: CartItem[];
@@ -22,6 +23,9 @@ interface CartStore {
   getDiscount: () => number;
   getTotal: () => number;
   getItemCount: () => number;
+  saveCart: (salesCustomerId?: string) => Promise<void>;
+  loadCart: () => Promise<{ salesCustomerId?: string } | null>;
+  isLoading: boolean;
 }
 
 export const useCartStore = create<CartStore>((set, get) => ({
@@ -29,6 +33,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
   taxRate: 0,
   discount: 0,
   paymentMethod: null,
+  isLoading: false,
 
   addItem: (item: Item, quantity: number = 1) => {
     const currentItems = get().items;
@@ -189,6 +194,51 @@ export const useCartStore = create<CartStore>((set, get) => ({
 
   getItemCount: () => {
     return get().items.reduce((sum, ci) => sum + ci.quantity, 0);
+  },
+
+  saveCart: async (salesCustomerId?: string) => {
+    try {
+      const state = get();
+      await storageService.saveCart({
+        items_json: JSON.stringify(state.items),
+        tax_rate: state.taxRate,
+        discount: state.discount,
+        payment_method: state.paymentMethod || undefined,
+        sales_customer_id: salesCustomerId,
+      });
+    } catch (error) {
+      console.error('Error saving cart:', error);
+      // Don't throw - silent fail for auto-save
+    }
+  },
+
+  loadCart: async () => {
+    try {
+      set({ isLoading: true });
+      const savedCart = await storageService.getCart();
+      
+      if (savedCart) {
+        try {
+          const items = JSON.parse(savedCart.items_json);
+          set({
+            items: items || [],
+            taxRate: typeof savedCart.tax_rate === 'string' ? parseFloat(savedCart.tax_rate) : savedCart.tax_rate,
+            discount: typeof savedCart.discount === 'string' ? parseFloat(savedCart.discount) : savedCart.discount,
+            paymentMethod: savedCart.payment_method || null,
+          });
+          return { salesCustomerId: savedCart.sales_customer_id };
+        } catch (parseError) {
+          console.error('Error parsing cart items:', parseError);
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error('Error loading cart:', error);
+      // Don't throw - just continue with empty cart
+      return null;
+    } finally {
+      set({ isLoading: false });
+    }
   },
 }));
 

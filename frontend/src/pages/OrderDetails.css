@@ -1,0 +1,259 @@
+.order-details {
+  animation: fadeIn 0.5s ease-in;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.order-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.invoice-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+.invoice-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #2c3e50;
+}
+
+.company-logo-container {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.company-logo {
+  max-width: 150px;
+  max-height: 80px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.company-name {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: #2c3e50;
+}
+
+.company-details {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #555;
+}
+
+.company-details div {
+  margin: 0.25rem 0;
+}
+
+.invoice-info {
+  display: flex;
+  justify-content: space-between;
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border: 1px solid #e0e6ed;
+  border-radius: 6px;
+}
+
+.invoice-info-left,
+.invoice-info-right {
+  flex: 1;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 0.25rem;
+}
+
+.info-value {
+  font-size: 15px;
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+.customer-section {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border: 1px solid #e0e6ed;
+  border-radius: 6px;
+}
+
+.customer-section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.customer-info {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #333;
+}
+
+.customer-info div {
+  margin: 0.5rem 0;
+}
+
+.items-section {
+  margin: 2rem 0;
+}
+
+.items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.items-table thead {
+  background: #2c3e50;
+  color: white;
+}
+
+.items-table th {
+  padding: 1rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.items-table td {
+  padding: 1rem 0.75rem;
+  border-bottom: 1px solid #e0e6ed;
+  font-size: 14px;
+}
+
+.items-table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.items-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.items-table .text-right {
+  text-align: right;
+}
+
+.items-table .text-center {
+  text-align: center;
+}
+
+.totals-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border: 1px solid #e0e6ed;
+  border-radius: 6px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  font-size: 15px;
+  color: #333;
+}
+
+.total-row.grand-total {
+  font-weight: bold;
+  font-size: 20px;
+  padding: 1rem 0;
+  margin-top: 0.5rem;
+  border-top: 2px solid #2c3e50;
+  color: #2c3e50;
+}
+
+.profit-discount-box {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-around;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.profit-discount-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profit-discount-item .label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profit-discount-item .value {
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+}
+
+.profit-discount-item .value.profit {
+  color: #4ade80;
+}
+
+.profit-discount-item .value.discount {
+  color: #fbbf24;
+}
+
+.loading-state,
+.error-state {
+  text-align: center;
+  padding: 3rem;
+}
+
+.loading-state p,
+.error-state p {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+@media print {
+  .order-details-header {
+    display: none;
+  }
+  
+  .profit-discount-box {
+    display: none;
+  }
+  
+  .invoice-container {
+    box-shadow: none;
+    padding: 0;
+  }
+}
+

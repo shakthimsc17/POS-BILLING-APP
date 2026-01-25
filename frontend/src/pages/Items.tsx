@@ -406,7 +406,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
           <h1>{company.logo ? '' : '📦 '}Items</h1>
         </div>
         <div className="header-actions">
-          {items.length > 0 && (
+          {items.length > 0 && isAdmin && (
             <button 
               className="btn btn-danger" 
               onClick={() => setDeleteAllModalVisible(true)}
@@ -646,7 +646,14 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                   type="text"
                   className="input"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    const newName = e.target.value;
+                    setName(newName);
+                    // Auto-update display_name if it matches the old name or is empty
+                    if (!displayName || displayName === name || displayName === editingItem?.name) {
+                      setDisplayName(newName);
+                    }
+                  }}
                 />
               </label>
               <label>
@@ -769,6 +776,17 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                   className="input"
                   value={stock}
                   onChange={(e) => setStock(e.target.value)}
+                  onFocus={(e) => {
+                    if (e.target.value === '0') {
+                      e.target.value = '';
+                      setStock('');
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (e.target.value === '') {
+                      setStock('0');
+                    }
+                  }}
                   min="0"
                 />
               </label>

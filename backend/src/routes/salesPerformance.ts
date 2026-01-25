@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Response } from 'express';
 import { query, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
@@ -11,7 +11,7 @@ router.use(authenticate);
 // Get sales data for charts
 router.get('/sales', [
   query('period').isIn(['7days', 'week', 'month', 'year', 'overall']).withMessage('Invalid period'),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -84,23 +84,24 @@ router.get('/sales', [
       grouped[key].sales += amount;
       grouped[key].count += 1;
 
-      // Calculate profit from items
+      // Calculate NET profit from items (grossProfit - grossLoss - billDiscount)
       try {
         const items = JSON.parse(tx.itemsJson);
+        let grossProfit = 0;
+        let grossLoss = 0;
+        let subtotal = 0;
+
         items.forEach((cartItem: any) => {
-          // Items can be stored as { item: {...}, quantity, subtotal } or directly as item
           const item = cartItem.item || cartItem;
           const quantity = cartItem.quantity || item.quantity || 1;
-          
-          // Get cost and price - check multiple possible locations
+
           let itemCost = 0;
           let itemPrice = 0;
-          
+
           if (item.cost !== undefined) {
             itemCost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
           }
-          
-          // Price might be custom price or original price
+
           if (cartItem.customPrice !== undefined) {
             itemPrice = typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : (cartItem.customPrice || 0);
           } else if (item.price !== undefined) {
@@ -108,10 +109,18 @@ router.get('/sales', [
           } else if (cartItem.originalPrice !== undefined) {
             itemPrice = typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : (cartItem.originalPrice || 0);
           }
-          
-          const profit = (itemPrice - itemCost) * quantity;
-          grouped[key].profit += profit;
+
+          subtotal += itemPrice * quantity;
+          const diff = (itemPrice - itemCost) * quantity;
+          if (diff >= 0) grossProfit += diff;
+          else grossLoss += Math.abs(diff);
         });
+
+        const totalAmount = Number(tx.totalAmount);
+        const billDiscount = Math.max(0, subtotal - totalAmount);
+        const netProfit = grossProfit - grossLoss - billDiscount;
+
+        grouped[key].profit += netProfit;
       } catch (e) {
         console.error('Error calculating profit for transaction:', e);
         // If itemsJson is invalid, skip profit calculation
@@ -138,7 +147,7 @@ router.get('/sales', [
 // Get profit data
 router.get('/profit', [
   query('period').isIn(['7days', 'week', 'month', 'year', 'overall']).withMessage('Invalid period'),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -186,10 +195,12 @@ router.get('/profit', [
       orderBy: { createdAt: 'asc' },
     });
 
-    // Calculate total profit
+    // Calculate NET profit (grossProfit - grossLoss - billDiscount)
     let totalProfit = 0;
     let totalSales = 0;
     let totalCost = 0;
+    let totalLoss = 0;
+    let totalBillDiscount = 0;
 
     transactions.forEach((tx) => {
       const amount = Number(tx.totalAmount);
@@ -197,6 +208,7 @@ router.get('/profit', [
 
       try {
         const items = JSON.parse(tx.itemsJson);
+        let subtotal = 0;
         items.forEach((cartItem: any) => {
           // Items can be stored as { item: {...}, quantity, subtotal } or directly as item
           const item = cartItem.item || cartItem;
@@ -218,21 +230,30 @@ router.get('/profit', [
           } else if (cartItem.originalPrice !== undefined) {
             itemPrice = typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : (cartItem.originalPrice || 0);
           }
-          
+
+          subtotal += itemPrice * quantity;
           totalCost += itemCost * quantity;
-          totalProfit += (itemPrice - itemCost) * quantity;
+
+          const diff = (itemPrice - itemCost) * quantity;
+          if (diff >= 0) totalProfit += diff;
+          else totalLoss += Math.abs(diff);
         });
+
+        const billDiscount = Math.max(0, subtotal - amount);
+        totalBillDiscount += billDiscount;
       } catch (e) {
         console.error('Error calculating profit for transaction:', e);
         // If itemsJson is invalid, skip
       }
     });
 
+    const netProfit = totalProfit - totalLoss - totalBillDiscount;
+
     res.json({
-      total_profit: totalProfit,
+      total_profit: netProfit,
       total_sales: totalSales,
       total_cost: totalCost,
-      profit_margin: totalSales > 0 ? (totalProfit / totalSales) * 100 : 0,
+      profit_margin: totalSales > 0 ? (netProfit / totalSales) * 100 : 0,
     });
   } catch (error: any) {
     console.error('Error fetching profit data:', error);
@@ -244,7 +265,7 @@ router.get('/profit', [
 router.get('/top-items', [
   query('period').optional().isIn(['7days', 'week', 'month', 'year', 'overall']),
   query('limit').optional().isInt({ min: 1, max: 50 }),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -337,7 +358,7 @@ router.get('/top-items', [
         quantity: data.quantity,
         revenue: data.revenue,
       }))
-      .sort((a, b) => b.revenue - a.revenue)
+      .sort((a, b) => b.quantity - a.quantity)
       .slice(0, limit);
 
     res.json(topItems);
@@ -350,7 +371,7 @@ router.get('/top-items', [
 // Get sales by payment method
 router.get('/payment-methods', [
   query('period').optional().isIn(['7days', 'week', 'month', 'year', 'overall']),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -418,7 +439,7 @@ router.get('/hourly', [
   query('date').isISO8601().withMessage('Date must be a valid ISO8601 date'),
   query('startHour').optional().isInt({ min: 0, max: 23 }),
   query('endHour').optional().isInt({ min: 0, max: 23 }),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -473,9 +494,12 @@ router.get('/hourly', [
         hourlyData[hour].sales += amount;
         hourlyData[hour].count += 1;
 
-        // Calculate profit
+        // Calculate NET profit (grossProfit - grossLoss - billDiscount)
         try {
           const items = JSON.parse(tx.itemsJson);
+          let grossProfit = 0;
+          let grossLoss = 0;
+          let subtotal = 0;
           items.forEach((cartItem: any) => {
             const item = cartItem.item || cartItem;
             const quantity = cartItem.quantity || item.quantity || 1;
@@ -494,10 +518,17 @@ router.get('/hourly', [
             } else if (cartItem.originalPrice !== undefined) {
               itemPrice = typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : (cartItem.originalPrice || 0);
             }
-            
-            const profit = (itemPrice - itemCost) * quantity;
-            hourlyData[hour].profit += profit;
+
+            subtotal += itemPrice * quantity;
+            const diff = (itemPrice - itemCost) * quantity;
+            if (diff >= 0) grossProfit += diff;
+            else grossLoss += Math.abs(diff);
           });
+
+          const totalAmount = Number(tx.totalAmount);
+          const billDiscount = Math.max(0, subtotal - totalAmount);
+          const netProfit = grossProfit - grossLoss - billDiscount;
+          hourlyData[hour].profit += netProfit;
         } catch (e) {
           // Skip if itemsJson is invalid
         }

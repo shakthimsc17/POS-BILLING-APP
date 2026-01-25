@@ -38,7 +38,7 @@ export default function SalesPerformance() {
   const [endHour, setEndHour] = useState<number>(22);
   const [loading, setLoading] = useState(true);
 
-  // Check if user can view profit data
+  // Check if user can view profit data - moved after hooks
   if (!canViewProfit('sales-performance')) {
     return <AccessDenied />;
   }
@@ -191,7 +191,7 @@ export default function SalesPerformance() {
                   dataKey="profit" 
                   stroke="#27ae60" 
                   strokeWidth={2}
-                  name="Profit"
+                  name="Net Profit"
                   dot={{ r: 4 }}
                   activeDot={{ r: 6 }}
                 />
@@ -222,9 +222,12 @@ export default function SalesPerformance() {
         {profitData && (
           <div className="profit-summary">
             <div className="profit-card">
-              <div className="profit-label">Total Profit</div>
+              <div className="profit-label">Net Profit</div>
               <div className="profit-value positive">
                 {formatCurrency(profitData.total_profit || 0)}
+              </div>
+              <div className="profit-subtext">
+                Net Profit: grossProfit - loss - billDiscount
               </div>
             </div>
             <div className="profit-card">
@@ -260,7 +263,7 @@ export default function SalesPerformance() {
                   labelFormatter={(label) => `Date: ${formatDate(label, profitPeriod)}`}
                 />
                 <Legend />
-                <Bar dataKey="profit" fill="#27ae60" name="Profit" />
+                <Bar dataKey="profit" fill="#27ae60" name="Net Profit" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -281,9 +284,9 @@ export default function SalesPerformance() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
                 <YAxis dataKey="name" type="category" width={150} />
-                <Tooltip formatter={(value: any) => formatCurrency(value)} />
+                <Tooltip formatter={(value: any) => value} />
                 <Legend />
-                <Bar dataKey="revenue" fill="#3498db" name="Revenue" />
+                <Bar dataKey="quantity" fill="#3498db" name="Quantity" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -363,7 +366,7 @@ export default function SalesPerformance() {
                 />
                 <Legend />
                 <Bar dataKey="sales" fill="#3498db" name="Sales" />
-                <Bar dataKey="profit" fill="#27ae60" name="Profit" />
+                <Bar dataKey="profit" fill="#27ae60" name="Net Profit" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -454,7 +457,7 @@ export default function SalesPerformance() {
                 />
                 <Legend />
                 <Bar dataKey="sales" fill="#3498db" name="Sales" />
-                <Bar dataKey="profit" fill="#27ae60" name="Profit" />
+                <Bar dataKey="profit" fill="#27ae60" name="Net Profit" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -470,7 +473,7 @@ export default function SalesPerformance() {
               </span>
             </div>
             <div className="summary-item">
-              <span className="summary-label">Total Profit:</span>
+              <span className="summary-label">Total Net Profit:</span>
               <span className="summary-value positive">
                 {formatCurrency(hourlyData.reduce((sum, item) => sum + item.profit, 0))}
               </span>

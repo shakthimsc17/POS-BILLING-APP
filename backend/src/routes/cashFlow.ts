@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Response } from 'express';
 import { body, query, param, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
@@ -13,7 +13,7 @@ router.get('/', [
   query('startDate').optional().isISO8601(),
   query('endDate').optional().isISO8601(),
   query('type').optional().isIn(['income', 'expense']),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -70,7 +70,7 @@ router.get('/', [
 router.get('/summary', [
   query('startDate').optional().isISO8601(),
   query('endDate').optional().isISO8601(),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -154,32 +154,46 @@ router.get('/summary', [
     const totalIncome = manualIncome + totalSales;
     const totalExpense = expenseEntries.reduce((sum, entry) => sum + Number(entry.amount), 0);
     
-    // Calculate profit from transactions for filtered date range
+    // Calculate NET profit from transactions for filtered date range:
+    // netProfit = grossProfit - grossLoss - billDiscount
+    // - grossProfit/grossLoss are based on sellingPrice (customPrice if present, else item price) vs cost
+    // - billDiscount is derived from subtotal vs totalAmount (keeps consistent with frontend)
     let totalProfit = 0;
     transactions.forEach((tx) => {
       try {
         const items = JSON.parse(tx.itemsJson);
+        let grossProfit = 0;
+        let grossLoss = 0;
+        let subtotal = 0;
+
         items.forEach((cartItem: any) => {
           const item = cartItem.item || cartItem;
           const quantity = cartItem.quantity || item.quantity || 1;
-          
-          let itemCost = 0;
-          let itemPrice = 0;
-          
-          if (item.cost !== undefined) {
-            itemCost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
-          }
-          
-          if (cartItem.customPrice !== undefined) {
-            itemPrice = typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : (cartItem.customPrice || 0);
-          } else if (item.price !== undefined) {
-            itemPrice = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
-          } else if (cartItem.originalPrice !== undefined) {
-            itemPrice = typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : (cartItem.originalPrice || 0);
-          }
-          
-          totalProfit += (itemPrice - itemCost) * quantity;
+
+          const itemCost =
+            item.cost !== undefined
+              ? (typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0))
+              : 0;
+
+          const itemPrice =
+            cartItem.customPrice !== undefined
+              ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : (cartItem.customPrice || 0))
+              : item.price !== undefined
+                  ? (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0))
+                  : cartItem.originalPrice !== undefined
+                      ? (typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : (cartItem.originalPrice || 0))
+                      : 0;
+
+          subtotal += itemPrice * quantity;
+          const diff = (itemPrice - itemCost) * quantity;
+          if (diff >= 0) grossProfit += diff;
+          else grossLoss += Math.abs(diff);
         });
+
+        const totalAmount = Number(tx.totalAmount);
+        const billDiscount = Math.max(0, subtotal - totalAmount);
+        const netProfit = grossProfit - grossLoss - billDiscount;
+        totalProfit += netProfit;
       } catch (e) {
         // Skip if itemsJson is invalid
       }
@@ -294,7 +308,7 @@ router.post('/', [
   body('amount').isFloat({ min: 0 }).withMessage('Amount must be a positive number'),
   body('entry_date').isISO8601().withMessage('Entry date must be a valid date'),
   body('description').optional().isString(),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -341,7 +355,7 @@ router.put('/:id', [
   body('amount').optional().isFloat({ min: 0 }),
   body('entry_date').optional().isISO8601(),
   body('description').optional().isString(),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -394,7 +408,7 @@ router.put('/:id', [
 // Delete cash flow entry
 router.delete('/:id', [
   param('id').isUUID().withMessage('Invalid entry ID'),
-], async (req: AuthRequest, res) => {
+], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

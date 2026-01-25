@@ -1,4 +1,4 @@
-import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer, QuickSaleItem, CashFlowEntry, CashFlowSummary, Permission, PagePermission } from '../types';
+import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer, QuickSaleItem, CashFlowEntry, CashFlowSummary, Permission, PagePermission, Cart } from '../types';
 import apiClient from '../lib/apiClient';
 
 export const storageService = {
@@ -72,6 +72,10 @@ export const storageService = {
     const response = await apiClient.get<{ transactions: Transaction[]; pagination?: any } | Transaction[]>('/transactions');
     // Handle both response formats: { transactions: [...], pagination: {...} } or array
     return Array.isArray(response) ? response : (response?.transactions || []);
+  },
+
+  getTransaction: async (id: string): Promise<Transaction> => {
+    return apiClient.get<Transaction>(`/transactions/${id}`);
   },
 
   addTransaction: async (transaction: Omit<Transaction, 'id' | 'created_at' | 'customer_id'>): Promise<Transaction> => {
@@ -335,5 +339,24 @@ export const storageService = {
 
   updatePermission: async (id: string, updates: Partial<Permission>): Promise<Permission> => {
     return apiClient.put<Permission>(`/permissions/${id}`, updates);
+  },
+
+  // Carts
+  getCart: async (): Promise<Cart | null> => {
+    return apiClient.get<Cart | null>('/carts');
+  },
+
+  saveCart: async (cart: {
+    items_json: string;
+    tax_rate?: number;
+    discount?: number;
+    payment_method?: 'cash' | 'card' | 'upi';
+    sales_customer_id?: string;
+  }): Promise<Cart> => {
+    return apiClient.post<Cart>('/carts', cart);
+  },
+
+  deleteCart: async (): Promise<{ message: string }> => {
+    return apiClient.delete<{ message: string }>('/carts');
   },
 };
