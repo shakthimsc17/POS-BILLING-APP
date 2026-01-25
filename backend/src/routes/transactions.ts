@@ -150,7 +150,10 @@ router.post(
             if (existingItem && existingItem.stock >= quantity) {
               await prisma.item.update({
                 where: { id: itemId },
-                data: { stock: existingItem.stock - quantity },
+                data: { 
+                  stock: existingItem.stock - quantity,
+                  purchaseQty: (existingItem.purchaseQty || 0) + quantity,
+                },
               });
             }
           }
@@ -265,6 +268,112 @@ router.delete('/:id', async (req: AuthRequest, res) => {
   } catch (error: any) {
     console.error('Error deleting transaction:', error);
     res.status(500).json({ error: error.message || 'Failed to delete transaction' });
+  }
+});
+
+// Refresh transaction with updated item costs (for quick sale items added to inventory)
+router.post('/:id/refresh', async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find transaction
+    const transaction = await prisma.transaction.findUnique({
+      where: { id },
+    });
+
+    if (!transaction) {
+      return res.status(404).json({ error: 'Transaction not found' });
+    }
+
+    // Parse items - handle both old format (array) and new format (object with items)
+    const { items } = parseTransactionItems(transaction.itemsJson);
+    let updated = false;
+    const updatedItems = [];
+
+    for (const cartItem of items) {
+      const item = cartItem.item || cartItem;
+      const itemId = item.id;
+
+      // Check if this is a quick sale item (ID starts with "quick-sale-")
+      if (itemId && typeof itemId === 'string' && itemId.startsWith('quick-sale-')) {
+        // Try to find the item in inventory by name or other identifier
+        // First, try to find by the quick sale item ID if it was stored
+        const quickSaleItemId = itemId.replace('quick-sale-', '');
+        
+        // Check if there's a QuickSaleItem with this ID that was added to inventory
+        const quickSaleItem = await prisma.quickSaleItem.findUnique({
+          where: { id: quickSaleItemId },
+          include: { inventoryItem: true },
+        });
+
+        if (quickSaleItem && quickSaleItem.addedToInventory && quickSaleItem.inventoryItem) {
+          // Item is now in inventory, update the cart item with inventory item details
+          const inventoryItem = quickSaleItem.inventoryItem;
+          updatedItems.push({
+            ...cartItem,
+            item: {
+              ...inventoryItem,
+              id: inventoryItem.id,
+              cost: inventoryItem.cost.toString(),
+              price: inventoryItem.price.toString(),
+              name: inventoryItem.name,
+              display_name: inventoryItem.displayName,
+              code: inventoryItem.code,
+              barcode: inventoryItem.barcode,
+            },
+          });
+          updated = true;
+        } else {
+          // Item not yet in inventory, keep as is
+          updatedItems.push(cartItem);
+        }
+      } else {
+        // Regular item, keep as is
+        updatedItems.push(cartItem);
+      }
+    }
+
+    if (updated) {
+      // Update transaction with new itemsJson - preserve metadata if exists
+      const updatedTransactionData = metadata && Object.keys(metadata).length > 0
+        ? { items: updatedItems, metadata }
+        : updatedItems;
+      
+      const updatedTransaction = await prisma.transaction.update({
+        where: { id },
+        data: {
+          itemsJson: JSON.stringify(updatedTransactionData),
+        },
+      });
+
+      // Transform response
+      const transformedTransaction = {
+        id: updatedTransaction.id,
+        customer_id: updatedTransaction.customerId,
+        transaction_customer_id: updatedTransaction.transactionCustomerId,
+        sales_customer_id: updatedTransaction.salesCustomerId,
+        total_amount: updatedTransaction.totalAmount.toString(),
+        payment_method: updatedTransaction.paymentMethod,
+        received_amount: updatedTransaction.receivedAmount ? updatedTransaction.receivedAmount.toString() : null,
+        change_amount: updatedTransaction.changeAmount ? updatedTransaction.changeAmount.toString() : null,
+        items_json: updatedTransaction.itemsJson,
+        created_at: updatedTransaction.createdAt.toISOString(),
+      };
+
+      res.json({ 
+        message: 'Transaction refreshed successfully',
+        transaction: transformedTransaction,
+        updated: true
+      });
+    } else {
+      res.json({ 
+        message: 'No updates needed - items not yet added to inventory',
+        updated: false
+      });
+    }
+  } catch (error: any) {
+    console.error('Error refreshing transaction:', error);
+    res.status(500).json({ error: error.message || 'Failed to refresh transaction' });
   }
 });
 

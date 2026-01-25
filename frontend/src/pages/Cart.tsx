@@ -4,6 +4,7 @@ import { useInventoryStore } from '../store/inventoryStore';
 import { storageService } from '../services/storage';
 import { formatCurrency } from '../utils/formatters';
 import { printReceipt } from '../utils/printer';
+import { parseTransactionItems } from '../utils/transactionParser';
 import { SalesCustomer } from '../types';
 import QuickAddItemModal from '../components/QuickAddItemModal';
 import CustomerSelectModal from '../components/CustomerSelectModal';
@@ -82,21 +83,36 @@ export default function Cart({ onNavigate }: CartProps) {
       const actualChange = changeAmount > 0 ? changeAmount : 0;
 
       // Prepare items with custom prices for transaction
+      // Also include discount and tax info for proper profit/loss calculation
+      const subtotal = getSubtotal();
+      const tax = getTax();
+      const discountAmount = getDiscount();
+      
       const itemsWithPrices = items.map(cartItem => ({
         ...cartItem,
         originalPrice: cartItem.originalPrice ?? (typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price),
         customPrice: cartItem.customPrice,
       }));
 
+      // Store discount and tax info in itemsJson metadata for proper profit calculation
+      const transactionData = {
+        items: itemsWithPrices,
+        metadata: {
+          subtotal: subtotal,
+          tax: tax,
+          discount: discountAmount,
+          taxRate: taxRate,
+        }
+      };
+
       // Save transaction
-      // If change is negative, it means discount was applied
       const savedTransaction = await storageService.addTransaction({
         sales_customer_id: selectedSalesCustomer?.id || undefined,
         total_amount: total,
         payment_method: paymentMethod,
         received_amount: received,
-        change_amount: actualChange, // Only positive change, discount is handled separately
-        items_json: JSON.stringify(itemsWithPrices),
+        change_amount: actualChange,
+        items_json: JSON.stringify(transactionData),
       });
 
       // Update item stock
@@ -125,7 +141,7 @@ export default function Cart({ onNavigate }: CartProps) {
       clearCart();
 
       // Show success with print option
-      const discountAmount = changeAmount < 0 ? Math.abs(changeAmount) : 0;
+      // Use the discount from cart store (overall discount) that was already calculated above
       const changeMessage = discountAmount > 0 
         ? `Discount: ${formatCurrency(discountAmount)}` 
         : actualChange > 0 
@@ -134,9 +150,7 @@ export default function Cart({ onNavigate }: CartProps) {
       const printAgain = confirm(`Payment successful! ${changeMessage}\n\nWould you like to print the receipt again?`);
       if (printAgain) {
         try {
-          const receiptItems = typeof savedTransaction.items_json === 'string' 
-            ? JSON.parse(savedTransaction.items_json) 
-            : savedTransaction.items_json;
+          const { items: receiptItems } = parseTransactionItems(savedTransaction.items_json);
           await printReceipt({
             items: receiptItems,
             transaction: savedTransaction,
@@ -263,33 +277,62 @@ export default function Cart({ onNavigate }: CartProps) {
         <div className="cart-summary">
           <div className="card">
             <h2>Sales Summary</h2>
-            <div className="summary-row">
-              <span>Subtotal:</span>
-              <span>{formatCurrency(getSubtotal())}</span>
-            </div>
+            {/* Calculate original subtotal (before item discounts) */}
+            {(() => {
+              const originalSubtotal = items.reduce((sum, cartItem) => {
+                const originalPrice = cartItem.originalPrice ?? (typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price);
+                return sum + (originalPrice * cartItem.quantity);
+              }, 0);
+              const currentSubtotal = getSubtotal();
+              const itemDiscount = originalSubtotal - currentSubtotal;
+              return (
+                <>
+                  {itemDiscount > 0 && (
+                    <div className="summary-row" style={{ color: '#27ae60', fontSize: '0.9em' }}>
+                      <span>Original Subtotal:</span>
+                      <span style={{ textDecoration: 'line-through', color: '#999' }}>{formatCurrency(originalSubtotal)}</span>
+                    </div>
+                  )}
+                  {itemDiscount > 0 && (
+                    <div className="summary-row" style={{ color: '#27ae60', fontSize: '0.9em' }}>
+                      <span>Item Discount:</span>
+                      <span>-{formatCurrency(itemDiscount)}</span>
+                    </div>
+                  )}
+                  <div className="summary-row">
+                    <span>Subtotal:</span>
+                    <span>{formatCurrency(currentSubtotal)}</span>
+                  </div>
+                </>
+              );
+            })()}
             <div className="summary-row">
               <div>
                 <label>Tax Rate (%):</label>
                 <input
                   type="number"
                   className="input"
-                  value={taxRate}
-                  onChange={(e) => setTaxRate(Number(e.target.value))}
+                  value={taxRate || ''}
+                  onChange={(e) => setTaxRate(Number(e.target.value) || 0)}
+                  onFocus={(e) => e.target.select()}
                   min="0"
                   max="100"
+                  placeholder=""
                 />
               </div>
               <span>{formatCurrency(getTax())}</span>
             </div>
             <div className="summary-row">
               <div>
-                <label>Discount (₹):</label>
+                <label>Overall Discount (₹):</label>
                 <input
                   type="number"
                   className="input"
-                  value={discount}
-                  onChange={(e) => setDiscount(Number(e.target.value))}
+                  value={discount || ''}
+                  onChange={(e) => setDiscount(Number(e.target.value) || 0)}
+                  onFocus={(e) => e.target.select()}
                   min="0"
+                  placeholder=""
                 />
               </div>
               <span>-{formatCurrency(getDiscount())}</span>

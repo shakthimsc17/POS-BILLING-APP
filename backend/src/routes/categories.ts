@@ -112,8 +112,8 @@ router.post(
         },
       });
 
-      // Clear cache on create
-      cache.clear();
+      // Clear all category-related cache entries
+      cache.clearByPrefix('categories:');
       
       // Transform to snake_case for frontend
       res.status(201).json({
@@ -193,8 +193,8 @@ router.put(
         },
       });
 
-      // Clear cache on update
-      cache.clear();
+      // Clear all category-related cache entries
+      cache.clearByPrefix('categories:');
 
       // Transform to snake_case for frontend
       res.json({
@@ -220,6 +220,9 @@ router.delete('/', async (req: AuthRequest, res) => {
       where: { customerId: req.customerId! },
     });
 
+    // Clear all category-related cache entries
+    cache.clearByPrefix('categories:');
+    
     res.json({ 
       message: 'All categories deleted successfully',
       count: deleted.count 
@@ -260,8 +263,8 @@ router.delete('/:id', async (req: AuthRequest, res) => {
       where: { id },
     });
 
-    // Clear cache on delete
-    cache.clear();
+    // Clear all category-related cache entries
+    cache.clearByPrefix('categories:');
     res.json({ message: 'Category deleted successfully' });
   } catch (error: any) {
     console.error('Error deleting category:', error);

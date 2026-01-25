@@ -2,6 +2,7 @@ import express from 'express';
 import { body, query, param, validationResult } from 'express-validator';
 import prisma from '../db/prisma.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { parseTransactionItems } from '../utils/transactionParser.js';
 
 const router = express.Router();
 
@@ -151,14 +152,13 @@ router.get('/summary', [
     // Filtered totals (for income/expense cards)
     const manualIncome = incomeEntries.reduce((sum, entry) => sum + Number(entry.amount), 0);
     const totalSales = transactions.reduce((sum, tx) => sum + Number(tx.totalAmount), 0);
-    const totalIncome = manualIncome + totalSales;
     const totalExpense = expenseEntries.reduce((sum, entry) => sum + Number(entry.amount), 0);
     
     // Calculate profit from transactions for filtered date range
     let totalProfit = 0;
     transactions.forEach((tx) => {
       try {
-        const items = JSON.parse(tx.itemsJson);
+        const { items } = parseTransactionItems(tx.itemsJson);
         items.forEach((cartItem: any) => {
           const item = cartItem.item || cartItem;
           const quantity = cartItem.quantity || item.quantity || 1;
@@ -170,13 +170,15 @@ router.get('/summary', [
             itemCost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
           }
           
-          if (cartItem.customPrice !== undefined) {
-            itemPrice = typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : (cartItem.customPrice || 0);
-          } else if (item.price !== undefined) {
-            itemPrice = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
-          } else if (cartItem.originalPrice !== undefined) {
-            itemPrice = typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : (cartItem.originalPrice || 0);
-          }
+          // Get price - use customPrice if available, otherwise use original price
+          const originalPrice = cartItem.originalPrice !== undefined
+            ? (typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : cartItem.originalPrice)
+            : (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
+          const sellingPrice = cartItem.customPrice !== undefined
+            ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
+            : originalPrice;
+          
+          itemPrice = sellingPrice;
           
           totalProfit += (itemPrice - itemCost) * quantity;
         });
@@ -184,6 +186,9 @@ router.get('/summary', [
         // Skip if itemsJson is invalid
       }
     });
+    
+    // Total income = profit + manual income (not sales + manual income)
+    const totalIncome = totalProfit + manualIncome;
 
     // All-time totals (for net cash flow)
     const allTimeManualIncome = allTimeIncomeEntries.reduce((sum, entry) => sum + Number(entry.amount), 0);

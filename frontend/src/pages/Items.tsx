@@ -646,7 +646,14 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                   type="text"
                   className="input"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    const newName = e.target.value;
+                    setName(newName);
+                    // Auto-update display name if it matches the old name or is empty
+                    if (displayName === name || !displayName) {
+                      setDisplayName(newName);
+                    }
+                  }}
                 />
               </label>
               <label>

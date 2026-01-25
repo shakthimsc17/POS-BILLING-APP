@@ -115,8 +115,10 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
     if (confirm(`Are you sure you want to delete "${category.name}${category.subcategory ? ` / ${category.subcategory}` : ''}"?`)) {
       try {
         await deleteCategory(category.id);
-        // Reload categories after deletion
-        loadCategories();
+        // Force reload categories after deletion with a small delay to ensure cache is cleared
+        setTimeout(() => {
+          loadCategories();
+        }, 100);
       } catch (error) {
         console.error('Error deleting category:', error);
         alert('Failed to delete category');
@@ -130,7 +132,10 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
       const result = await deleteAllCategories();
       alert(`Successfully deleted ${result.count} categor${result.count === 1 ? 'y' : 'ies'}`);
       setDeleteAllModalVisible(false);
-      loadCategories();
+      // Force reload categories after deletion with a small delay to ensure cache is cleared
+      setTimeout(() => {
+        loadCategories();
+      }, 100);
     } catch (error) {
       console.error('Error deleting all categories:', error);
       alert('Failed to delete all categories');

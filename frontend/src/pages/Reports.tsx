@@ -5,6 +5,7 @@ import { useCompanyStore } from '../store/companyStore';
 import { useAuthStore } from '../store/authStore';
 import { Transaction, Item, Category } from '../types';
 import { formatCurrency } from '../utils/formatters';
+import { parseTransactionItems } from '../utils/transactionParser';
 import './Reports.css';
 
 type ReportPeriod = 'week' | 'month' | 'year' | 'overall';
@@ -116,8 +117,8 @@ export default function Reports() {
 
     transactions.forEach((tx) => {
       try {
-        const cartItems = JSON.parse(tx.items_json);
-        cartItems.forEach((cartItem: any) => {
+        const { items } = parseTransactionItems(tx.items_json);
+        items.forEach((cartItem: any) => {
           const item = cartItem.item || cartItem;
           const quantity = cartItem.quantity || 1;
           const cost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
@@ -150,14 +151,22 @@ export default function Reports() {
 
     filteredTx.forEach((tx) => {
       try {
-        const cartItems = JSON.parse(tx.items_json);
-        cartItems.forEach((cartItem: any) => {
+        const { items } = parseTransactionItems(tx.items_json);
+        items.forEach((cartItem: any) => {
           const item = cartItem.item || cartItem;
           const quantity = cartItem.quantity || 1;
+          
+          // Get price - use customPrice if available, otherwise use original price
+          const originalPrice = cartItem.originalPrice !== undefined
+            ? (typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : cartItem.originalPrice)
+            : (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
+          const sellingPrice = cartItem.customPrice !== undefined
+            ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
+            : originalPrice;
+          
           const cost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
-          const price = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
           const validCost = isNaN(cost) ? 0 : cost;
-          const validPrice = isNaN(price) ? 0 : price;
+          const validPrice = isNaN(sellingPrice) ? 0 : sellingPrice;
           totalCost += validCost * quantity;
           totalProfit += (validPrice - validCost) * quantity;
         });
@@ -183,15 +192,22 @@ export default function Reports() {
 
     filteredTx.forEach((tx) => {
       try {
-        const cartItems = JSON.parse(tx.items_json);
-        cartItems.forEach((cartItem: any) => {
+        const { items } = parseTransactionItems(tx.items_json);
+        items.forEach((cartItem: any) => {
           const item = cartItem.item || cartItem;
           const quantity = cartItem.quantity || 1;
           const itemId = item.id;
 
-          const price = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
+          // Get price - use customPrice if available, otherwise use original price
+          const originalPrice = cartItem.originalPrice !== undefined
+            ? (typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : cartItem.originalPrice)
+            : (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
+          const sellingPrice = cartItem.customPrice !== undefined
+            ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
+            : originalPrice;
+          
           const cost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
-          const validPrice = isNaN(price) ? 0 : price;
+          const validPrice = isNaN(sellingPrice) ? 0 : sellingPrice;
           const validCost = isNaN(cost) ? 0 : cost;
           
           if (itemMap.has(itemId)) {
@@ -230,14 +246,22 @@ export default function Reports() {
 
     filteredTx.forEach((tx) => {
       try {
-        const cartItems = JSON.parse(tx.items_json);
-        cartItems.forEach((cartItem: any) => {
+        const { items } = parseTransactionItems(tx.items_json);
+        items.forEach((cartItem: any) => {
           const item = cartItem.item || cartItem;
           const quantity = cartItem.quantity || 1;
           const categoryId = item.category_id;
-          const price = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
+          
+          // Get price - use customPrice if available, otherwise use original price
+          const originalPrice = cartItem.originalPrice !== undefined
+            ? (typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : cartItem.originalPrice)
+            : (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
+          const sellingPrice = cartItem.customPrice !== undefined
+            ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
+            : originalPrice;
+          
           const cost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
-          const validPrice = isNaN(price) ? 0 : price;
+          const validPrice = isNaN(sellingPrice) ? 0 : sellingPrice;
           const validCost = isNaN(cost) ? 0 : cost;
 
           if (categoryId) {

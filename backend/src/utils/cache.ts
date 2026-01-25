@@ -56,6 +56,15 @@ class SimpleCache {
     this.cache.clear();
   }
 
+  // Clear cache keys that start with a prefix
+  clearByPrefix(prefix: string): void {
+    for (const key of this.cache.keys()) {
+      if (key.startsWith(prefix)) {
+        this.cache.delete(key);
+      }
+    }
+  }
+
   // Clear expired entries
   cleanup(): void {
     const now = Date.now();

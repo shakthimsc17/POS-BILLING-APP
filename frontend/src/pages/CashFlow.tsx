@@ -348,8 +348,8 @@ export default function CashFlow() {
             <div className="summary-card-amount income">{formatCurrency(summary.total_income)}</div>
             <div className="income-breakdown">
               <div className="income-item">
-                <span>Total Sales:</span>
-                <span className="income-sales">{formatCurrency(summary.total_sales)}</span>
+                <span>Sales Profit:</span>
+                <span className="income-sales">{formatCurrency(summary.total_profit || 0)}</span>
               </div>
               <div className="income-item">
                 <span>Manual Income:</span>

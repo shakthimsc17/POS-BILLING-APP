@@ -53,8 +53,38 @@ export default function SalesPerformance() {
 
   const loadHourlyData = async () => {
     try {
+      if (!hourlyDate) {
+        setHourlyData([]);
+        return;
+      }
+
       const data = await storageService.getHourlySalesData(hourlyDate, startHour, endHour);
-      setHourlyData(data || []);
+      
+      if (!data || !Array.isArray(data)) {
+        setHourlyData([]);
+        return;
+      }
+
+      // Process and validate data
+      const processedData = data
+        .map((item: any) => {
+          const hour = typeof item.hour === 'number' ? item.hour : parseInt(item.hour || 0);
+          const sales = typeof item.sales === 'number' ? item.sales : parseFloat(item.sales || 0);
+          const profit = typeof item.profit === 'number' ? item.profit : parseFloat(item.profit || 0);
+          const count = typeof item.count === 'number' ? item.count : parseInt(item.count || 0);
+          
+          return {
+            hour,
+            hourLabel: item.hourLabel || `${String(hour).padStart(2, '0')}:00`,
+            sales: isNaN(sales) ? 0 : sales,
+            profit: isNaN(profit) ? 0 : profit,
+            count: isNaN(count) ? 0 : count,
+          };
+        })
+        .filter((item: any) => item.hour >= startHour && item.hour <= endHour)
+        .sort((a, b) => a.hour - b.hour);
+      
+      setHourlyData(processedData);
     } catch (error: any) {
       console.error('Error loading hourly data:', error);
       setHourlyData([]);
@@ -281,9 +311,9 @@ export default function SalesPerformance() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
                 <YAxis dataKey="name" type="category" width={150} />
-                <Tooltip formatter={(value: any) => formatCurrency(value)} />
+                <Tooltip formatter={(value: any) => value} />
                 <Legend />
-                <Bar dataKey="revenue" fill="#3498db" name="Revenue" />
+                <Bar dataKey="quantity" fill="#3498db" name="Quantity Sold" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
