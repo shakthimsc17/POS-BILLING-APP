@@ -41,6 +41,7 @@ router.get('/', [
       can_edit: perm.canEdit,
       can_delete: perm.canDelete,
       can_view_profit: perm.canViewProfit,
+      is_hidden: perm.isHidden,
       created_at: perm.createdAt.toISOString(),
       updated_at: perm.updatedAt.toISOString(),
     }));
@@ -71,6 +72,7 @@ router.get('/by-type/:customerType', async (req: AuthRequest, res) => {
       can_edit: perm.canEdit,
       can_delete: perm.canDelete,
       can_view_profit: perm.canViewProfit,
+      is_hidden: perm.isHidden,
       created_at: perm.createdAt.toISOString(),
       updated_at: perm.updatedAt.toISOString(),
     }));
@@ -152,6 +154,7 @@ router.post('/', [
             canEdit: Boolean(perm.can_edit),
             canDelete: Boolean(perm.can_delete),
             canViewProfit: Boolean(perm.can_view_profit),
+            isHidden: Boolean(perm.is_hidden),
           },
         });
       })
@@ -166,6 +169,7 @@ router.post('/', [
       can_edit: perm.canEdit,
       can_delete: perm.canDelete,
       can_view_profit: perm.canViewProfit,
+      is_hidden: perm.isHidden,
       created_at: perm.createdAt.toISOString(),
       updated_at: perm.updatedAt.toISOString(),
     }));
@@ -213,6 +217,7 @@ router.put('/:id', [
   body('can_edit').optional().isBoolean(),
   body('can_delete').optional().isBoolean(),
   body('can_view_profit').optional().isBoolean(),
+  body('is_hidden').optional().isBoolean(),
 ], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
@@ -221,16 +226,18 @@ router.put('/:id', [
     }
 
     const { id } = req.params;
-    const { can_view, can_edit, can_delete, can_view_profit } = req.body;
+    const { can_view, can_edit, can_delete, can_view_profit, is_hidden } = req.body;
+
+    const updateData: any = {};
+    if (can_view !== undefined) updateData.canView = can_view;
+    if (can_edit !== undefined) updateData.canEdit = can_edit;
+    if (can_delete !== undefined) updateData.canDelete = can_delete;
+    if (can_view_profit !== undefined) updateData.canViewProfit = can_view_profit;
+    if (is_hidden !== undefined) updateData.isHidden = is_hidden;
 
     const permission = await prisma.permission.update({
       where: { id },
-      data: {
-        canView: can_view,
-        canEdit: can_edit,
-        canDelete: can_delete,
-        canViewProfit: can_view_profit,
-      },
+      data: updateData,
     });
 
     // Transform Prisma camelCase to snake_case for frontend compatibility
@@ -242,6 +249,7 @@ router.put('/:id', [
       can_edit: permission.canEdit,
       can_delete: permission.canDelete,
       can_view_profit: permission.canViewProfit,
+      is_hidden: permission.isHidden,
       created_at: permission.createdAt.toISOString(),
       updated_at: permission.updatedAt.toISOString(),
     };

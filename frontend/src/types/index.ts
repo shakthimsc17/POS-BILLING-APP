@@ -67,6 +67,7 @@ export interface Permission {
   can_edit: boolean;
   can_delete: boolean;
   can_view_profit: boolean;
+  is_hidden?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -78,6 +79,7 @@ export interface PagePermission {
   can_edit: boolean;
   can_delete: boolean;
   can_view_profit: boolean;
+  is_hidden?: boolean;
 }
 
 export interface Transaction {

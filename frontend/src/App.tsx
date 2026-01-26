@@ -43,7 +43,7 @@ function App() {
   const { customer, initialized, initialize, signOut } = useAuthStore();
   const { items: cartItems } = useCartStore();
   const { company, loadCompany } = useCompanyStore();
-  const { canView, loading: permissionsLoading } = usePermissions();
+  const { canView, isHidden, loading: permissionsLoading } = usePermissions();
 
   useEffect(() => {
     initialize();
@@ -58,14 +58,23 @@ function App() {
     }
   }, [initialized, customer, loadCategories, loadItems, loadCompany]);
 
-  // Redirect to dashboard if trying to access a page without permission
+  // Redirect to dashboard if trying to access a page without permission or if page is hidden
   // Only redirect if permissions are loaded and user doesn't have access
   useEffect(() => {
-    if (customer && !permissionsLoading && !customer.isAdmin && !canView(currentPage)) {
-      console.log(`Access denied to ${currentPage} - redirecting to dashboard`);
-      setCurrentPage('dashboard');
+    if (customer && !permissionsLoading) {
+      // For admin users, check if page is hidden
+      if (customer.isAdmin && isHidden(currentPage)) {
+        console.log(`Page ${currentPage} is hidden - redirecting to dashboard`);
+        setCurrentPage('dashboard');
+        return;
+      }
+      // For non-admin users, check if they have view permission
+      if (!customer.isAdmin && !canView(currentPage)) {
+        console.log(`Access denied to ${currentPage} - redirecting to dashboard`);
+        setCurrentPage('dashboard');
+      }
     }
-  }, [currentPage, canView, customer, permissionsLoading]);
+  }, [currentPage, canView, isHidden, customer, permissionsLoading]);
 
   // Show auth pages if not signed in
   if (!initialized || permissionsLoading) {
@@ -115,7 +124,7 @@ function App() {
         <nav className="sidebar-nav">
           <div className="nav-section">
             <div className="nav-section-label">Main</div>
-            {canView('dashboard') && (
+            {canView('dashboard') && !isHidden('dashboard') && (
             <button
               className={currentPage === 'dashboard' ? 'active' : ''}
               onClick={() => setCurrentPage('dashboard')}
@@ -124,7 +133,7 @@ function App() {
               <span className="nav-text">Dashboard</span>
             </button>
             )}
-            {canView('cart') && (
+            {canView('cart') && !isHidden('cart') && (
             <button
               className={currentPage === 'cart' ? 'active' : ''}
               onClick={() => setCurrentPage('cart')}
@@ -133,7 +142,7 @@ function App() {
               <span className="nav-text">Cart</span>
             </button>
             )}
-            {canView('sales') && (
+            {canView('sales') && !isHidden('sales') && (
             <button
               className={currentPage === 'sales' ? 'active' : ''}
               onClick={() => setCurrentPage('sales')}
@@ -142,7 +151,7 @@ function App() {
               <span className="nav-text">Sales</span>
             </button>
             )}
-            {canView('sales-performance') && (
+            {canView('sales-performance') && !isHidden('sales-performance') && (
               <button
                 className={currentPage === 'sales-performance' ? 'active' : ''}
                 onClick={() => setCurrentPage('sales-performance')}
@@ -151,7 +160,7 @@ function App() {
                 <span className="nav-text">Sales Performance</span>
               </button>
             )}
-            {canView('cash-flow') && (
+            {canView('cash-flow') && !isHidden('cash-flow') && (
               <button
                 className={currentPage === 'cash-flow' ? 'active' : ''}
                 onClick={() => setCurrentPage('cash-flow')}
@@ -164,7 +173,7 @@ function App() {
 
           <div className="nav-section">
             <div className="nav-section-label">Inventory</div>
-            {canView('items') && (
+            {canView('items') && !isHidden('items') && (
             <button
               className={currentPage === 'items' ? 'active' : ''}
               onClick={() => setCurrentPage('items')}
@@ -173,7 +182,7 @@ function App() {
               <span className="nav-text">Items</span>
             </button>
             )}
-            {canView('categories') && (
+            {canView('categories') && !isHidden('categories') && (
             <button
               className={currentPage === 'categories' ? 'active' : ''}
               onClick={() => setCurrentPage('categories')}
@@ -182,7 +191,7 @@ function App() {
               <span className="nav-text">Categories</span>
             </button>
             )}
-            {canView('import') && (
+            {canView('import') && !isHidden('import') && (
             <button
               className={currentPage === 'import' ? 'active' : ''}
               onClick={() => setCurrentPage('import')}
@@ -191,7 +200,7 @@ function App() {
               <span className="nav-text">Import</span>
             </button>
             )}
-            {canView('quick-sale-items') && (
+            {canView('quick-sale-items') && !isHidden('quick-sale-items') && (
               <button
                 className={currentPage === 'quick-sale-items' ? 'active' : ''}
                 onClick={() => setCurrentPage('quick-sale-items')}
@@ -205,7 +214,7 @@ function App() {
           {(customer?.isAdmin || canView('customers') || canView('reports') || canView('activity-logs')) && (
             <div className="nav-section">
               <div className="nav-section-label">Admin</div>
-              {(customer?.isAdmin || canView('customers')) && (
+              {(customer?.isAdmin || canView('customers')) && !isHidden('customers') && (
               <button
                 className={currentPage === 'customers' ? 'active' : ''}
                 onClick={() => setCurrentPage('customers')}
@@ -214,7 +223,7 @@ function App() {
                 <span className="nav-text">Customers</span>
               </button>
               )}
-              {(customer?.isAdmin || canView('reports')) && (
+              {(customer?.isAdmin || canView('reports')) && !isHidden('reports') && (
               <button
                 className={currentPage === 'reports' ? 'active' : ''}
                 onClick={() => setCurrentPage('reports')}
@@ -223,7 +232,7 @@ function App() {
                 <span className="nav-text">Reports</span>
               </button>
               )}
-              {(customer?.isAdmin || canView('activity-logs')) && (
+              {(customer?.isAdmin || canView('activity-logs')) && !isHidden('activity-logs') && (
               <button
                 className={currentPage === 'activity-logs' ? 'active' : ''}
                 onClick={() => setCurrentPage('activity-logs')}
@@ -237,7 +246,7 @@ function App() {
 
           <div className="nav-section">
             <div className="nav-section-label">Tools</div>
-            {canView('bulk-operations') && (
+            {canView('bulk-operations') && !isHidden('bulk-operations') && (
             <button
               className={currentPage === 'bulk-operations' ? 'active' : ''}
               onClick={() => setCurrentPage('bulk-operations')}
@@ -246,7 +255,7 @@ function App() {
               <span className="nav-text">Bulk Operations</span>
             </button>
             )}
-            {canView('calculators') && (
+            {canView('calculators') && !isHidden('calculators') && (
             <button
               className={currentPage === 'calculators' ? 'active' : ''}
               onClick={() => setCurrentPage('calculators')}
@@ -255,7 +264,7 @@ function App() {
               <span className="nav-text">Calculators</span>
             </button>
             )}
-            {canView('company') && (
+            {canView('company') && !isHidden('company') && (
             <button
               className={currentPage === 'company' ? 'active' : ''}
               onClick={() => setCurrentPage('company')}
@@ -264,7 +273,7 @@ function App() {
               <span className="nav-text">Company</span>
             </button>
             )}
-            {canView('settings') && (
+            {canView('settings') && !isHidden('settings') && (
             <button
               className={currentPage === 'settings' ? 'active' : ''}
               onClick={() => setCurrentPage('settings')}
@@ -298,23 +307,23 @@ function App() {
       <main className={`main-content ${sidebarOpen ? 'sidebar-open' : ''}`}>
         <div className="page-content-wrapper">
           <Suspense fallback={<LoadingSpinner message="Loading page..." />}>
-            {currentPage === 'dashboard' && (canView('dashboard') ? <Dashboard onNavigate={setCurrentPage} /> : <AccessDenied />)}
-            {currentPage === 'cart' && (canView('cart') ? <Cart onNavigate={setCurrentPage} /> : <AccessDenied />)}
-            {currentPage === 'categories' && (canView('categories') ? <Categories onNavigate={setCurrentPage} /> : <AccessDenied />)}
-            {currentPage === 'items' && (canView('items') ? <Items onNavigate={setCurrentPage} /> : <AccessDenied />)}
-            {currentPage === 'sales' && (canView('sales') ? <SalesOrders onNavigate={(page, orderId) => { if (page === 'order-details' && orderId) { setSelectedOrderId(orderId); setCurrentPage('order-details'); } }} /> : <AccessDenied />)}
-            {currentPage === 'order-details' && selectedOrderId && (canView('sales') ? <OrderDetails orderId={selectedOrderId} onBack={() => { setCurrentPage('sales'); setSelectedOrderId(null); }} /> : <AccessDenied />)}
-            {currentPage === 'sales-performance' && (canView('sales-performance') ? <SalesPerformance /> : <AccessDenied />)}
-            {currentPage === 'cash-flow' && (canView('cash-flow') ? <CashFlow /> : <AccessDenied />)}
-            {currentPage === 'customers' && ((customer?.isAdmin || canView('customers')) ? <Customers /> : <AccessDenied />)}
-            {currentPage === 'import' && (canView('import') ? <Import /> : <AccessDenied />)}
-            {currentPage === 'quick-sale-items' && (canView('quick-sale-items') ? <QuickSaleItems /> : <AccessDenied />)}
-            {currentPage === 'reports' && ((customer?.isAdmin || canView('reports')) ? <Reports /> : <AccessDenied />)}
-            {currentPage === 'activity-logs' && ((customer?.isAdmin || canView('activity-logs')) ? <ActivityLogs /> : <AccessDenied />)}
-            {currentPage === 'bulk-operations' && (canView('bulk-operations') ? <BulkOperations /> : <AccessDenied />)}
-            {currentPage === 'calculators' && (canView('calculators') ? <Calculators /> : <AccessDenied />)}
-            {currentPage === 'company' && (canView('company') ? <CompanySettings /> : <AccessDenied />)}
-            {currentPage === 'settings' && (canView('settings') ? <Settings /> : <AccessDenied />)}
+            {currentPage === 'dashboard' && (canView('dashboard') && !isHidden('dashboard') ? <Dashboard onNavigate={setCurrentPage} /> : <AccessDenied />)}
+            {currentPage === 'cart' && (canView('cart') && !isHidden('cart') ? <Cart onNavigate={setCurrentPage} /> : <AccessDenied />)}
+            {currentPage === 'categories' && (canView('categories') && !isHidden('categories') ? <Categories onNavigate={setCurrentPage} /> : <AccessDenied />)}
+            {currentPage === 'items' && (canView('items') && !isHidden('items') ? <Items onNavigate={setCurrentPage} /> : <AccessDenied />)}
+            {currentPage === 'sales' && (canView('sales') && !isHidden('sales') ? <SalesOrders onNavigate={(page, orderId) => { if (page === 'order-details' && orderId) { setSelectedOrderId(orderId); setCurrentPage('order-details'); } }} /> : <AccessDenied />)}
+            {currentPage === 'order-details' && selectedOrderId && (canView('sales') && !isHidden('sales') ? <OrderDetails orderId={selectedOrderId} onBack={() => { setCurrentPage('sales'); setSelectedOrderId(null); }} /> : <AccessDenied />)}
+            {currentPage === 'sales-performance' && (canView('sales-performance') && !isHidden('sales-performance') ? <SalesPerformance /> : <AccessDenied />)}
+            {currentPage === 'cash-flow' && (canView('cash-flow') && !isHidden('cash-flow') ? <CashFlow /> : <AccessDenied />)}
+            {currentPage === 'customers' && ((customer?.isAdmin || canView('customers')) && !isHidden('customers') ? <Customers /> : <AccessDenied />)}
+            {currentPage === 'import' && (canView('import') && !isHidden('import') ? <Import /> : <AccessDenied />)}
+            {currentPage === 'quick-sale-items' && (canView('quick-sale-items') && !isHidden('quick-sale-items') ? <QuickSaleItems /> : <AccessDenied />)}
+            {currentPage === 'reports' && ((customer?.isAdmin || canView('reports')) && !isHidden('reports') ? <Reports /> : <AccessDenied />)}
+            {currentPage === 'activity-logs' && ((customer?.isAdmin || canView('activity-logs')) && !isHidden('activity-logs') ? <ActivityLogs /> : <AccessDenied />)}
+            {currentPage === 'bulk-operations' && (canView('bulk-operations') && !isHidden('bulk-operations') ? <BulkOperations /> : <AccessDenied />)}
+            {currentPage === 'calculators' && (canView('calculators') && !isHidden('calculators') ? <Calculators /> : <AccessDenied />)}
+            {currentPage === 'company' && (canView('company') && !isHidden('company') ? <CompanySettings /> : <AccessDenied />)}
+            {currentPage === 'settings' && (canView('settings') && !isHidden('settings') ? <Settings /> : <AccessDenied />)}
             {currentPage === 'acl-permissions' && customer?.isAdmin && <ACLPermissions />}
           </Suspense>
         </div>

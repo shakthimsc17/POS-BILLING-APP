@@ -8,11 +8,13 @@ interface PagePermission {
   can_edit: boolean;
   can_delete: boolean;
   can_view_profit: boolean;
+  is_hidden?: boolean;
 }
 
 export function usePermissions() {
   const { customer } = useAuthStore();
   const [permissions, setPermissions] = useState<Map<string, PagePermission>>(new Map());
+  const [hiddenPages, setHiddenPages] = useState<Set<string>>(new Set()); // Track hidden pages for admin
   const [loading, setLoading] = useState(true);
   const [permissionsConfigured, setPermissionsConfigured] = useState(false); // Track if permissions have been explicitly configured
 
@@ -37,7 +39,7 @@ export function usePermissions() {
 
     try {
       setLoading(true);
-      // If user is admin, they have all permissions - no restrictions
+      // If user is admin, they have all permissions - but check for hidden pages
       if (customer.isAdmin) {
         const allPermissions = new Map<string, PagePermission>();
         // Admin has full access to all pages
@@ -55,6 +57,22 @@ export function usePermissions() {
           });
         });
         setPermissions(allPermissions);
+        
+        // Load hidden pages for admin
+        try {
+          const adminPerms = await storageService.getPermissionsByType('Admin');
+          const hidden = new Set<string>();
+          adminPerms.forEach((perm: Permission) => {
+            if (perm.is_hidden) {
+              hidden.add(perm.page);
+            }
+          });
+          setHiddenPages(hidden);
+        } catch (error) {
+          console.error('Error loading hidden pages for admin:', error);
+          setHiddenPages(new Set());
+        }
+        
         setPermissionsConfigured(true); // Admin always has permissions configured
         setLoading(false);
         return;
@@ -71,6 +89,7 @@ export function usePermissions() {
             can_edit: perm.can_edit,
             can_delete: perm.can_delete,
             can_view_profit: perm.can_view_profit,
+            is_hidden: perm.is_hidden,
           });
         });
 
@@ -110,11 +129,18 @@ export function usePermissions() {
     }
   };
 
+  const isHidden = (page: string): boolean => {
+    if (!customer || !customer.isAdmin) return false;
+    return hiddenPages.has(page);
+  };
+
   const canView = (page: string): boolean => {
     if (!customer) return false;
     
-    // Admin has unlimited access to everything - no restrictions
-    if (customer.isAdmin) return true;
+    // Admin has unlimited access to everything - but check if page is hidden
+    if (customer.isAdmin) {
+      return !isHidden(page);
+    }
     
     // Allow access during loading to prevent blocking
     if (loading) return true;
@@ -170,6 +196,7 @@ export function usePermissions() {
     canEdit,
     canDelete,
     canViewProfit,
+    isHidden,
     reloadPermissions: loadPermissions,
   };
 }
