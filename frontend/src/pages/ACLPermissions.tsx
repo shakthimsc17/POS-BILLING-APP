@@ -87,6 +87,7 @@ export default function ACLPermissions() {
           can_edit: existing?.can_edit ?? false,
           can_delete: existing?.can_delete ?? false,
           can_view_profit: existing?.can_view_profit ?? false,
+          is_hidden: existing?.is_hidden ?? false,
         };
       });
 
@@ -250,6 +251,16 @@ export default function ACLPermissions() {
                             />
                             <span>View Profit</span>
                           </label>
+                          {selectedCustomerType === 'Admin' && (
+                            <label className="permission-checkbox" title="Hide this page from admin navigation">
+                              <input
+                                type="checkbox"
+                                checked={permission.is_hidden ?? false}
+                                onChange={(e) => handlePermissionChange(page.id, 'is_hidden', e.target.checked)}
+                              />
+                              <span>Hide</span>
+                            </label>
+                          )}
                         </div>
                       </div>
                     );

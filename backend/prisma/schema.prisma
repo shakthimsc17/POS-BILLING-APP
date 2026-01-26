@@ -248,6 +248,7 @@ model Permission {
   canEdit       Boolean  @default(false) @map("can_edit")
   canDelete     Boolean  @default(false) @map("can_delete")
   canViewProfit Boolean  @default(false) @map("can_view_profit")
+  isHidden      Boolean  @default(false) @map("is_hidden") // Hide page from admin navigation
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 

@@ -333,6 +333,7 @@ export const storageService = {
         can_edit: p.can_edit,
         can_delete: p.can_delete,
         can_view_profit: p.can_view_profit,
+        is_hidden: p.is_hidden ?? false,
       })),
     });
   },
