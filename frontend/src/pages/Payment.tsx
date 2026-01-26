@@ -89,8 +89,9 @@ export default function Payment({ onNavigate }: PaymentProps) {
         // Don't block payment if print fails
       }
 
-      // Clear cart
+      // Clear cart and delete saved cart from database
       clearCart();
+      await storageService.deleteCart().catch(console.error);
 
       // Show success with print option
       const discountAmount = changeAmount < 0 ? Math.abs(changeAmount) : 0;
