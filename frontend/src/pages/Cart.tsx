@@ -141,11 +141,7 @@ export default function Cart({ onNavigate }: CartProps) {
       onF8: () => {
         // F8 - New Sale/Clear Cart: Clear cart
         if (!processing && !showQuickAddModal && !showCustomerModal) {
-          if (confirm('Clear cart and start a new sale?')) {
-            clearCart();
-            // Delete saved cart
-            storageService.deleteCart().catch(console.error);
-          }
+          handleClearCart();
         }
       },
       onF9: () => {
@@ -189,6 +185,15 @@ export default function Cart({ onNavigate }: CartProps) {
       inputFocused: false, // We handle input focus check in the hook itself
     },
   });
+
+  const handleClearCart = async () => {
+    if (confirm('Clear cart and start a new sale?')) {
+      clearCart();
+      setSelectedSalesCustomer(null);
+      // Delete saved cart from database
+      await storageService.deleteCart().catch(console.error);
+    }
+  };
 
   const handlePayment = async () => {
     if (!paymentMethod) {
@@ -342,7 +347,7 @@ export default function Cart({ onNavigate }: CartProps) {
                 >
                   💾 Save <span className="function-key-hint">F9</span>
                 </button>
-                <button className="btn btn-secondary btn-sm" onClick={clearCart}>
+                <button className="btn btn-secondary btn-sm" onClick={handleClearCart}>
                   Clear <span className="function-key-hint">F8</span>
                 </button>
               </div>
