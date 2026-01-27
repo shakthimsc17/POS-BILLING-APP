@@ -12,12 +12,11 @@ Before starting, make sure you have these installed on your system:
    - Should show version 18.x.x or higher
 
 2. **PostgreSQL Database** (version 15 or higher)
-   - **Option A (Recommended)**: Docker Desktop
-     - Download from: https://www.docker.com/products/docker-desktop/
-     - Install Docker Desktop
-   - **Option B**: Install PostgreSQL directly
-     - Download from: https://www.postgresql.org/download/
-     - Follow installation instructions for your operating system
+   - Download from: https://www.postgresql.org/download/
+   - Follow installation instructions for your operating system
+   - **Ubuntu/Debian**: `sudo apt install postgresql postgresql-contrib`
+   - **macOS**: `brew install postgresql@15 && brew services start postgresql@15`
+   - **Windows**: Download installer from PostgreSQL website
 
 3. **Git** (to clone the project)
    - Download from: https://git-scm.com/downloads
@@ -38,31 +37,71 @@ Or if you have the project files, navigate to the project folder.
 
 ### Step 2: Database Setup
 
-#### Option A: Using Docker (Easiest - Recommended)
+#### Install PostgreSQL (if not already installed)
 
-1. Make sure Docker Desktop is running
-2. Open terminal in the project folder
-3. Run:
+**Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+```
+
+**macOS (using Homebrew):**
+```bash
+brew install postgresql@15
+brew services start postgresql@15
+```
+
+**Windows:**
+Download and install from [PostgreSQL Downloads](https://www.postgresql.org/download/windows/)
+
+#### Create Database and User
+
+1. Open PostgreSQL command line:
    ```bash
-   docker-compose up -d
+   # Linux/macOS
+   sudo -u postgres psql
+   
+   # macOS with Homebrew
+   psql postgres
+   
+   # Windows (use Command Prompt as Administrator)
+   psql -U postgres
    ```
-4. Wait for the database to start (about 10-30 seconds)
-5. Verify it's running:
-   ```bash
-   docker ps
-   ```
-   You should see a container named `posbilling_postgres` running
 
-#### Option B: Manual PostgreSQL Setup
-
-1. Open PostgreSQL command line (psql) or pgAdmin
-2. Create database and user:
+2. Run these SQL commands:
    ```sql
+   -- Create database
    CREATE DATABASE posbilling_db;
+   
+   -- Create user
    CREATE USER posbilling WITH PASSWORD 'posbilling123';
+   
+   -- Grant privileges
    GRANT ALL PRIVILEGES ON DATABASE posbilling_db TO posbilling;
+   
+   -- Connect to the database
+   \c posbilling_db
+   
+   -- Grant schema privileges
+   GRANT ALL ON SCHEMA public TO posbilling;
+   
+   -- Exit psql
+   \q
    ```
-3. Exit PostgreSQL
+
+#### Run Database Schema Script
+
+```bash
+# From the project root directory
+psql -U posbilling -d posbilling_db -f database/init.sql
+```
+
+If prompted for password, enter: `posbilling123`
+
+**Alternative (if you need to specify host/port):**
+```bash
+psql -h localhost -p 5432 -U posbilling -d posbilling_db -f database/init.sql
+```
 
 ### Step 3: Backend Setup
 
@@ -71,6 +110,7 @@ Or if you have the project files, navigate to the project folder.
    ```bash
    cd backend
    ```
+
 3. Install dependencies:
    ```bash
    npm install
@@ -112,6 +152,7 @@ Or if you have the project files, navigate to the project folder.
    ```bash
    cd frontend
    ```
+
 3. Install dependencies:
    ```bash
    npm install
@@ -195,9 +236,9 @@ Wait until you see: `Local: http://localhost:5173`
 ### If Something Goes Wrong
 
 1. **Database connection error:**
-   - Make sure Docker is running (if using Docker)
    - Check that PostgreSQL is running
    - Verify `.env` file has correct database URL
+   - See troubleshooting section below
 
 2. **Port already in use:**
    - Close other applications using ports 3001 or 5173
@@ -216,6 +257,56 @@ Wait until you see: `Local: http://localhost:5173`
 
 ## 🔧 Troubleshooting
 
+### PostgreSQL Connection Issues
+
+1. **Check if PostgreSQL is running:**
+   ```bash
+   # Linux
+   sudo systemctl status postgresql
+   
+   # macOS
+   brew services list
+   
+   # Windows
+   # Check Services (services.msc) for PostgreSQL service
+   ```
+
+2. **Verify connection:**
+   ```bash
+   psql -U posbilling -d posbilling_db -h localhost
+   ```
+
+3. **Check PostgreSQL port (default is 5432):**
+   ```bash
+   # Linux
+   sudo netstat -tulpn | grep 5432
+   # or
+   sudo ss -tulpn | grep 5432
+   
+   # macOS
+   lsof -i :5432
+   ```
+
+### Database Connection String
+
+If your PostgreSQL is on a different host/port, update `backend/.env`:
+```env
+DATABASE_URL="postgresql://posbilling:posbilling123@localhost:5432/posbilling_db?schema=public"
+```
+
+Change `localhost:5432` to your PostgreSQL host and port.
+
+### Permission Issues
+
+If you get permission errors, you might need to:
+```sql
+-- Connect as postgres superuser
+sudo -u postgres psql
+
+-- Then run:
+ALTER USER posbilling WITH SUPERUSER;
+```
+
 ### Check if everything is running:
 
 **Backend:**
@@ -226,20 +317,34 @@ Wait until you see: `Local: http://localhost:5173`
 - Open browser: http://localhost:5173
 - Should show the login page
 
-**Database (Docker):**
+**Database:**
 ```bash
-docker ps
+psql -U posbilling -d posbilling_db -h localhost
 ```
-Should show `posbilling_postgres` container
+Should connect successfully
+
+### Reset Database (if needed)
+
+```bash
+# Drop and recreate database
+sudo -u postgres psql << EOF
+DROP DATABASE IF EXISTS posbilling_db;
+CREATE DATABASE posbilling_db;
+GRANT ALL PRIVILEGES ON DATABASE posbilling_db TO posbilling;
+EOF
+
+# Re-run schema script
+psql -U posbilling -d posbilling_db -f database/init.sql
+
+# Re-run Prisma push
+cd backend
+npm run prisma:push
+```
 
 ### Reset Everything (Fresh Start)
 
 1. Stop all running processes (Ctrl+C in terminals)
-2. Stop Docker container:
-   ```bash
-   docker-compose down -v
-   ```
-3. Delete `node_modules` folders:
+2. Delete `node_modules` folders:
    ```bash
    # Windows
    rmdir /s /q backend\node_modules frontend\node_modules
@@ -247,7 +352,7 @@ Should show `posbilling_postgres` container
    # Mac/Linux
    rm -rf backend/node_modules frontend/node_modules
    ```
-4. Start from Step 3 again
+3. Start from Step 3 again
 
 ## 📞 Support
 
@@ -268,4 +373,3 @@ Once you see the login page, you're all set! You can now:
 ---
 
 **Note**: Keep both terminal windows open while using the app. Closing them will stop the application.
-

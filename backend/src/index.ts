@@ -25,42 +25,24 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// CORS configuration - environment-based
+// CORS configuration - simplified
 const getAllowedOrigins = (): string[] => {
-  const origins: string[] = [];
-  
-  // Production: Use ALLOWED_ORIGINS environment variable
   if (process.env.NODE_ENV === 'production') {
-    if (process.env.ALLOWED_ORIGINS) {
-      return process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim());
-    }
-    // Fallback: Use FRONTEND_URL if ALLOWED_ORIGINS not set
-    if (process.env.FRONTEND_URL) {
-      return [process.env.FRONTEND_URL];
-    }
-    // Production should have explicit origins configured
-    console.warn('⚠️  WARNING: No ALLOWED_ORIGINS configured for production');
-    return [];
+    return process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()) || 
+           (process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []);
   }
-  
   // Development: Allow localhost and custom frontend URL
+  const devOrigins = ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:8080'];
   if (process.env.FRONTEND_URL) {
-    origins.push(process.env.FRONTEND_URL);
+    devOrigins.push(process.env.FRONTEND_URL);
   }
-  
-  // Add common localhost ports for development
-  const commonPorts = ['3000', '5173', '5174', '5175', '8080'];
-  commonPorts.forEach(port => {
-    origins.push(`http://localhost:${port}`);
-  });
-  
-  return origins;
+  return devOrigins;
 };
 
-// Middleware
+// Middleware - CORS must be before routes
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests) in development only
+    // Allow requests with no origin (like mobile apps or Postman) in development only
     if (!origin) {
       if (process.env.NODE_ENV === 'production') {
         return callback(new Error('CORS: Origin required in production'));
@@ -70,16 +52,14 @@ app.use(cors({
     
     const allowedOrigins = getAllowedOrigins();
     
-    // In development, allow localhost origins
+    // Check if origin is in allowed list
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // In development, also allow any localhost origin
     if (process.env.NODE_ENV !== 'production') {
-    if (allowedOrigins.includes(origin) || 
-        origin.startsWith('http://localhost:') || 
-        origin.startsWith('http://127.0.0.1:')) {
-        return callback(null, true);
-      }
-    } else {
-      // In production, only allow explicitly configured origins
-      if (allowedOrigins.includes(origin)) {
+      if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
         return callback(null, true);
       }
     }
@@ -87,6 +67,8 @@ app.use(cors({
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 // Increase body size limit to handle base64 images (50MB should be enough)
 app.use(express.json({ limit: '50mb' }));
@@ -120,7 +102,7 @@ app.use(errorHandler);
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📡 CORS enabled for localhost ports: 3000, 5173, 5174, 5175, 8080`);
+  console.log(`📡 CORS enabled for localhost ports: 3000 (default), 5173, 5174, 5175, 8080`);
   if (process.env.FRONTEND_URL) {
     console.log(`📡 Custom frontend URL: ${process.env.FRONTEND_URL}`);
   }

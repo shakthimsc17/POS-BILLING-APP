@@ -6,11 +6,10 @@ This document outlines what's included and excluded from the repository.
 
 ### Root Level
 - `README.md` - Main documentation
-- `SETUP_WITHOUT_DOCKER.md` - Manual setup guide
+- `INSTALLATION_GUIDE.md` - Installation guide
 - `setup.sh` - Automated setup script
 - `.gitignore` - Git ignore rules
 - `.gitattributes` - Line ending normalization
-- `docker-compose.yml` - Docker configuration
 
 ### Backend (`backend/`)
 - `package.json` - Dependencies
@@ -135,9 +134,8 @@ posbillingapp-local/
 ├── .gitignore          # Git ignore rules
 ├── .gitattributes      # Line ending normalization
 ├── README.md           # Main documentation
-├── SETUP_WITHOUT_DOCKER.md
+├── INSTALLATION_GUIDE.md # Installation guide
 ├── setup.sh            # Setup script
-├── docker-compose.yml  # Docker config
 ├── backend/            # Express API
 │   ├── .env.example    # Environment template
 │   ├── package.json

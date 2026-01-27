@@ -3,7 +3,7 @@
 -- =====================================================
 -- Complete database initialization script
 -- Creates database, extensions, tables, indexes, and triggers
--- Run automatically when Docker container starts
+-- Run manually on local PostgreSQL installation
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
