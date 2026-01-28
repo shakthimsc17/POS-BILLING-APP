@@ -23,6 +23,7 @@ router.get('/', async (req: AuthRequest, res) => {
           activityLogEnabled: true,
           itemLogActions: 'update_delete',
           receiptHeaderOption: 'both',
+          receiptAutoPrint: true,
         },
       });
     }
@@ -33,6 +34,7 @@ router.get('/', async (req: AuthRequest, res) => {
       activity_log_enabled: settings.activityLogEnabled,
       item_log_actions: settings.itemLogActions,
       receipt_header_option: settings.receiptHeaderOption,
+      receipt_auto_print: settings.receiptAutoPrint,
       created_at: settings.createdAt.toISOString(),
       updated_at: settings.updatedAt.toISOString(),
     });
@@ -49,6 +51,7 @@ router.post(
     body('activity_log_enabled').optional().isBoolean(),
     body('item_log_actions').optional().isIn(['all', 'update_delete']),
     body('receipt_header_option').optional().isIn(['logo', 'company_name', 'both']),
+    body('receipt_auto_print').optional().isBoolean(),
   ],
   async (req: AuthRequest, res: Response) => {
     try {
@@ -61,6 +64,7 @@ router.post(
         activity_log_enabled,
         item_log_actions,
         receipt_header_option,
+        receipt_auto_print,
       } = req.body;
 
       // Check if settings exist
@@ -77,6 +81,7 @@ router.post(
             activityLogEnabled: activity_log_enabled !== undefined ? activity_log_enabled : existing.activityLogEnabled,
             itemLogActions: item_log_actions || existing.itemLogActions,
             receiptHeaderOption: receipt_header_option || existing.receiptHeaderOption,
+            receiptAutoPrint: receipt_auto_print !== undefined ? receipt_auto_print : existing.receiptAutoPrint,
           },
         });
       } else {
@@ -87,6 +92,7 @@ router.post(
             activityLogEnabled: activity_log_enabled !== undefined ? activity_log_enabled : true,
             itemLogActions: item_log_actions || 'update_delete',
             receiptHeaderOption: receipt_header_option || 'both',
+            receiptAutoPrint: receipt_auto_print !== undefined ? receipt_auto_print : true,
           },
         });
       }
@@ -97,6 +103,7 @@ router.post(
         activity_log_enabled: settings.activityLogEnabled,
         item_log_actions: settings.itemLogActions,
         receipt_header_option: settings.receiptHeaderOption,
+        receipt_auto_print: settings.receiptAutoPrint,
         created_at: settings.createdAt.toISOString(),
         updated_at: settings.updatedAt.toISOString(),
       });

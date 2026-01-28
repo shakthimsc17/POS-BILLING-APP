@@ -30,8 +30,10 @@ const CashFlow = lazy(() => import('./pages/CashFlow'));
 const SalesPerformance = lazy(() => import('./pages/SalesPerformance'));
 const ACLPermissions = lazy(() => import('./pages/ACLPermissions'));
 const OrderDetails = lazy(() => import('./pages/OrderDetails'));
+const Tables = lazy(() => import('./pages/Tables'));
+const TableOrders = lazy(() => import('./pages/TableOrders'));
 
-type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'sales' | 'sales-performance' | 'customers' | 'import' | 'reports' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items' | 'cash-flow' | 'acl-permissions' | 'order-details';
+type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'sales' | 'sales-performance' | 'customers' | 'import' | 'reports' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items' | 'cash-flow' | 'acl-permissions' | 'order-details' | 'tables' | 'table-orders';
 type AuthPage = 'signin' | 'signup';
 
 function App() {
@@ -41,7 +43,6 @@ function App() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const { loadCategories, loadItems } = useInventoryStore();
   const { customer, initialized, initialize, signOut } = useAuthStore();
-  const { items: cartItems } = useCartStore();
   const { company, loadCompany } = useCompanyStore();
   const { canView, isHidden, loading: permissionsLoading } = usePermissions();
 
@@ -170,6 +171,26 @@ function App() {
               </button>
             )}
           </div>
+
+          {company.business_type === 'cafe' && (
+            <div className="nav-section">
+              <div className="nav-section-label">Cafe</div>
+              <button
+                className={currentPage === 'tables' ? 'active' : ''}
+                onClick={() => setCurrentPage('tables')}
+              >
+                <span className="nav-icon">🪑</span>
+                <span className="nav-text">Tables</span>
+              </button>
+              <button
+                className={currentPage === 'table-orders' ? 'active' : ''}
+                onClick={() => setCurrentPage('table-orders')}
+              >
+                <span className="nav-icon">📋</span>
+                <span className="nav-text">Table Orders</span>
+              </button>
+            </div>
+          )}
 
           <div className="nav-section">
             <div className="nav-section-label">Inventory</div>
@@ -325,6 +346,8 @@ function App() {
             {currentPage === 'company' && (canView('company') && !isHidden('company') ? <CompanySettings /> : <AccessDenied />)}
             {currentPage === 'settings' && (canView('settings') && !isHidden('settings') ? <Settings /> : <AccessDenied />)}
             {currentPage === 'acl-permissions' && customer?.isAdmin && <ACLPermissions />}
+            {currentPage === 'tables' && company.business_type === 'cafe' && <Tables onNavigate={setCurrentPage} />}
+            {currentPage === 'table-orders' && company.business_type === 'cafe' && <TableOrders onNavigate={setCurrentPage} />}
           </Suspense>
         </div>
 

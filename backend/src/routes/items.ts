@@ -162,7 +162,7 @@ router.get('/by-categories', [query('categoryIds').notEmpty()], async (req: Auth
   }
 });
 
-// Get item by barcode
+// Get item by barcode (exact match)
 router.get('/barcode/:barcode', async (req: AuthRequest, res) => {
   try {
     const { barcode } = req.params;
@@ -197,6 +197,60 @@ router.get('/barcode/:barcode', async (req: AuthRequest, res) => {
   } catch (error: any) {
     console.error('Error fetching item by barcode:', error);
     res.status(500).json({ error: error.message || 'Failed to fetch item' });
+  }
+});
+
+// Search items by barcode (case-insensitive, partial match support)
+router.get('/search-by-barcode/:barcode', async (req: AuthRequest, res) => {
+  try {
+    const { barcode } = req.params;
+    const searchTerm = `%${barcode}%`;
+
+    const items = await prisma.$queryRaw<any[]>`
+      SELECT * FROM items
+      WHERE barcode ILIKE ${searchTerm}
+      ORDER BY 
+        CASE 
+          WHEN barcode = ${barcode} THEN 1
+          WHEN barcode LIKE ${barcode + '%'} THEN 2
+          ELSE 3
+        END,
+        created_at DESC
+      LIMIT 10
+    `;
+
+    if (items.length === 0) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    // Transform to snake_case for frontend
+    const transformedItems = items.map((item: any) => ({
+      id: item.id,
+      customer_id: item.customer_id,
+      name: item.name,
+      display_name: item.display_name,
+      code: item.code,
+      barcode: item.barcode,
+      category_id: item.category_id,
+      subcategory: item.subcategory,
+      cost: item.cost,
+      price: item.price,
+      mrp: item.mrp,
+      stock: item.stock,
+      image_url: item.image_url,
+      created_at: item.created_at ? new Date(item.created_at).toISOString() : new Date().toISOString(),
+    }));
+
+    // Return first item if exact match, otherwise return array
+    const exactMatch = transformedItems.find(item => item.barcode?.toLowerCase() === barcode.toLowerCase());
+    if (exactMatch) {
+      res.json(exactMatch);
+    } else {
+      res.json(transformedItems[0]); // Return closest match
+    }
+  } catch (error: any) {
+    console.error('Error searching item by barcode:', error);
+    res.status(500).json({ error: error.message || 'Failed to search item' });
   }
 });
 

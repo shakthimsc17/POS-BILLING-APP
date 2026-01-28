@@ -1,4 +1,4 @@
-import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer, QuickSaleItem, CashFlowEntry, CashFlowSummary, Permission, PagePermission, Cart } from '../types';
+import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer, QuickSaleItem, CashFlowEntry, CashFlowSummary, Permission, PagePermission, Cart, Table, TableOrder } from '../types';
 import apiClient from '../lib/apiClient';
 
 export const storageService = {
@@ -55,6 +55,17 @@ export const storageService = {
   getItemByBarcode: async (barcode: string): Promise<Item | null> => {
     try {
       return await apiClient.get<Item>(`/items/barcode/${encodeURIComponent(barcode)}`);
+    } catch (error: any) {
+      if (error.message.includes('404') || error.message.includes('not found')) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  searchItemByBarcode: async (barcode: string): Promise<Item | null> => {
+    try {
+      return await apiClient.get<Item>(`/items/search-by-barcode/${encodeURIComponent(barcode)}`);
     } catch (error: any) {
       if (error.message.includes('404') || error.message.includes('not found')) {
         return null;
@@ -359,5 +370,66 @@ export const storageService = {
 
   deleteCart: async (): Promise<{ message: string }> => {
     return apiClient.delete<{ message: string }>('/carts');
+  },
+
+  // Tables
+  getTables: async (): Promise<Table[]> => {
+    return apiClient.get<Table[]>('/tables');
+  },
+
+  getTablesByStatus: async (status: 'available' | 'occupied' | 'reserved'): Promise<Table[]> => {
+    return apiClient.get<Table[]>(`/tables/status?status=${status}`);
+  },
+
+  addTable: async (table: Omit<Table, 'id' | 'customer_id' | 'created_at' | 'updated_at'>): Promise<Table> => {
+    return apiClient.post<Table>('/tables', table);
+  },
+
+  updateTable: async (id: string, updates: Partial<Table>): Promise<Table> => {
+    return apiClient.put<Table>(`/tables/${id}`, updates);
+  },
+
+  deleteTable: async (id: string): Promise<void> => {
+    await apiClient.delete(`/tables/${id}`);
+  },
+
+  // Table Orders
+  getTableOrders: async (filters?: { status?: string; tableId?: string }): Promise<TableOrder[]> => {
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.tableId) params.append('tableId', filters.tableId);
+    const query = params.toString();
+    return apiClient.get<TableOrder[]>(`/table-orders${query ? `?${query}` : ''}`);
+  },
+
+  getTableOrder: async (id: string): Promise<TableOrder> => {
+    return apiClient.get<TableOrder>(`/table-orders/${id}`);
+  },
+
+  getActiveTableOrder: async (tableId: string): Promise<TableOrder | null> => {
+    try {
+      return await apiClient.get<TableOrder>(`/table-orders/table/${tableId}`);
+    } catch (error: any) {
+      if (error.message.includes('404') || error.message.includes('not found')) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  createTableOrder: async (order: Omit<TableOrder, 'id' | 'customer_id' | 'created_at' | 'updated_at' | 'status' | 'transaction_id'>): Promise<TableOrder> => {
+    return apiClient.post<TableOrder>('/table-orders', order);
+  },
+
+  updateTableOrder: async (id: string, updates: Partial<TableOrder>): Promise<TableOrder> => {
+    return apiClient.put<TableOrder>(`/table-orders/${id}`, updates);
+  },
+
+  completeTableOrder: async (id: string, data: { payment_method: 'cash' | 'card' | 'upi'; received_amount?: number; sales_customer_id?: string }): Promise<{ message: string; transaction: Transaction }> => {
+    return apiClient.post<{ message: string; transaction: Transaction }>(`/table-orders/${id}/complete`, data);
+  },
+
+  cancelTableOrder: async (id: string): Promise<void> => {
+    await apiClient.post(`/table-orders/${id}/cancel`);
   },
 };

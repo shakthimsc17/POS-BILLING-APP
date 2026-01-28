@@ -5,6 +5,7 @@ import { useCompanyStore } from '../store/companyStore';
 import ItemCard from '../components/ItemCard';
 import CategoryFilter from '../components/CategoryFilter';
 import QuickSaleModal from '../components/QuickSaleModal';
+import SearchBarcodeInput from '../components/SearchBarcodeInput';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Item, Category } from '../types';
 import { formatCurrency } from '../utils/formatters';
@@ -209,12 +210,10 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
       {/* Search & Filters */}
       <div className="search-and-filter-container">
         <div className="card search-container">
-          <input
-            type="text"
-            className="input"
+          <SearchBarcodeInput
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
             placeholder="🔍 Search items..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
