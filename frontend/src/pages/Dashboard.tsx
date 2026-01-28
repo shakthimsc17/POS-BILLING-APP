@@ -6,6 +6,7 @@ import ItemCard from '../components/ItemCard';
 import CategoryFilter from '../components/CategoryFilter';
 import QuickSaleModal from '../components/QuickSaleModal';
 import SearchBarcodeInput from '../components/SearchBarcodeInput';
+import QuickItemSearch from '../components/QuickItemSearch';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Item, Category } from '../types';
 import { formatCurrency } from '../utils/formatters';
@@ -24,10 +25,18 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [showQuickSaleModal, setShowQuickSaleModal] = useState(false);
+  const [useQuickSearch, setUseQuickSearch] = useState(false);
 
   const { items: cartItems, addItem, getTotal, getItemCount } = useCartStore();
   const { items, loadItems } = useInventoryStore();
   const { company, loadCompany } = useCompanyStore();
+
+  // Set default search mode based on business type
+  useEffect(() => {
+    if (company.business_type === 'cafe') {
+      setUseQuickSearch(true);
+    }
+  }, [company.business_type]);
 
   /* ---------------- Initial Load ---------------- */
 
@@ -48,6 +57,33 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
   useEffect(() => {
     loadCompany();
   }, [loadCompany]);
+
+  /* ---------------- Keyboard Shortcuts ---------------- */
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Only trigger if not typing in an input/textarea/select
+      const target = e.target as HTMLElement;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target.isContentEditable ||
+        target.tagName === 'BUTTON'
+      ) {
+        return;
+      }
+
+      // 's' key to navigate to cart (only when not in input field)
+      if ((e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        onNavigate('cart');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [onNavigate]);
 
   /* ---------------- Filtering ---------------- */
 
@@ -210,11 +246,36 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
       {/* Search & Filters */}
       <div className="search-and-filter-container">
         <div className="card search-container">
-          <SearchBarcodeInput
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            placeholder="🔍 Search items..."
-          />
+          <div className="search-inputs-row">
+            {useQuickSearch ? (
+              <QuickItemSearch
+                onItemAdded={() => {
+                  // Refresh items if needed
+                }}
+                onNavigate={(page) => {
+                  if (page === 'cart') {
+                    onNavigate('cart');
+                  }
+                }}
+                autoFocus={true}
+                placeholder="Enter mapping code (e.g., 1, 2)..."
+              />
+            ) : (
+              <SearchBarcodeInput
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                placeholder="🔍 Search items..."
+              />
+            )}
+            <button
+              type="button"
+              className="search-mode-toggle"
+              onClick={() => setUseQuickSearch(!useQuickSearch)}
+              title={useQuickSearch ? "Switch to regular search" : "Switch to quick item search (mapping code)"}
+            >
+              {useQuickSearch ? '🔍' : '🔢'}
+            </button>
+          </div>
         </div>
 
         {categories.length > 0 && (

@@ -12,11 +12,65 @@ interface TableOrdersProps {
 export default function TableOrders({ onNavigate }: TableOrdersProps = {}) {
   const { tableOrders, loadTableOrders, completeTableOrder, cancelTableOrder, loading } = useTableStore();
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'completed' | 'cancelled'>('all');
+  const [filterDateType, setFilterDateType] = useState<'all' | 'date' | 'week' | 'month' | 'year'>('all');
+  const [filterDate, setFilterDate] = useState<string>('');
+  const [filteredOrders, setFilteredOrders] = useState<TableOrder[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<TableOrder | null>(null);
 
   useEffect(() => {
     loadTableOrders(filterStatus === 'all' ? undefined : { status: filterStatus });
   }, [filterStatus, loadTableOrders]);
+
+  // Apply date filters
+  useEffect(() => {
+    let filtered = [...tableOrders];
+
+    if (filterDateType === 'date' && filterDate) {
+      const selectedDate = new Date(filterDate);
+      selectedDate.setHours(0, 0, 0, 0);
+      const nextDay = new Date(selectedDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      
+      filtered = filtered.filter(order => {
+        const orderDate = new Date(order.created_at);
+        return orderDate >= selectedDate && orderDate < nextDay;
+      });
+    } else if (filterDateType === 'week' && filterDate) {
+      const selectedDate = new Date(filterDate);
+      const startOfWeek = new Date(selectedDate);
+      startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 7);
+      
+      filtered = filtered.filter(order => {
+        const orderDate = new Date(order.created_at);
+        return orderDate >= startOfWeek && orderDate < endOfWeek;
+      });
+    } else if (filterDateType === 'month' && filterDate) {
+      const selectedDate = new Date(filterDate);
+      const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1);
+      
+      filtered = filtered.filter(order => {
+        const orderDate = new Date(order.created_at);
+        return orderDate >= startOfMonth && orderDate < endOfMonth;
+      });
+    } else if (filterDateType === 'year' && filterDate) {
+      const selectedDate = new Date(filterDate);
+      const startOfYear = new Date(selectedDate.getFullYear(), 0, 1);
+      startOfYear.setHours(0, 0, 0, 0);
+      const endOfYear = new Date(selectedDate.getFullYear() + 1, 0, 1);
+      
+      filtered = filtered.filter(order => {
+        const orderDate = new Date(order.created_at);
+        return orderDate >= startOfYear && orderDate < endOfYear;
+      });
+    }
+
+    setFilteredOrders(filtered);
+  }, [tableOrders, filterDateType, filterDate]);
 
   const handleComplete = async (order: TableOrder) => {
     if (!confirm(`Complete order for Table ${order.table_number}?`)) return;
@@ -105,6 +159,49 @@ export default function TableOrders({ onNavigate }: TableOrdersProps = {}) {
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
+          
+          <select
+            className="input"
+            value={filterDateType}
+            onChange={(e) => {
+              setFilterDateType(e.target.value as any);
+              if (e.target.value === 'all') {
+                setFilterDate('');
+              } else if (!filterDate) {
+                // Set default date to today if not set
+                const today = new Date().toISOString().split('T')[0];
+                setFilterDate(today);
+              }
+            }}
+          >
+            <option value="all">All Dates</option>
+            <option value="date">Date</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+            <option value="year">Year</option>
+          </select>
+          
+          {filterDateType !== 'all' && (
+            filterDateType === 'year' ? (
+              <input
+                type="number"
+                className="input"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+                placeholder="Year (e.g., 2026)"
+                min="2020"
+                max="2100"
+                style={{ width: '120px' }}
+              />
+            ) : (
+              <input
+                type={filterDateType === 'month' ? 'month' : 'date'}
+                className="input"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+              />
+            )
+          )}
         </div>
       </div>
 
@@ -112,7 +209,7 @@ export default function TableOrders({ onNavigate }: TableOrdersProps = {}) {
         <div className="card">
           <p>Loading orders...</p>
         </div>
-      ) : tableOrders.length === 0 ? (
+      ) : filteredOrders.length === 0 ? (
         <div className="card">
           <div className="empty-state">
             <p>📭 No orders found</p>
@@ -121,7 +218,7 @@ export default function TableOrders({ onNavigate }: TableOrdersProps = {}) {
       ) : (
         <div className="card">
           <div className="table-orders-list">
-            {tableOrders.map((order) => {
+            {filteredOrders.map((order) => {
               const items = JSON.parse(order.items_json);
               const total = typeof order.total_amount === 'string' ? parseFloat(order.total_amount) : (order.total_amount || 0);
 

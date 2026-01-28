@@ -4,7 +4,9 @@ import apiClient from '../lib/apiClient';
 export const storageService = {
   // Categories
   getCategories: async (): Promise<Category[]> => {
-    const response = await apiClient.get<{ categories: Category[]; pagination?: any } | Category[]>('/categories');
+    // Add timestamp to bypass cache
+    const timestamp = Date.now();
+    const response = await apiClient.get<{ categories: Category[]; pagination?: any } | Category[]>(`/categories?_t=${timestamp}`);
     // Handle both response formats: { categories: [...], pagination: {...} } or array
     return Array.isArray(response) ? response : (response?.categories || []);
   },
@@ -66,6 +68,17 @@ export const storageService = {
   searchItemByBarcode: async (barcode: string): Promise<Item | null> => {
     try {
       return await apiClient.get<Item>(`/items/search-by-barcode/${encodeURIComponent(barcode)}`);
+    } catch (error: any) {
+      if (error.message.includes('404') || error.message.includes('not found')) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  searchItemByMappingCode: async (mappingCode: string): Promise<Item | null> => {
+    try {
+      return await apiClient.get<Item>(`/items/search-by-mapping-code/${encodeURIComponent(mappingCode)}`);
     } catch (error: any) {
       if (error.message.includes('404') || error.message.includes('not found')) {
         return null;
@@ -291,23 +304,33 @@ export const storageService = {
 
   // Sales Performance
   getSalesData: async (period: '7days' | 'week' | 'month' | 'year' | 'overall'): Promise<any[]> => {
-    return apiClient.get<any[]>(`/sales-performance/sales?period=${period}`);
+    // Add timestamp to bypass any potential caching
+    const timestamp = Date.now();
+    return apiClient.get<any[]>(`/sales-performance/sales?period=${period}&_t=${timestamp}`);
   },
 
   getProfitData: async (period: '7days' | 'week' | 'month' | 'year' | 'overall'): Promise<any> => {
-    return apiClient.get<any>(`/sales-performance/profit?period=${period}`);
+    // Add timestamp to bypass any potential caching
+    const timestamp = Date.now();
+    return apiClient.get<any>(`/sales-performance/profit?period=${period}&_t=${timestamp}`);
   },
 
   getTopItems: async (period: '7days' | 'week' | 'month' | 'year' | 'overall' = 'overall', limit: number = 10): Promise<any[]> => {
-    return apiClient.get<any[]>(`/sales-performance/top-items?period=${period}&limit=${limit}`);
+    // Add timestamp to bypass any potential caching
+    const timestamp = Date.now();
+    return apiClient.get<any[]>(`/sales-performance/top-items?period=${period}&limit=${limit}&_t=${timestamp}`);
   },
 
   getPaymentMethodsData: async (period: '7days' | 'week' | 'month' | 'year' | 'overall' = 'overall'): Promise<any[]> => {
-    return apiClient.get<any[]>(`/sales-performance/payment-methods?period=${period}`);
+    // Add timestamp to bypass any potential caching
+    const timestamp = Date.now();
+    return apiClient.get<any[]>(`/sales-performance/payment-methods?period=${period}&_t=${timestamp}`);
   },
 
   getHourlySalesData: async (date: string, startHour?: number, endHour?: number, endDate?: string): Promise<any[]> => {
     const params = new URLSearchParams();
+    // Add timestamp to bypass any potential caching
+    params.append('_t', Date.now().toString());
     if (endDate) {
       // Date range mode
       params.append('startDate', date);

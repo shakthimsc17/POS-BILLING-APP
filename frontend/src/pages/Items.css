@@ -84,6 +84,53 @@
   font-size: 0.9rem;
 }
 
+.item-mapping-code {
+  min-width: 150px;
+}
+
+.mapping-code-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mapping-code-value {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #667eea;
+  flex: 1;
+}
+
+.mapping-code-empty {
+  color: #999;
+  font-style: italic;
+  flex: 1;
+}
+
+.quick-edit-mapping-code {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.quick-edit-mapping-code .input-sm {
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.quick-edit-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.quick-edit-actions .btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  min-width: auto;
+}
+
 .item-category {
   color: #3498db;
   font-size: 0.9rem;

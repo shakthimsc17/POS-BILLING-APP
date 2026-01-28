@@ -15,6 +15,7 @@ export interface Item {
   display_name?: string;
   code: string;
   barcode?: string;
+  mapping_code?: string;
   category_id?: string;
   subcategory?: string;
   cost: number | string; // Prisma Decimal returns as string

@@ -7,6 +7,8 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .table-orders-header h1 {
@@ -16,6 +18,13 @@
 .filter-controls {
   display: flex;
   gap: 10px;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.filter-controls .input {
+  min-width: 150px;
+  height: 40px;
 }
 
 .table-orders-list {

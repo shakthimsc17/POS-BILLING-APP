@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useTableStore } from '../store/tableStore';
 import { useInventoryStore } from '../store/inventoryStore';
+import { useCompanyStore } from '../store/companyStore';
 import { Table, Item, CartItem } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import SearchBarcodeInput from './SearchBarcodeInput';
+import QuickItemSearch from './QuickItemSearch';
 import ItemCard from './ItemCard';
 import './TableOrderModal.css';
 
@@ -22,6 +24,7 @@ export default function TableOrderModal({
 }: TableOrderModalProps) {
   const { createTableOrder, getActiveTableOrder, updateTableOrder, completeTableOrder } = useTableStore();
   const { items, loadItems } = useInventoryStore();
+  const { company, loadCompany } = useCompanyStore();
   
   const [orderItems, setOrderItems] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,6 +33,16 @@ export default function TableOrderModal({
   const [existingOrder, setExistingOrder] = useState<any>(null);
   const [taxRate, setTaxRate] = useState(0);
   const [discount, setDiscount] = useState(0);
+  const [useQuickSearch, setUseQuickSearch] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadCompany();
+      if (company.business_type === 'cafe') {
+        setUseQuickSearch(true);
+      }
+    }
+  }, [isOpen, company.business_type, loadCompany]);
 
   useEffect(() => {
     if (isOpen && table) {
@@ -271,11 +284,35 @@ export default function TableOrderModal({
           <div className="table-order-left">
             <div className="card">
               <div className="search-container">
-                <SearchBarcodeInput
-                  searchQuery={searchQuery}
-                  onSearchChange={setSearchQuery}
-                  placeholder="🔍 Search items..."
-                />
+                <div className="search-inputs-row">
+                  {useQuickSearch ? (
+                    <QuickItemSearch
+                      onItemAdded={() => {
+                        // Item is already added to orderItems via customAddItem
+                        // Refresh if needed
+                      }}
+                      customAddItem={(item, quantity) => {
+                        handleItemPress(item);
+                      }}
+                      autoFocus={true}
+                      placeholder="Enter mapping code (e.g., 1, 2)..."
+                    />
+                  ) : (
+                    <SearchBarcodeInput
+                      searchQuery={searchQuery}
+                      onSearchChange={setSearchQuery}
+                      placeholder="🔍 Search items..."
+                    />
+                  )}
+                  <button
+                    type="button"
+                    className="search-mode-toggle"
+                    onClick={() => setUseQuickSearch(!useQuickSearch)}
+                    title={useQuickSearch ? "Switch to regular search" : "Switch to quick item search (mapping code)"}
+                  >
+                    {useQuickSearch ? '🔍' : '🔢'}
+                  </button>
+                </div>
               </div>
             </div>
 

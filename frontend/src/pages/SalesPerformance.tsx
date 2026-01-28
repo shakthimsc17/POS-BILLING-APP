@@ -51,6 +51,24 @@ export default function SalesPerformance() {
     loadHourlyData();
   }, [hourlyDate, startHour, endHour]);
 
+  // Refresh data when page becomes visible (e.g., after navigating back from deleting transactions)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Small delay to ensure any deletions are processed
+        setTimeout(() => {
+          loadAllData();
+          loadHourlyData();
+        }, 500);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [salesPeriod, profitPeriod, hourlyDate, startHour, endHour]);
+
   const loadHourlyData = async () => {
     try {
       const data = await storageService.getHourlySalesData(hourlyDate, startHour, endHour);
@@ -63,6 +81,12 @@ export default function SalesPerformance() {
 
   const loadAllData = async () => {
     setLoading(true);
+    // Immediately clear existing data to prevent showing stale data
+    setSalesData([]);
+    setProfitData(null);
+    setTopItems([]);
+    setPaymentMethods([]);
+    
     try {
       const [sales, profit, items, payments] = await Promise.all([
         storageService.getSalesData(salesPeriod),
@@ -89,7 +113,7 @@ export default function SalesPerformance() {
     } catch (error: any) {
       console.error('Error loading performance data:', error);
       console.error('Error details:', error);
-      // Don't show alert, just log and set empty data
+      // Ensure empty data is set on error
       setSalesData([]);
       setProfitData(null);
       setTopItems([]);
@@ -141,6 +165,14 @@ export default function SalesPerformance() {
     <div className="sales-performance">
       <div className="performance-header">
         <h1>Sales Performance</h1>
+        <button
+          className="btn btn-secondary"
+          onClick={() => loadAllData()}
+          style={{ marginLeft: '1rem' }}
+          title="Refresh data"
+        >
+          🔄 Refresh
+        </button>
       </div>
 
       {/* Sales Report Section */}

@@ -31,9 +31,10 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const categories = await storageService.getCategories();
-      set({ categories, loading: false });
+      // Ensure we set an empty array if no categories exist
+      set({ categories: Array.isArray(categories) ? categories : [], loading: false });
     } catch (error) {
-      set({ error: (error as Error).message, loading: false });
+      set({ error: (error as Error).message, loading: false, categories: [] });
     }
   },
 
@@ -41,7 +42,12 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const items = await storageService.getItems();
-      set({ items, loading: false });
+      // Ensure mapping_code is included in all items
+      const itemsWithMappingCode = items.map(item => ({
+        ...item,
+        mapping_code: item.mapping_code || null,
+      }));
+      set({ items: itemsWithMappingCode, loading: false });
     } catch (error) {
       set({ error: (error as Error).message, loading: false });
     }
@@ -77,6 +83,10 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
   deleteCategory: async (id) => {
     try {
       await storageService.deleteCategory(id);
+      // Immediately clear categories from store and reload
+      set({ categories: [] });
+      // Add small delay to ensure backend cache is cleared
+      await new Promise(resolve => setTimeout(resolve, 100));
       // Reload categories to ensure we have the latest from database
       await get().loadCategories();
     } catch (error) {
@@ -88,6 +98,10 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
   deleteAllCategories: async () => {
     try {
       const result = await storageService.deleteAllCategories();
+      // Immediately clear categories from store
+      set({ categories: [] });
+      // Add small delay to ensure backend cache is cleared
+      await new Promise(resolve => setTimeout(resolve, 100));
       // Reload categories to ensure we have the latest from database
       await get().loadCategories();
       return result;
@@ -115,16 +129,8 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
   updateItem: async (id, item) => {
     try {
       await storageService.updateItem(id, item);
-      const currentItems = get().items;
-      // Ensure items is an array before mapping
-      if (Array.isArray(currentItems)) {
-        set({
-          items: currentItems.map((i) => (i.id === id ? { ...i, ...item } : i)),
-        });
-      } else {
-        // If items is not an array, reload from server
-        await get().loadItems();
-      }
+      // Always reload items from server to get latest data including mapping_code
+      await get().loadItems();
     } catch (error) {
       set({ error: (error as Error).message });
       throw error;
