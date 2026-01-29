@@ -327,6 +327,30 @@ export const storageService = {
     return apiClient.get<any[]>(`/sales-performance/payment-methods?period=${period}&_t=${timestamp}`);
   },
 
+  /** Export full DB as gzip-compressed JSON (admin only). Backend saves to db-exports/YYYY-MM-DD/ and returns file for download. */
+  exportDb: async (): Promise<void> => {
+    const token = localStorage.getItem('pos_token');
+    const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+    const res = await fetch(`${base}/export-db`, {
+      method: 'GET',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as { error?: string }).error || 'Export failed');
+    }
+    const blob = await res.blob();
+    const cd = res.headers.get('Content-Disposition');
+    const match = cd && cd.match(/filename="?([^";]+)/);
+    const filename = match ? match[1].trim() : `pos-backup-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json.gz`;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  },
+
   getHourlySalesData: async (date: string, startHour?: number, endHour?: number, endDate?: string): Promise<any[]> => {
     const params = new URLSearchParams();
     // Add timestamp to bypass any potential caching

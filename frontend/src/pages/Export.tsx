@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { storageService } from '../services/storage';
 import { useCompanyStore } from '../store/companyStore';
+import { useAuthStore } from '../store/authStore';
 import { Item, Transaction, CashFlowEntry, Category, SalesCustomer } from '../types';
 import { formatCurrency, formatOrderId } from '../utils/formatters';
 import './Export.css';
@@ -99,6 +100,8 @@ export default function Export() {
   const [ieDateMode, setIeDateMode] = useState<'single' | 'range'>('range');
 
   const { company, loadCompany } = useCompanyStore();
+  const { customer } = useAuthStore();
+  const isAdmin = customer?.isAdmin ?? false;
 
   useEffect(() => {
     loadCompany();
@@ -1018,6 +1021,17 @@ export default function Export() {
     setExportLoading(null);
   };
 
+  const handleExportDb = async () => {
+    setExportLoading('export-db');
+    try {
+      await storageService.exportDb();
+    } catch (e) {
+      console.error(e);
+      alert((e as Error).message || 'Export DB failed.');
+    }
+    setExportLoading(null);
+  };
+
   if (loading) {
     return (
       <div className="export-page">
@@ -1326,6 +1340,23 @@ export default function Export() {
             {exportLoading === 'customer-wise' ? 'Generating...' : 'Export Customer-wise'}
           </button>
         </div>
+
+        {isAdmin && (
+          <div className="export-card export-card-db">
+            <div className="export-card-header">
+              <span className="export-card-icon">🗄️</span>
+              <h2>Export Database</h2>
+            </div>
+            <p className="export-card-desc">Download full database as a compressed (.json.gz) backup. Saved on server under db-exports/YYYY-MM-DD/ for manual cleanup.</p>
+            <button
+              className="btn btn-primary"
+              onClick={handleExportDb}
+              disabled={!!exportLoading}
+            >
+              {exportLoading === 'export-db' ? 'Exporting...' : 'Export DB'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
