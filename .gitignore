@@ -58,8 +58,8 @@ desktop.ini
 db-exports/
 backend/db-exports/
 
-# Prisma
-backend/prisma/migrations/
+# Prisma (keep migrations/ committed so production can run migrate deploy)
+# backend/prisma/migrations/
 
 # Testing
 coverage/
