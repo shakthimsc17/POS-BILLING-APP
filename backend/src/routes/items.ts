@@ -12,7 +12,8 @@ router.use(authenticate);
 // Get all items - show all items to all authenticated users (shared inventory)
 router.get('/', [
   query('page').optional().isInt({ min: 1 }),
-  query('limit').optional().isInt({ min: 1, max: 1000 }),
+  query('limit').optional().isInt({ min: 1, max: 10000 }),
+  query('all').optional().isIn(['true', 'false']),
 ], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
@@ -20,15 +21,15 @@ router.get('/', [
       return res.status(400).json({ errors: errors.array() });
     }
 
+    const fetchAll = req.query.all === 'true';
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 100; // Default 100 items per page
-    const skip = (page - 1) * limit;
+    const limit = fetchAll ? undefined : (parseInt(req.query.limit as string) || 100);
+    const skip = fetchAll ? 0 : (page - 1) * (limit as number);
 
     const [items, totalCount] = await Promise.all([
       prisma.item.findMany({
-        skip,
-        take: limit,
-      orderBy: { createdAt: 'desc' },
+        ...(fetchAll ? {} : { skip, take: limit }),
+        orderBy: { createdAt: 'desc' },
       }),
       prisma.item.count(),
     ]);
@@ -54,11 +55,11 @@ router.get('/', [
     res.json({
       items: transformedItems,
       pagination: {
-        page,
-        limit,
+        page: fetchAll ? 1 : page,
+        limit: fetchAll ? totalCount : limit,
         total: totalCount,
-        totalPages: Math.ceil(totalCount / limit),
-        hasMore: skip + limit < totalCount,
+        totalPages: fetchAll ? 1 : Math.ceil(totalCount / (limit as number)),
+        hasMore: fetchAll ? false : skip + (limit as number) < totalCount,
       },
     });
   } catch (error: any) {

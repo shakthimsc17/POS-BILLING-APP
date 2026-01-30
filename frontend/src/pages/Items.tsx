@@ -53,7 +53,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
     const loadData = async () => {
       await Promise.all([
         loadCategories(),
-        loadItems(),
+        loadItems(true), // Load all items so the Items page shows full list
         loadPrefixes(),
       ]);
     };

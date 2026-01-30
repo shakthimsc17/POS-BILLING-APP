@@ -26,8 +26,9 @@ export const storageService = {
   },
 
   // Items
-  getItems: async (): Promise<Item[]> => {
-    const response = await apiClient.get<{ items: Item[]; pagination?: any } | Item[]>('/items');
+  getItems: async (options?: { all?: boolean }): Promise<Item[]> => {
+    const query = options?.all ? '?all=true' : '';
+    const response = await apiClient.get<{ items: Item[]; pagination?: any } | Item[]>(`/items${query}`);
     // Handle both response formats: { items: [...], pagination: {...} } or array
     return Array.isArray(response) ? response : (response?.items || []);
   },

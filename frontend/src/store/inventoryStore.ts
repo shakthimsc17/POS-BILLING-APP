@@ -8,7 +8,7 @@ interface InventoryStore {
   loading: boolean;
   error: string | null;
   loadCategories: () => Promise<void>;
-  loadItems: () => Promise<void>;
+  loadItems: (all?: boolean) => Promise<void>;
   addCategory: (category: Omit<Category, 'id' | 'created_at' | 'customer_id'>) => Promise<void>;
   updateCategory: (id: string, category: Partial<Category>) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
@@ -37,10 +37,10 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
     }
   },
 
-  loadItems: async () => {
+  loadItems: async (all = true) => {
     set({ loading: true, error: null });
     try {
-      const items = await storageService.getItems();
+      const items = await storageService.getItems({ all });
       set({ items, loading: false });
     } catch (error) {
       set({ error: (error as Error).message, loading: false });
