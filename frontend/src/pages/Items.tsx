@@ -69,8 +69,8 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
   useEffect(() => {
     const loadData = async () => {
       await Promise.all([
-        loadCategories(),
-        loadItems(),
+        loadCategories(true),  // Load all categories for filter dropdown
+        loadItems(true),       // Load all items so the Items page shows full list
         loadPrefixes(),
       ]);
     };

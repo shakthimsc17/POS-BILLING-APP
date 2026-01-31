@@ -13,7 +13,8 @@ router.use(authenticate);
 // Get all categories - show all categories to all authenticated users (shared inventory)
 router.get('/', [
   query('page').optional().isInt({ min: 1 }),
-  query('limit').optional().isInt({ min: 1, max: 1000 }),
+  query('limit').optional().isInt({ min: 1, max: 10000 }),
+  query('all').optional().isIn(['true', 'false']),
 ], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
@@ -21,12 +22,13 @@ router.get('/', [
       return res.status(400).json({ errors: errors.array() });
     }
 
+    const fetchAll = req.query.all === 'true';
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 100;
-    const skip = (page - 1) * limit;
+    const limit = fetchAll ? undefined : (parseInt(req.query.limit as string) || 100);
+    const skip = fetchAll ? 0 : (page - 1) * (limit as number);
 
     // Check cache first (but skip if _t parameter is present for cache busting)
-    const cacheKey = `categories:${page}:${limit}`;
+    const cacheKey = fetchAll ? 'categories:all' : `categories:${page}:${limit}`;
     const skipCache = req.query._t !== undefined; // Cache busting parameter
     if (!skipCache) {
       const cached = cache.get(cacheKey);
@@ -37,8 +39,7 @@ router.get('/', [
 
     const [categories, totalCount] = await Promise.all([
       prisma.category.findMany({
-        skip,
-        take: limit,
+        ...(fetchAll ? {} : { skip, take: limit }),
         orderBy: { createdAt: 'desc' },
       }),
       prisma.category.count(),
@@ -58,11 +59,11 @@ router.get('/', [
     const response = {
       categories: transformedCategories,
       pagination: {
-        page,
-        limit,
+        page: fetchAll ? 1 : page,
+        limit: fetchAll ? totalCount : limit,
         total: totalCount,
-        totalPages: Math.ceil(totalCount / limit),
-        hasMore: skip + limit < totalCount,
+        totalPages: fetchAll ? 1 : Math.ceil(totalCount / (limit as number)),
+        hasMore: fetchAll ? false : skip + (limit as number) < totalCount,
       },
     };
 

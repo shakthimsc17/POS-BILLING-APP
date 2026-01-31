@@ -7,8 +7,8 @@ interface InventoryStore {
   items: Item[];
   loading: boolean;
   error: string | null;
-  loadCategories: () => Promise<void>;
-  loadItems: () => Promise<void>;
+  loadCategories: (all?: boolean) => Promise<void>;
+  loadItems: (all?: boolean) => Promise<void>;
   addCategory: (category: Omit<Category, 'id' | 'created_at' | 'customer_id'>) => Promise<void>;
   updateCategory: (id: string, category: Partial<Category>) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
@@ -27,10 +27,10 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
   loading: false,
   error: null,
 
-  loadCategories: async () => {
+  loadCategories: async (all = true) => {
     set({ loading: true, error: null });
     try {
-      const categories = await storageService.getCategories();
+      const categories = await storageService.getCategories({ all });
       // Ensure we set an empty array if no categories exist
       set({ categories: Array.isArray(categories) ? categories : [], loading: false });
     } catch (error) {
@@ -38,10 +38,10 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
     }
   },
 
-  loadItems: async () => {
+  loadItems: async (all = true) => {
     set({ loading: true, error: null });
     try {
-      const items = await storageService.getItems();
+      const items = await storageService.getItems({ all });
       // Ensure mapping_code is included in all items
       const itemsWithMappingCode = items.map(item => ({
         ...item,
