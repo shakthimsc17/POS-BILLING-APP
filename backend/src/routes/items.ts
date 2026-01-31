@@ -41,6 +41,7 @@ router.get('/', [
       display_name: item.displayName,
       code: item.code,
       barcode: item.barcode,
+      mapping_code: item.mappingCode,
       category_id: item.categoryId,
       subcategory: item.subcategory,
       cost: item.cost,
@@ -84,6 +85,7 @@ router.get('/search', [query('q').notEmpty()], async (req: AuthRequest, res: Res
         name ILIKE ${searchTerm}
         OR code ILIKE ${searchTerm}
         OR barcode ILIKE ${searchTerm}
+        OR mapping_code ILIKE ${searchTerm}
       )
       ORDER BY created_at DESC
     `;
@@ -96,6 +98,7 @@ router.get('/search', [query('q').notEmpty()], async (req: AuthRequest, res: Res
       display_name: item.display_name,
       code: item.code,
       barcode: item.barcode,
+      mapping_code: item.mapping_code,
       category_id: item.category_id,
       subcategory: item.subcategory,
       cost: item.cost,
@@ -145,6 +148,7 @@ router.get('/by-categories', [query('categoryIds').notEmpty()], async (req: Auth
       display_name: item.displayName,
       code: item.code,
       barcode: item.barcode,
+      mapping_code: item.mappingCode,
       category_id: item.categoryId,
       subcategory: item.subcategory,
       cost: item.cost,
@@ -162,7 +166,7 @@ router.get('/by-categories', [query('categoryIds').notEmpty()], async (req: Auth
   }
 });
 
-// Get item by barcode
+// Get item by barcode (exact match)
 router.get('/barcode/:barcode', async (req: AuthRequest, res) => {
   try {
     const { barcode } = req.params;
@@ -185,6 +189,7 @@ router.get('/barcode/:barcode', async (req: AuthRequest, res) => {
       display_name: item.displayName,
       code: item.code,
       barcode: item.barcode,
+      mapping_code: item.mappingCode,
       category_id: item.categoryId,
       subcategory: item.subcategory,
       cost: item.cost,
@@ -197,6 +202,103 @@ router.get('/barcode/:barcode', async (req: AuthRequest, res) => {
   } catch (error: any) {
     console.error('Error fetching item by barcode:', error);
     res.status(500).json({ error: error.message || 'Failed to fetch item' });
+  }
+});
+
+// Search items by mapping code (exact match for cafe quick search)
+router.get('/search-by-mapping-code/:mappingCode', async (req: AuthRequest, res) => {
+  try {
+    const { mappingCode } = req.params;
+
+    const item = await prisma.item.findFirst({
+      where: {
+        mappingCode: {
+          equals: mappingCode,
+          mode: 'insensitive',
+        },
+      },
+    });
+
+    if (!item) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    // Transform to snake_case for frontend
+    res.json({
+      id: item.id,
+      customer_id: item.customerId,
+      name: item.name,
+      display_name: item.displayName,
+      code: item.code,
+      barcode: item.barcode,
+      mapping_code: item.mappingCode,
+      category_id: item.categoryId,
+      subcategory: item.subcategory,
+      cost: item.cost,
+      price: item.price,
+      mrp: item.mrp,
+      stock: item.stock,
+      image_url: item.imageUrl,
+      created_at: item.createdAt.toISOString(),
+    });
+  } catch (error: any) {
+    console.error('Error searching item by mapping code:', error);
+    res.status(500).json({ error: error.message || 'Failed to search item' });
+  }
+});
+
+// Search items by barcode (case-insensitive, partial match support)
+router.get('/search-by-barcode/:barcode', async (req: AuthRequest, res) => {
+  try {
+    const { barcode } = req.params;
+    const searchTerm = `%${barcode}%`;
+
+    const items = await prisma.$queryRaw<any[]>`
+      SELECT * FROM items
+      WHERE barcode ILIKE ${searchTerm}
+      ORDER BY 
+        CASE 
+          WHEN barcode = ${barcode} THEN 1
+          WHEN barcode LIKE ${barcode + '%'} THEN 2
+          ELSE 3
+        END,
+        created_at DESC
+      LIMIT 10
+    `;
+
+    if (items.length === 0) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    // Transform to snake_case for frontend
+    const transformedItems = items.map((item: any) => ({
+      id: item.id,
+      customer_id: item.customer_id,
+      name: item.name,
+      display_name: item.display_name,
+      code: item.code,
+      barcode: item.barcode,
+      mapping_code: item.mapping_code,
+      category_id: item.category_id,
+      subcategory: item.subcategory,
+      cost: item.cost,
+      price: item.price,
+      mrp: item.mrp,
+      stock: item.stock,
+      image_url: item.image_url,
+      created_at: item.created_at ? new Date(item.created_at).toISOString() : new Date().toISOString(),
+    }));
+
+    // Return first item if exact match, otherwise return array
+    const exactMatch = transformedItems.find(item => item.barcode?.toLowerCase() === barcode.toLowerCase());
+    if (exactMatch) {
+      res.json(exactMatch);
+    } else {
+      res.json(transformedItems[0]); // Return closest match
+    }
+  } catch (error: any) {
+    console.error('Error searching item by barcode:', error);
+    res.status(500).json({ error: error.message || 'Failed to search item' });
   }
 });
 
@@ -221,6 +323,8 @@ router.post(
         name,
         code,
         barcode,
+        mappingCode,
+        mapping_code, // Accept snake_case from frontend
         categoryId,
         category_id, // Accept snake_case from frontend
         subcategory,
@@ -238,6 +342,9 @@ router.post(
       
       // Use displayName (camelCase) or display_name (snake_case), whichever is provided
       const finalDisplayName = displayName !== undefined ? displayName : display_name;
+      
+      // Use mappingCode (camelCase) or mapping_code (snake_case), whichever is provided
+      const finalMappingCode = mappingCode !== undefined ? (mappingCode === '' ? null : mappingCode) : (mapping_code !== undefined ? (mapping_code === '' ? null : mapping_code) : undefined);
       
       console.log('Creating item:', {
         name,
@@ -258,6 +365,7 @@ router.post(
           displayName: finalDisplayName || null,
           code,
           barcode,
+          mappingCode: finalMappingCode === '' || finalMappingCode === null ? null : (finalMappingCode || null),
           categoryId: finalCategoryId || null,
           subcategory,
           cost: parseFloat(cost),
@@ -295,6 +403,7 @@ router.post(
         display_name: item.displayName,
         code: item.code,
         barcode: item.barcode,
+        mapping_code: item.mappingCode,
         category_id: item.categoryId,
         subcategory: item.subcategory,
         cost: item.cost,
@@ -335,6 +444,8 @@ router.put(
         display_name, // Accept snake_case from frontend
         code,
         barcode,
+        mappingCode,
+        mapping_code, // Accept snake_case from frontend
         categoryId,
         category_id, // Accept snake_case from frontend
         subcategory,
@@ -349,6 +460,8 @@ router.put(
       const finalCategoryId = categoryId !== undefined ? categoryId : category_id;
       // Use displayName (camelCase) or display_name (snake_case), whichever is provided
       const finalDisplayName = displayName !== undefined ? displayName : display_name;
+      // Use mappingCode (camelCase) or mapping_code (snake_case), whichever is provided
+      const finalMappingCode = mappingCode !== undefined ? (mappingCode === '' ? null : mappingCode) : (mapping_code !== undefined ? (mapping_code === '' ? null : mapping_code) : undefined);
 
       // Check if item exists (shared inventory - no customerId check)
       const existing = await prisma.item.findUnique({
@@ -391,6 +504,9 @@ router.put(
       if (finalDisplayName !== undefined) updateData.displayName = finalDisplayName || null;
       if (code) updateData.code = code;
       if (barcode !== undefined) updateData.barcode = barcode;
+      if (finalMappingCode !== undefined) {
+        updateData.mappingCode = finalMappingCode === '' || finalMappingCode === null ? null : finalMappingCode;
+      }
       if (finalCategoryId !== undefined) updateData.categoryId = finalCategoryId || null;
       if (subcategory !== undefined) updateData.subcategory = subcategory;
       if (cost !== undefined) updateData.cost = parseFloat(cost);
@@ -429,6 +545,7 @@ router.put(
         display_name: item.displayName,
         code: item.code,
         barcode: item.barcode,
+        mapping_code: item.mappingCode,
         category_id: item.categoryId,
         subcategory: item.subcategory,
         cost: item.cost,

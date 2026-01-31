@@ -25,24 +25,6 @@ if ! command -v npm &> /dev/null; then
     exit 1
 fi
 
-# Check if Docker is running (if using Docker)
-if command -v docker &> /dev/null; then
-    if ! docker ps &> /dev/null; then
-        echo -e "${YELLOW}⚠️  Docker is not running. Starting database...${NC}"
-        docker-compose up -d
-        echo "Waiting for database to be ready..."
-        sleep 5
-    else
-        # Check if database container is running
-        if ! docker ps | grep -q posbilling_postgres; then
-            echo -e "${YELLOW}⚠️  Database container not running. Starting...${NC}"
-            docker-compose up -d
-            echo "Waiting for database to be ready..."
-            sleep 5
-        fi
-    fi
-fi
-
 # Check if backend .env exists
 if [ ! -f "backend/.env" ]; then
     echo -e "${YELLOW}⚠️  Backend .env file not found. Creating default...${NC}"
@@ -126,7 +108,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo -e "${GREEN}🎉 POS Billing App is running!${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "📍 Frontend: http://localhost:5173"
+echo "📍 Frontend: http://localhost:3000"
 echo "📍 Backend API: http://localhost:3001"
 echo ""
 echo "👤 Default Admin Login:"

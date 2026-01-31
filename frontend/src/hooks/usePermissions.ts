@@ -45,7 +45,7 @@ export function usePermissions() {
         // Admin has full access to all pages
         const pages = [
           'dashboard', 'cart', 'sales', 'sales-performance', 'cash-flow',
-          'categories', 'items', 'quick-sale-items', 'customers', 'reports',
+          'categories', 'items', 'quick-sale-items', 'customers', 'reports', 'export',
           'company', 'settings', 'activity-logs', 'bulk-operations'
         ];
         pages.forEach(page => {

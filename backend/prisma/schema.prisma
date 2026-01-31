@@ -35,6 +35,8 @@ model Customer {
   activityLogs         ActivityLog[]
   cashFlowEntries      CashFlowEntry[]
   carts                Cart[]
+  tables               Table[]
+  tableOrders          TableOrder[]
 
   @@index([email])
   @@index([phone])
@@ -66,6 +68,7 @@ model Item {
   displayName String?  @map("display_name") @db.VarChar(255)
   code        String   @db.VarChar(100)
   barcode     String?  @db.VarChar(255)
+  mappingCode String?  @map("mapping_code") @db.VarChar(100)
   categoryId  String?  @map("category_id") @db.Uuid
   subcategory String?  @db.VarChar(255)
   cost        Decimal  @db.Decimal(10, 2)
@@ -85,6 +88,7 @@ model Item {
   @@index([categoryId])
   @@index([barcode])
   @@index([code])
+  @@index([mappingCode])
   @@map("items")
 }
 
@@ -104,6 +108,7 @@ model Transaction {
   customer            Customer       @relation("CustomerTransactions", fields: [customerId], references: [id], onDelete: Cascade)
   transactionCustomer Customer?      @relation("TransactionCustomers", fields: [transactionCustomerId], references: [id], onDelete: SetNull)
   salesCustomer       SalesCustomer? @relation(fields: [salesCustomerId], references: [id], onDelete: SetNull)
+  tableOrder          TableOrder?
 
   @@index([customerId])
   @@index([createdAt])
@@ -141,6 +146,7 @@ model Settings {
   activityLogEnabled  Boolean  @default(true) @map("activity_log_enabled")
   itemLogActions      String   @default("update_delete") @map("item_log_actions") @db.VarChar(20)
   receiptHeaderOption String   @default("both") @map("receipt_header_option") @db.VarChar(20)
+  receiptAutoPrint    Boolean  @default(true) @map("receipt_auto_print")
   createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -276,4 +282,50 @@ model Cart {
   @@unique([customerId])
   @@index([customerId])
   @@map("carts")
+}
+
+model Table {
+  id          String   @id @default(uuid()) @db.Uuid
+  customerId  String   @map("customer_id") @db.Uuid
+  tableNumber String   @map("table_number") @db.VarChar(50)
+  capacity    Int      @default(4)
+  status      String   @default("available") @map("status") @db.VarChar(20) // 'available', 'occupied', 'reserved'
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  customer Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  orders   TableOrder[]
+
+  @@unique([customerId, tableNumber])
+  @@index([customerId])
+  @@index([status])
+  @@map("tables")
+}
+
+model TableOrder {
+  id            String   @id @default(uuid()) @db.Uuid
+  customerId    String   @map("customer_id") @db.Uuid
+  tableId       String   @map("table_id") @db.Uuid
+  status        String   @default("pending") @map("status") @db.VarChar(20) // 'pending', 'completed', 'cancelled'
+  itemsJson     String   @map("items_json") @db.Text
+  taxRate       Decimal  @default(0) @map("tax_rate") @db.Decimal(5, 2)
+  discount      Decimal  @default(0) @map("discount") @db.Decimal(10, 2)
+  totalAmount   Decimal? @map("total_amount") @db.Decimal(10, 2)
+  paymentMethod String?  @map("payment_method") @db.VarChar(20)
+  transactionId String?  @unique @map("transaction_id") @db.Uuid
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  customer    Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  table       Table        @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@index([customerId])
+  @@index([tableId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("table_orders")
 }

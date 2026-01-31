@@ -69,6 +69,14 @@ export default function Settings() {
     receiptSettings.clearCache();
   };
 
+  const handleReceiptAutoPrintToggle = async (enabled: boolean) => {
+    if (!settings) return;
+    await saveSettings({ receipt_auto_print: enabled });
+    // Clear receipt settings cache
+    const { receiptSettings } = await import('../utils/receiptSettings');
+    receiptSettings.clearCache();
+  };
+
   const loadPrefixes = async () => {
     try {
       setLoadingPrefixes(true);
@@ -274,6 +282,31 @@ export default function Settings() {
                   </td>
                   <td className="setting-description">
                     Controls how company information appears at the top of receipts
+                  </td>
+                </tr>
+                <tr>
+                  <td className="setting-label">Auto Print Receipts</td>
+                  <td>
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={settings.receipt_auto_print !== undefined ? settings.receipt_auto_print : true}
+                        onChange={(e) => handleReceiptAutoPrintToggle(e.target.checked)}
+                        disabled={saving}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </td>
+                  <td className="setting-description">
+                    <div>
+                      <p style={{ marginBottom: '0.5rem' }}>Automatically print receipts after payment completion.</p>
+                      <p style={{ fontSize: '0.85rem', color: '#e74c3c', fontWeight: '600', margin: 0 }}>
+                        ⚠️ Browser security requires user interaction - print dialog will still appear.
+                      </p>
+                      <p style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.25rem', marginBottom: 0 }}>
+                        For true silent printing, use Chrome with <code>--kiosk-printing</code> flag. See PRINTER_SETUP.md.
+                      </p>
+                    </div>
                   </td>
                 </tr>
               </tbody>

@@ -7,11 +7,12 @@ import { printReceipt } from '../utils/printer';
 import { SalesCustomer } from '../types';
 import QuickAddItemModal from '../components/QuickAddItemModal';
 import CustomerSelectModal from '../components/CustomerSelectModal';
+import SearchBarcodeInput from '../components/SearchBarcodeInput';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import './Cart.css';
 
 interface CartProps {
-  onNavigate: (page: 'dashboard') => void;
+  onNavigate: (page: string) => void;
 }
 
 export default function Cart({ onNavigate }: CartProps) {
@@ -42,6 +43,7 @@ export default function Cart({ onNavigate }: CartProps) {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [editingPrice, setEditingPrice] = useState<Record<string, string>>({});
   const [cartSavedNotification, setCartSavedNotification] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Refs for input fields that need to be focused
   const discountInputRef = useRef<HTMLInputElement>(null);
@@ -242,11 +244,15 @@ export default function Cart({ onNavigate }: CartProps) {
         }
       }
 
-      // Print receipt
+      // Print receipt (use setting for auto-print)
       try {
+        const { receiptSettings } = await import('../utils/receiptSettings');
+        const autoPrint = await receiptSettings.getAutoPrint();
+        console.log('Auto-print setting:', autoPrint);
         await printReceipt({
           items,
           transaction: savedTransaction,
+          autoPrint,
         });
       } catch (printError) {
         console.error('Print error:', printError);
@@ -257,27 +263,21 @@ export default function Cart({ onNavigate }: CartProps) {
       clearCart();
       await storageService.deleteCart().catch(console.error);
 
-      // Show success with print option
+      // Show success message and navigate
       const discountAmount = changeAmount < 0 ? Math.abs(changeAmount) : 0;
       const changeMessage = discountAmount > 0 
         ? `Discount: ${formatCurrency(discountAmount)}` 
         : actualChange > 0 
         ? `Change: ${formatCurrency(actualChange)}` 
         : 'Exact amount';
-      const printAgain = confirm(`Payment successful! ${changeMessage}\n\nWould you like to print the receipt again?`);
-      if (printAgain) {
-        try {
-          const receiptItems = typeof savedTransaction.items_json === 'string' 
-            ? JSON.parse(savedTransaction.items_json) 
-            : savedTransaction.items_json;
-          await printReceipt({
-            items: receiptItems,
-            transaction: savedTransaction,
-          });
-        } catch (printError) {
-          console.error('Print error:', printError);
-        }
-      }
+      
+      // Show brief success notification
+      const notification = document.createElement('div');
+      notification.className = 'notification';
+      notification.style.background = '#27ae60';
+      notification.textContent = `Payment successful! ${changeMessage}`;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
       
       onNavigate('dashboard');
     } catch (error) {
@@ -320,12 +320,20 @@ export default function Cart({ onNavigate }: CartProps) {
       )}
       <div className="cart-header">
         <h1>Sales Invoice</h1>
+        <div className="cart-header-search">
+          <SearchBarcodeInput
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            placeholder="🔍 Search or scan barcode..."
+          />
+        </div>
         <button className="btn btn-secondary" onClick={() => onNavigate('dashboard')}>
           ← Back to Dashboard
         </button>
       </div>
 
       <div className="cart-content">
+
         <div className="cart-items">
           <div className="card">
             <div className="cart-items-header">

@@ -2,27 +2,52 @@
 
 This is a fully local version of the POS Billing application that runs entirely on your machine without any external dependencies like Supabase.
 
-## 🚀 Quick Start (For New Users)
+## 🚀 Quick Start
 
-**Just want to get started quickly?** See [QUICK_START.md](./QUICK_START.md)
+### For Non-Technical Users
 
-**Need detailed installation instructions?** See [INSTALLATION_GUIDE.md](./INSTALLATION_GUIDE.md)
+**Windows Users:**
+1. **Double-click** `START_APP.bat`
+2. Wait for two windows to open (Backend and Frontend)
+3. Open your browser and go to: **http://localhost:3000**
+4. Login with:
+   - Email: `admin@posbilling.com`
+   - Password: `admin123`
 
-### One-Click Start
+**To Stop:** Close the two windows that opened.
 
-- **Windows**: Double-click `START_APP.bat`
-- **Mac/Linux**: Run `./start.sh` in terminal
+**Mac/Linux Users:**
+1. Open Terminal in the project folder
+2. Run: `./start.sh`
+3. Wait for the message "Application started successfully!"
+4. Open your browser and go to: **http://localhost:5173**
+5. Login with:
+   - Email: `admin@posbilling.com`
+   - Password: `admin123`
 
-That's it! The app will open at http://localhost:5173
+**To Stop:** Press `Ctrl+C` in the terminal, or run `./stop.sh`
 
-**Default Admin Login:**
-- Email: `admin@posbilling.com`
-- Password: `admin123`
+### First Time Setup
+
+If this is your first time installing:
+
+1. Make sure you have **Node.js** installed (download from nodejs.org)
+2. Make sure **PostgreSQL** is installed and running locally
+3. Run the setup script:
+   ```bash
+   npm run setup
+   ```
+   This will:
+   - Install all dependencies
+   - Set up the database
+   - Create the admin account
+
+4. Then start the app using the Quick Start instructions above.
 
 ## Architecture
 
 ```
-Frontend (React) → Express API → Prisma ORM → PostgreSQL (Docker)
+Frontend (React) → Express API → Prisma ORM → PostgreSQL
 ```
 
 ### Why Two package.json Files?
@@ -35,7 +60,7 @@ This is a **monorepo structure** with separate frontend and backend applications
   
 - **`frontend/package.json`** - React frontend dependencies
   - React, Vite, Zustand, etc.
-  - Runs on port 5173
+  - Runs on port 3000 (default)
 
 Each has its own `node_modules/` because they need different dependencies. This is standard practice for full-stack applications and allows:
 - Independent version management
@@ -45,38 +70,31 @@ Each has its own `node_modules/` because they need different dependencies. This 
 ## Prerequisites
 
 - Node.js 18+ installed
-- PostgreSQL 15+ installed (or Docker for containerized setup)
+- PostgreSQL 15+ installed and running locally
 - npm or yarn package manager
 
-**Note:** If you don't have Docker, see [SETUP_WITHOUT_DOCKER.md](./SETUP_WITHOUT_DOCKER.md) for manual setup instructions.
+**Need detailed installation instructions?** See [INSTALLATION_GUIDE.md](./INSTALLATION_GUIDE.md)
 
-## Quick Start
+## Manual Setup
 
-### Option A: With Docker (Recommended)
-
-#### 1. Start PostgreSQL Database
-
-```bash
-cd /var/www/html/database/POSBILLING/posbillingapp-local
-docker-compose up -d
-```
-
-This will start PostgreSQL on port 5432 with:
-- Database: `posbilling_db`
-- User: `posbilling`
-- Password: `posbilling123`
-
-### Option B: Without Docker
-
-If you don't have Docker, you need to:
+### 1. Database Setup
 
 1. **Install PostgreSQL locally** (if not already installed)
+   - Ubuntu/Debian: `sudo apt install postgresql postgresql-contrib`
+   - macOS: `brew install postgresql@15`
+   - Windows: Download from [PostgreSQL Downloads](https://www.postgresql.org/download/windows/)
+
 2. **Create database and user:**
    ```bash
    sudo -u postgres psql
+   ```
+   Then run:
+   ```sql
    CREATE DATABASE posbilling_db;
    CREATE USER posbilling WITH PASSWORD 'posbilling123';
    GRANT ALL PRIVILEGES ON DATABASE posbilling_db TO posbilling;
+   \c posbilling_db
+   GRANT ALL ON SCHEMA public TO posbilling;
    \q
    ```
 
@@ -84,8 +102,6 @@ If you don't have Docker, you need to:
    ```bash
    psql -U posbilling -d posbilling_db -f database/init.sql
    ```
-
-See [SETUP_WITHOUT_DOCKER.md](./SETUP_WITHOUT_DOCKER.md) for detailed instructions.
 
 ### 2. Setup Backend
 
@@ -103,6 +119,9 @@ npm run prisma:generate
 
 # Push database schema
 npm run prisma:push
+
+# Create admin account
+npm run seed:admin
 
 # Start backend server
 npm run dev
@@ -125,7 +144,7 @@ echo "VITE_API_BASE_URL=http://localhost:3001/api" > .env
 npm run dev
 ```
 
-The frontend will run on `http://localhost:5173`
+The frontend will run on `http://localhost:3000`
 
 ## Environment Variables
 
@@ -139,7 +158,7 @@ PORT=3001
 # FRONTEND_URL="http://localhost:3000"
 ```
 
-**Note:** The backend CORS is configured to automatically allow requests from common localhost ports (3000, 5173, 5174, 5175, 8080). You can override this by setting `FRONTEND_URL` in your `.env` file.
+**Note:** The backend CORS is configured to automatically allow requests from common localhost ports (3000, 5173, 5174, 5175, 8080). The frontend defaults to port 3000. You can override this by setting `FRONTEND_URL` in your `.env` file.
 
 ### Frontend (.env)
 
@@ -155,17 +174,21 @@ VITE_API_BASE_URL=http://localhost:3001/api
 ### Access PostgreSQL
 
 ```bash
-docker exec -it posbilling_postgres psql -U posbilling -d posbilling_db
+psql -U posbilling -d posbilling_db
 ```
 
 ### Reset Database
 
 ```bash
-# Stop and remove containers
-docker-compose down -v
+# Drop and recreate database
+sudo -u postgres psql << EOF
+DROP DATABASE IF EXISTS posbilling_db;
+CREATE DATABASE posbilling_db;
+GRANT ALL PRIVILEGES ON DATABASE posbilling_db TO posbilling;
+EOF
 
-# Start fresh
-docker-compose up -d
+# Re-run schema script
+psql -U posbilling -d posbilling_db -f database/init.sql
 
 # Re-run Prisma push
 cd backend
@@ -251,14 +274,18 @@ npm run build
 
 ### Database Connection Issues
 
-1. Check if PostgreSQL container is running:
+1. Check if PostgreSQL is running:
    ```bash
-   docker ps
+   # Linux
+   sudo systemctl status postgresql
+   
+   # macOS
+   brew services list
    ```
 
-2. Check database logs:
+2. Verify connection:
    ```bash
-   docker logs posbilling_postgres
+   psql -U posbilling -d posbilling_db -h localhost
    ```
 
 3. Verify connection string in `backend/.env`
@@ -266,7 +293,7 @@ npm run build
 ### Port Already in Use
 
 - Backend default port: 3001 (change in `backend/.env`)
-- Frontend default port: 5173 (Vite will auto-increment)
+- Frontend default port: 3000 (Vite will auto-increment if port is in use)
 - PostgreSQL port: 5432
 
 ### Prisma Issues
@@ -277,12 +304,25 @@ npm run prisma:generate  # Regenerate client
 npm run prisma:push      # Push schema to database
 ```
 
+### Common Issues
+
+**"Port already in use" error:**
+- Close other applications using ports 3001 or 3000
+- Or change ports in `.env` files
+
+**"Cannot find module" error:**
+- Run: `npm run install:all`
+
+**Database connection error:**
+- Check PostgreSQL is installed and running
+- Verify database credentials in `backend/.env`
+
 ## Security Notes
 
 - Change `JWT_SECRET` in production
-- Change database password in `docker-compose.yml`
 - Use environment variables for all secrets
 - Never commit `.env` files to version control
+- Change default database password in production
 
 ## Differences from Supabase Version
 
@@ -295,4 +335,3 @@ npm run prisma:push      # Push schema to database
 ## License
 
 Same as original project.
-
