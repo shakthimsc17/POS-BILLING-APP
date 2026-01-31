@@ -1,0 +1,60 @@
+.barcode-input-container {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+}
+
+.barcode-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 500;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.2s;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.barcode-input:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.barcode-input.searching {
+  border-color: #f39c12;
+  background: #fffbf0;
+}
+
+.barcode-input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.barcode-loading {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #f39c12;
+  font-weight: 500;
+}
+
+.barcode-hint {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #666;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .barcode-input-container {
+    max-width: 100%;
+  }
+  
+  .barcode-hint {
+    font-size: 10px;
+  }
+}

@@ -6,8 +6,16 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 1.5rem;
   color: #1a1a1a;
+  flex-wrap: wrap;
+}
+
+.cart-header-search {
+  flex: 1;
+  min-width: 300px;
+  max-width: 500px;
 }
 
 .cart-header h1 {

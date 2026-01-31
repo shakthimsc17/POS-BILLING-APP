@@ -25,11 +25,14 @@ router.get('/', [
     const limit = parseInt(req.query.limit as string) || 100;
     const skip = (page - 1) * limit;
 
-    // Check cache first
+    // Check cache first (but skip if _t parameter is present for cache busting)
     const cacheKey = `categories:${page}:${limit}`;
-    const cached = cache.get(cacheKey);
-    if (cached) {
-      return res.json(cached);
+    const skipCache = req.query._t !== undefined; // Cache busting parameter
+    if (!skipCache) {
+      const cached = cache.get(cacheKey);
+      if (cached) {
+        return res.json(cached);
+      }
     }
 
     const [categories, totalCount] = await Promise.all([
@@ -219,6 +222,9 @@ router.delete('/', async (req: AuthRequest, res) => {
     const deleted = await prisma.category.deleteMany({
       where: { customerId: req.customerId! },
     });
+
+    // Clear cache on delete all
+    cache.clear();
 
     res.json({ 
       message: 'All categories deleted successfully',
