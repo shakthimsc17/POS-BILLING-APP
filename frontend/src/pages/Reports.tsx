@@ -371,7 +371,9 @@ export default function Reports() {
     });
 
     // Remaining amount = Total selling amount - Sales ordered selling amount
-    const remainingAmount = totalSellingAmount - salesOrderedSellingAmount;
+    // When there is no stock (totalSellingAmount = 0), there is no remaining sales — show 0, not negative
+    const rawRemainingAmount = totalSellingAmount - salesOrderedSellingAmount;
+    const remainingAmount = totalSellingAmount === 0 ? 0 : Math.max(0, rawRemainingAmount);
 
     // Remaining investment = sum of (item.stock × item.cost) for all items (current inventory)
     const remainingInvestment = items.reduce((sum, item) => {
@@ -379,8 +381,8 @@ export default function Reports() {
       return sum + item.stock * (isNaN(cost) ? 0 : cost);
     }, 0);
 
-    // Remaining profit = Remaining amount - Remaining investment
-    const remainingProfit = remainingAmount - remainingInvestment;
+    // Remaining profit = Remaining sales amount - Remaining investment. When no stock, no remaining profit.
+    const remainingProfit = totalSellingAmount === 0 ? 0 : Math.max(0, remainingAmount - remainingInvestment);
 
     return {
       totalSellingAmount,

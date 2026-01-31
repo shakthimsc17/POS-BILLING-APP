@@ -40,16 +40,8 @@ export const useCartStore = create<CartStore>((set, get) => ({
     const existingItem = currentItems.find((ci) => ci.item.id === item.id);
     const itemPrice = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
     
-    // Stock validation - skip for quick sale items
-    const isQuickSaleItem = item.id.startsWith('quick-sale-');
-    if (!isQuickSaleItem) {
-      const itemStock = typeof item.stock === 'number' ? item.stock : parseInt(item.stock?.toString() || '0', 10);
-      const requestedQuantity = existingItem ? existingItem.quantity + quantity : quantity;
-      
-      if (itemStock < requestedQuantity) {
-        throw new Error(`Only ${itemStock} ${item.name} available in stock. Requested: ${requestedQuantity}`);
-      }
-    }
+    // Stock validation removed - allow adding out-of-stock items
+    // Quick sale items already skip validation
 
     if (existingItem) {
       const currentPrice = existingItem.customPrice ?? itemPrice;
@@ -94,18 +86,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
     const currentItems = get().items;
     const cartItem = currentItems.find((ci) => ci.item.id === itemId);
     if (cartItem) {
-      // Stock validation - skip for quick sale items
-      const isQuickSaleItem = itemId.startsWith('quick-sale-');
-      if (!isQuickSaleItem) {
-        const itemStock = typeof cartItem.item.stock === 'number' 
-          ? cartItem.item.stock 
-          : parseInt(cartItem.item.stock?.toString() || '0', 10);
-        
-        if (itemStock < quantity) {
-          throw new Error(`Only ${itemStock} ${cartItem.item.name} available in stock. Requested: ${quantity}`);
-        }
-      }
-      
+      // Stock validation removed - allow adding out-of-stock items
       const itemPrice = get().getItemPrice(itemId);
       set({
         items: currentItems.map((ci) =>

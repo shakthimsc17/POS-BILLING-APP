@@ -25,25 +25,6 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b 1
 )
 
-REM Check if Docker is available and start database
-where docker >nul 2>nul
-if %ERRORLEVEL% EQU 0 (
-    echo [INFO] Checking Docker database...
-    docker ps >nul 2>nul
-    if %ERRORLEVEL% NEQ 0 (
-        echo [INFO] Starting database container...
-        docker-compose up -d
-        timeout /t 5 /nobreak >nul
-    ) else (
-        docker ps | findstr posbilling_postgres >nul
-        if %ERRORLEVEL% NEQ 0 (
-            echo [INFO] Starting database container...
-            docker-compose up -d
-            timeout /t 5 /nobreak >nul
-        )
-    )
-)
-
 REM Check if backend .env exists
 if not exist "backend\.env" (
     echo [INFO] Creating backend .env file...

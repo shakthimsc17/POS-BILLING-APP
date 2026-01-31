@@ -1,10 +1,12 @@
-import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer, QuickSaleItem, CashFlowEntry, CashFlowSummary, Permission, PagePermission, Cart } from '../types';
+import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer, QuickSaleItem, CashFlowEntry, CashFlowSummary, Permission, PagePermission, Cart, Table, TableOrder } from '../types';
 import apiClient from '../lib/apiClient';
 
 export const storageService = {
   // Categories
   getCategories: async (): Promise<Category[]> => {
-    const response = await apiClient.get<{ categories: Category[]; pagination?: any } | Category[]>('/categories');
+    // Add timestamp to bypass cache
+    const timestamp = Date.now();
+    const response = await apiClient.get<{ categories: Category[]; pagination?: any } | Category[]>(`/categories?_t=${timestamp}`);
     // Handle both response formats: { categories: [...], pagination: {...} } or array
     return Array.isArray(response) ? response : (response?.categories || []);
   },
@@ -55,6 +57,28 @@ export const storageService = {
   getItemByBarcode: async (barcode: string): Promise<Item | null> => {
     try {
       return await apiClient.get<Item>(`/items/barcode/${encodeURIComponent(barcode)}`);
+    } catch (error: any) {
+      if (error.message.includes('404') || error.message.includes('not found')) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  searchItemByBarcode: async (barcode: string): Promise<Item | null> => {
+    try {
+      return await apiClient.get<Item>(`/items/search-by-barcode/${encodeURIComponent(barcode)}`);
+    } catch (error: any) {
+      if (error.message.includes('404') || error.message.includes('not found')) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  searchItemByMappingCode: async (mappingCode: string): Promise<Item | null> => {
+    try {
+      return await apiClient.get<Item>(`/items/search-by-mapping-code/${encodeURIComponent(mappingCode)}`);
     } catch (error: any) {
       if (error.message.includes('404') || error.message.includes('not found')) {
         return null;
@@ -280,23 +304,57 @@ export const storageService = {
 
   // Sales Performance
   getSalesData: async (period: '7days' | 'week' | 'month' | 'year' | 'overall'): Promise<any[]> => {
-    return apiClient.get<any[]>(`/sales-performance/sales?period=${period}`);
+    // Add timestamp to bypass any potential caching
+    const timestamp = Date.now();
+    return apiClient.get<any[]>(`/sales-performance/sales?period=${period}&_t=${timestamp}`);
   },
 
   getProfitData: async (period: '7days' | 'week' | 'month' | 'year' | 'overall'): Promise<any> => {
-    return apiClient.get<any>(`/sales-performance/profit?period=${period}`);
+    // Add timestamp to bypass any potential caching
+    const timestamp = Date.now();
+    return apiClient.get<any>(`/sales-performance/profit?period=${period}&_t=${timestamp}`);
   },
 
   getTopItems: async (period: '7days' | 'week' | 'month' | 'year' | 'overall' = 'overall', limit: number = 10): Promise<any[]> => {
-    return apiClient.get<any[]>(`/sales-performance/top-items?period=${period}&limit=${limit}`);
+    // Add timestamp to bypass any potential caching
+    const timestamp = Date.now();
+    return apiClient.get<any[]>(`/sales-performance/top-items?period=${period}&limit=${limit}&_t=${timestamp}`);
   },
 
   getPaymentMethodsData: async (period: '7days' | 'week' | 'month' | 'year' | 'overall' = 'overall'): Promise<any[]> => {
-    return apiClient.get<any[]>(`/sales-performance/payment-methods?period=${period}`);
+    // Add timestamp to bypass any potential caching
+    const timestamp = Date.now();
+    return apiClient.get<any[]>(`/sales-performance/payment-methods?period=${period}&_t=${timestamp}`);
+  },
+
+  /** Export full DB as gzip-compressed JSON (admin only). Backend saves to db-exports/YYYY-MM-DD/ and returns file for download. */
+  exportDb: async (): Promise<void> => {
+    const token = localStorage.getItem('pos_token');
+    const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+    const res = await fetch(`${base}/export-db`, {
+      method: 'GET',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as { error?: string }).error || 'Export failed');
+    }
+    const blob = await res.blob();
+    const cd = res.headers.get('Content-Disposition');
+    const match = cd && cd.match(/filename="?([^";]+)/);
+    const filename = match ? match[1].trim() : `pos-backup-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json.gz`;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   },
 
   getHourlySalesData: async (date: string, startHour?: number, endHour?: number, endDate?: string): Promise<any[]> => {
     const params = new URLSearchParams();
+    // Add timestamp to bypass any potential caching
+    params.append('_t', Date.now().toString());
     if (endDate) {
       // Date range mode
       params.append('startDate', date);
@@ -359,5 +417,66 @@ export const storageService = {
 
   deleteCart: async (): Promise<{ message: string }> => {
     return apiClient.delete<{ message: string }>('/carts');
+  },
+
+  // Tables
+  getTables: async (): Promise<Table[]> => {
+    return apiClient.get<Table[]>('/tables');
+  },
+
+  getTablesByStatus: async (status: 'available' | 'occupied' | 'reserved'): Promise<Table[]> => {
+    return apiClient.get<Table[]>(`/tables/status?status=${status}`);
+  },
+
+  addTable: async (table: Omit<Table, 'id' | 'customer_id' | 'created_at' | 'updated_at'>): Promise<Table> => {
+    return apiClient.post<Table>('/tables', table);
+  },
+
+  updateTable: async (id: string, updates: Partial<Table>): Promise<Table> => {
+    return apiClient.put<Table>(`/tables/${id}`, updates);
+  },
+
+  deleteTable: async (id: string): Promise<void> => {
+    await apiClient.delete(`/tables/${id}`);
+  },
+
+  // Table Orders
+  getTableOrders: async (filters?: { status?: string; tableId?: string }): Promise<TableOrder[]> => {
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.tableId) params.append('tableId', filters.tableId);
+    const query = params.toString();
+    return apiClient.get<TableOrder[]>(`/table-orders${query ? `?${query}` : ''}`);
+  },
+
+  getTableOrder: async (id: string): Promise<TableOrder> => {
+    return apiClient.get<TableOrder>(`/table-orders/${id}`);
+  },
+
+  getActiveTableOrder: async (tableId: string): Promise<TableOrder | null> => {
+    try {
+      return await apiClient.get<TableOrder>(`/table-orders/table/${tableId}`);
+    } catch (error: any) {
+      if (error.message.includes('404') || error.message.includes('not found')) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  createTableOrder: async (order: Omit<TableOrder, 'id' | 'customer_id' | 'created_at' | 'updated_at' | 'status' | 'transaction_id'>): Promise<TableOrder> => {
+    return apiClient.post<TableOrder>('/table-orders', order);
+  },
+
+  updateTableOrder: async (id: string, updates: Partial<TableOrder>): Promise<TableOrder> => {
+    return apiClient.put<TableOrder>(`/table-orders/${id}`, updates);
+  },
+
+  completeTableOrder: async (id: string, data: { payment_method: 'cash' | 'card' | 'upi'; received_amount?: number; sales_customer_id?: string }): Promise<{ message: string; transaction: Transaction }> => {
+    return apiClient.post<{ message: string; transaction: Transaction }>(`/table-orders/${id}/complete`, data);
+  },
+
+  cancelTableOrder: async (id: string): Promise<void> => {
+    await apiClient.post(`/table-orders/${id}/cancel`);
   },
 };

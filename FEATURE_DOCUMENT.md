@@ -538,7 +538,7 @@ This document provides a comprehensive list of all features organized by pages/m
 - bcrypt (password hashing)
 
 ### 8.3 Development Tools
-- Docker (PostgreSQL)
+- PostgreSQL (local installation)
 - Prisma Studio
 - npm scripts
 - Git version control

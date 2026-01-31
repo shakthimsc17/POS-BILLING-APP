@@ -15,6 +15,7 @@ export interface Item {
   display_name?: string;
   code: string;
   barcode?: string;
+  mapping_code?: string;
   category_id?: string;
   subcategory?: string;
   cost: number | string; // Prisma Decimal returns as string
@@ -87,6 +88,7 @@ export interface Transaction {
   customer_id: string; // The customer who owns this transaction (the seller/store owner)
   transaction_customer_id?: string; // The customer who made the purchase (buyer) - system user
   sales_customer_id?: string; // The sales customer who made the purchase (buyer) - sales customer
+  table_order_id?: string; // The table order this transaction is linked to
   total_amount: number | string; // Prisma Decimal returns as string
   payment_method: 'cash' | 'card' | 'upi';
   received_amount?: number | string; // Prisma Decimal returns as string
@@ -131,6 +133,7 @@ export interface Settings {
   activity_log_enabled: boolean;
   item_log_actions: 'all' | 'update_delete';
   receipt_header_option: 'logo' | 'company_name' | 'both';
+  receipt_auto_print: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -187,6 +190,33 @@ export interface Cart {
   discount: number | string;
   payment_method?: 'cash' | 'card' | 'upi';
   sales_customer_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Table {
+  id: string;
+  customer_id: string;
+  table_number: string;
+  capacity: number;
+  status: 'available' | 'occupied' | 'reserved';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TableOrder {
+  id: string;
+  customer_id: string;
+  table_id: string;
+  table_number?: string; // Included when fetched with table relation
+  status: 'pending' | 'completed' | 'cancelled';
+  items_json: string;
+  tax_rate: number | string;
+  discount: number | string;
+  total_amount?: number | string;
+  payment_method?: 'cash' | 'card' | 'upi';
+  transaction_id?: string;
+  notes?: string;
   created_at: string;
   updated_at: string;
 }
