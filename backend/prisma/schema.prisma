@@ -68,6 +68,7 @@ model Item {
   displayName String?  @map("display_name") @db.VarChar(255)
   code        String   @db.VarChar(100)
   barcode     String?  @db.VarChar(255)
+  mappingCode String?  @map("mapping_code") @db.VarChar(100)
   categoryId  String?  @map("category_id") @db.Uuid
   subcategory String?  @db.VarChar(255)
   cost        Decimal  @db.Decimal(10, 2)
@@ -87,6 +88,7 @@ model Item {
   @@index([categoryId])
   @@index([barcode])
   @@index([code])
+  @@index([mappingCode])
   @@map("items")
 }
 

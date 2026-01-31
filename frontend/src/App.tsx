@@ -20,12 +20,14 @@ const SalesOrders = lazy(() => import('./pages/SalesOrders'));
 const Customers = lazy(() => import('./pages/Customers'));
 const Import = lazy(() => import('./pages/Import'));
 const Reports = lazy(() => import('./pages/Reports'));
+const Export = lazy(() => import('./pages/Export'));
 const Calculators = lazy(() => import('./pages/Calculators'));
 const CompanySettings = lazy(() => import('./pages/CompanySettings'));
 const Settings = lazy(() => import('./pages/Settings'));
 const ActivityLogs = lazy(() => import('./pages/ActivityLogs'));
 const BulkOperations = lazy(() => import('./pages/BulkOperations'));
 const QuickSaleItems = lazy(() => import('./pages/QuickSaleItems'));
+const QuickItemSales = lazy(() => import('./pages/QuickItemSales'));
 const CashFlow = lazy(() => import('./pages/CashFlow'));
 const SalesPerformance = lazy(() => import('./pages/SalesPerformance'));
 const ACLPermissions = lazy(() => import('./pages/ACLPermissions'));
@@ -33,7 +35,7 @@ const OrderDetails = lazy(() => import('./pages/OrderDetails'));
 const Tables = lazy(() => import('./pages/Tables'));
 const TableOrders = lazy(() => import('./pages/TableOrders'));
 
-type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'sales' | 'sales-performance' | 'customers' | 'import' | 'reports' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items' | 'cash-flow' | 'acl-permissions' | 'order-details' | 'tables' | 'table-orders';
+type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'sales' | 'sales-performance' | 'customers' | 'import' | 'reports' | 'export' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items' | 'quick-item-sales' | 'cash-flow' | 'acl-permissions' | 'order-details' | 'tables' | 'table-orders';
 type AuthPage = 'signin' | 'signup';
 
 function App() {
@@ -230,6 +232,15 @@ function App() {
                 <span className="nav-text">Quick Sale Items</span>
               </button>
             )}
+            {canView('quick-item-sales') && !isHidden('quick-item-sales') && (
+              <button
+                className={currentPage === 'quick-item-sales' ? 'active' : ''}
+                onClick={() => setCurrentPage('quick-item-sales')}
+              >
+                <span className="nav-icon">🔢</span>
+                <span className="nav-text">Quick Item Sales</span>
+              </button>
+            )}
           </div>
 
           {(customer?.isAdmin || canView('customers') || canView('reports') || canView('activity-logs')) && (
@@ -251,6 +262,15 @@ function App() {
               >
                 <span className="nav-icon">📊</span>
                 <span className="nav-text">Reports</span>
+              </button>
+              )}
+              {(customer?.isAdmin || canView('export')) && !isHidden('export') && (
+              <button
+                className={currentPage === 'export' ? 'active' : ''}
+                onClick={() => setCurrentPage('export')}
+              >
+                <span className="nav-icon">📤</span>
+                <span className="nav-text">Export</span>
               </button>
               )}
               {(customer?.isAdmin || canView('activity-logs')) && !isHidden('activity-logs') && (
@@ -339,7 +359,9 @@ function App() {
             {currentPage === 'customers' && ((customer?.isAdmin || canView('customers')) && !isHidden('customers') ? <Customers /> : <AccessDenied />)}
             {currentPage === 'import' && (canView('import') && !isHidden('import') ? <Import /> : <AccessDenied />)}
             {currentPage === 'quick-sale-items' && (canView('quick-sale-items') && !isHidden('quick-sale-items') ? <QuickSaleItems /> : <AccessDenied />)}
+            {currentPage === 'quick-item-sales' && (canView('quick-item-sales') && !isHidden('quick-item-sales') ? <QuickItemSales onNavigate={setCurrentPage} /> : <AccessDenied />)}
             {currentPage === 'reports' && ((customer?.isAdmin || canView('reports')) && !isHidden('reports') ? <Reports /> : <AccessDenied />)}
+            {currentPage === 'export' && ((customer?.isAdmin || canView('export')) && !isHidden('export') ? <Export /> : <AccessDenied />)}
             {currentPage === 'activity-logs' && ((customer?.isAdmin || canView('activity-logs')) && !isHidden('activity-logs') ? <ActivityLogs /> : <AccessDenied />)}
             {currentPage === 'bulk-operations' && (canView('bulk-operations') && !isHidden('bulk-operations') ? <BulkOperations /> : <AccessDenied />)}
             {currentPage === 'calculators' && (canView('calculators') && !isHidden('calculators') ? <Calculators /> : <AccessDenied />)}

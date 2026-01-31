@@ -21,6 +21,7 @@ import permissionsRoutes from './routes/permissions.js';
 import cartsRoutes from './routes/carts.js';
 import tablesRoutes from './routes/tables.js';
 import tableOrdersRoutes from './routes/tableOrders.js';
+import exportDbRoutes from './routes/exportDb.js';
 
 dotenv.config();
 
@@ -99,6 +100,7 @@ app.use('/api/permissions', permissionsRoutes);
 app.use('/api/carts', cartsRoutes);
 app.use('/api/tables', tablesRoutes);
 app.use('/api/table-orders', tableOrdersRoutes);
+app.use('/api/export-db', exportDbRoutes);
 
 // Error handling
 app.use(errorHandler);
