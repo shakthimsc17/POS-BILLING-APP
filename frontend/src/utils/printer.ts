@@ -7,10 +7,13 @@ import { receiptSettings } from './receiptSettings';
 interface PrintOptions {
   items: CartItem[];
   transaction: Transaction;
+  autoPrint?: boolean;
 }
 
 export async function printReceipt(options: PrintOptions) {
-  const { items, transaction } = options;
+  const { items, transaction, autoPrint = false } = options;
+  
+  console.log('Print receipt called with autoPrint:', autoPrint);
   
   // Ensure company data is loaded from database (not localStorage)
   const companyStore = useCompanyStore.getState();
@@ -26,7 +29,8 @@ export async function printReceipt(options: PrintOptions) {
   const receiptHeaderOption = await receiptSettings.getHeaderOption();
 
   const date = new Date(transaction.created_at);
-  const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+  // Use transaction.totalAmount if available (includes tax/discount), otherwise calculate from items
+  const total = transaction.total_amount ? Number(transaction.total_amount) : items.reduce((sum, item) => sum + item.subtotal, 0);
 
   // Create HTML for 3-inch (80mm) thermal printer
   const printHTML = `
@@ -440,19 +444,70 @@ export async function printReceipt(options: PrintOptions) {
     </html>
   `;
 
-  // Open print window
-  const printWindow = window.open('', '_blank');
-  if (printWindow) {
-    printWindow.document.write(printHTML);
-    printWindow.document.close();
-    printWindow.focus();
+  // Auto-print mode: attempt silent printing (browser limitations apply)
+  if (autoPrint) {
+    // Create a hidden iframe for printing
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.style.opacity = '0';
+    iframe.style.pointerEvents = 'none';
+    document.body.appendChild(iframe);
 
-    setTimeout(() => {
-      printWindow.print();
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (iframeDoc) {
+      iframeDoc.open();
+      iframeDoc.write(printHTML);
+      iframeDoc.close();
+
+      // Wait for content to load, then attempt to print
+      // IMPORTANT: Browsers require user interaction for printing due to security restrictions
+      // The print dialog will still appear even in auto-print mode
+      // For true silent printing, use Chrome with --kiosk-printing flag or a print service
       setTimeout(() => {
-        printWindow.close();
+        if (iframe.contentWindow) {
+          // Try to print (dialog will appear - this is a browser security limitation)
+          try {
+            console.log('Attempting auto-print (note: browser may still show print dialog)');
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+          } catch (error) {
+            console.warn('Auto-print failed, falling back to print dialog:', error);
+            // Fallback: show print dialog
+            window.print();
+          }
+        }
+        // Remove iframe after printing attempt
+        setTimeout(() => {
+          try {
+            if (iframe.parentNode) {
+              document.body.removeChild(iframe);
+            }
+          } catch (e) {
+            // Ignore cleanup errors
+          }
+        }, 2000);
+      }, 500);
+    }
+  } else {
+    // Normal mode: open print window with dialog
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printHTML);
+      printWindow.document.close();
+      printWindow.focus();
+
+      setTimeout(() => {
+        printWindow.print();
+        setTimeout(() => {
+          printWindow.close();
+        }, 250);
       }, 250);
-    }, 250);
+    }
   }
 }
 

@@ -99,6 +99,7 @@ router.get('/pages', async (req: AuthRequest, res) => {
       { id: 'quick-sale-items', label: 'Quick Sale Items', category: 'Sales & Finance' },
       { id: 'customers', label: 'Customers', category: 'Settings' },
       { id: 'reports', label: 'Reports', category: 'Reports' },
+      { id: 'export', label: 'Export', category: 'Reports' },
       { id: 'company', label: 'Company Settings', category: 'Settings' },
       { id: 'settings', label: 'Settings', category: 'Settings' },
       { id: 'activity-logs', label: 'Activity Logs', category: 'Settings' },
