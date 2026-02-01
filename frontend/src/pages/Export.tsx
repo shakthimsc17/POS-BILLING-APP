@@ -18,6 +18,8 @@ const PRINT_STYLES = `
   th { background: #1a365d; color: #fff; font-weight: 600; }
   .text-right { text-align: right; }
   .totals-row { background: #f0f4f8; font-weight: 600; }
+  .two-column-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .two-column-layout .column-table { width: 100%; }
 `;
 
 function openPrintWindow(title: string, html: string) {
@@ -74,6 +76,7 @@ export default function Export() {
     const d = new Date();
     return d.toISOString().slice(0, 10);
   });
+  const [invHideCostPrice, setInvHideCostPrice] = useState(false);
 
   const [salesDateFrom, setSalesDateFrom] = useState<string>(() => {
     const d = new Date();
@@ -169,9 +172,59 @@ export default function Export() {
     return map;
   };
 
+  const handleExportItemNameMappingCode = () => {
+    setExportLoading('item-name-mapping');
+    const withMappingCode = items.filter((item) => (item.mapping_code ?? '').toString().trim() !== '');
+    const sorted = [...withMappingCode].sort((a, b) => {
+      const ac = (a.mapping_code ?? '').toString().trim();
+      const bc = (b.mapping_code ?? '').toString().trim();
+      if (ac === bc) return 0;
+      return ac.localeCompare(bc, undefined, { numeric: true });
+    });
+    const mid = Math.ceil(sorted.length / 2);
+    const leftItems = sorted.slice(0, mid);
+    const rightItems = sorted.slice(mid);
+    const makeTable = (list: Item[]) =>
+      list.map((item) => `
+        <tr>
+          <td>${(item.mapping_code ?? '').toString() || '-'}</td>
+          <td>${item.name}</td>
+        </tr>`).join('');
+    const leftRows = makeTable(leftItems);
+    const rightRows = makeTable(rightItems);
+    const emptyRow = '<tr><td>-</td><td>-</td></tr>';
+    const body =
+      sorted.length === 0
+        ? '<p style="margin: 1rem 0;">No items with mapping code.</p>'
+        : `
+      <div class="two-column-layout">
+        <table class="column-table">
+          <thead>
+            <tr><th>Mapping Code</th><th>Item Name</th></tr>
+          </thead>
+          <tbody>${leftRows || emptyRow}</tbody>
+        </table>
+        <table class="column-table">
+          <thead>
+            <tr><th>Mapping Code</th><th>Item Name</th></tr>
+          </thead>
+          <tbody>${rightRows || emptyRow}</tbody>
+        </table>
+      </div>`;
+    const html = `
+      ${headerHtml('Item Name & Mapping Code', 'Sorted by mapping code (ascending)')}
+      ${body}
+      <div class="doc-footer">
+        Total items with mapping code: ${sorted.length}
+      </div>`;
+    openPrintWindow('Item Name & Mapping Code', html);
+    setExportLoading(null);
+  };
+
   const handleExportInventory = () => {
     setExportLoading('inventory');
     const useRange = invDateMode === 'range';
+    const hideCostPrice = invHideCostPrice;
     const soldQtyMap = useRange
       ? getSoldQtyByItemId(invDateFrom, invDateTo)
       : getSoldQtyByItemId();
@@ -190,6 +243,16 @@ export default function Export() {
       totalSoldQty += sold;
       totalCost += item.stock * c;
       totalPrice += item.stock * p;
+      if (hideCostPrice) {
+        return `
+        <tr>
+          <td class="text-right">${idx + 1}</td>
+          <td>${item.name}</td>
+          <td>${item.code}</td>
+          <td class="text-right">${item.stock}</td>
+          <td class="text-right">${sold}</td>
+        </tr>`;
+      }
       return `
         <tr>
           <td class="text-right">${idx + 1}</td>
@@ -205,9 +268,19 @@ export default function Export() {
     const dateLabel = useRange
       ? `As on ${invDateTo} | Sold Qty Period: ${invDateFrom} to ${invDateTo}`
       : `As on ${invDate}`;
-    const html = `
-      ${headerHtml('Inventory Details Report', dateLabel)}
-      <table>
+    const colCount = hideCostPrice ? 5 : 7;
+    const thead = hideCostPrice
+      ? `
+        <thead>
+          <tr>
+            <th class="text-right">S.No</th>
+            <th>Item Name</th>
+            <th>Item Code</th>
+            <th class="text-right">Current Stock</th>
+            <th class="text-right">${useRange ? `Sold Qty (${invDateFrom} to ${invDateTo})` : 'Sold Qty'}</th>
+          </tr>
+        </thead>`
+      : `
         <thead>
           <tr>
             <th class="text-right">S.No</th>
@@ -218,8 +291,17 @@ export default function Export() {
             <th class="text-right">Cost</th>
             <th class="text-right">Price</th>
           </tr>
-        </thead>
-        <tbody>${rows || '<tr><td colspan="7">No items</td></tr>'}</tbody>
+        </thead>`;
+    const tfoot = hideCostPrice
+      ? `
+        <tfoot>
+          <tr class="totals-row">
+            <td colspan="3" class="text-right">Total</td>
+            <td class="text-right">${totalCurrentQty}</td>
+            <td class="text-right">${totalSoldQty}</td>
+          </tr>
+        </tfoot>`
+      : `
         <tfoot>
           <tr class="totals-row">
             <td colspan="3" class="text-right">Total</td>
@@ -228,10 +310,19 @@ export default function Export() {
             <td class="text-right">${formatCurrency(totalCost)}</td>
             <td class="text-right">${formatCurrency(totalPrice)}</td>
           </tr>
-        </tfoot>
+        </tfoot>`;
+    const footerText = hideCostPrice
+      ? `Total Current Qty: ${totalCurrentQty} &nbsp;|&nbsp; Total Sold Qty: ${totalSoldQty}`
+      : `Total Current Qty: ${totalCurrentQty} &nbsp;|&nbsp; Total Sold Qty: ${totalSoldQty} &nbsp;|&nbsp; Total Cost: ${formatCurrency(totalCost)} &nbsp;|&nbsp; Total Price: ${formatCurrency(totalPrice)}`;
+    const html = `
+      ${headerHtml('Inventory Details Report', dateLabel)}
+      <table>
+        ${thead}
+        <tbody>${rows || `<tr><td colspan="${colCount}">No items</td></tr>`}</tbody>
+        ${tfoot}
       </table>
       <div class="doc-footer">
-        Total Current Qty: ${totalCurrentQty} &nbsp;|&nbsp; Total Sold Qty: ${totalSoldQty} &nbsp;|&nbsp; Total Cost: ${formatCurrency(totalCost)} &nbsp;|&nbsp; Total Price: ${formatCurrency(totalPrice)}
+        ${footerText}
       </div>`;
     openPrintWindow('Inventory Details', html);
     setExportLoading(null);
@@ -379,13 +470,7 @@ export default function Export() {
 
   const handleExportSaleProfit = () => {
     setExportLoading('sale-profit');
-    const from = new Date(salesDateFrom);
-    const to = new Date(salesDateTo);
     const dayMap: Record<string, { sales: number; discount: number; expense: number; otherIncome: number; profit: number }> = {};
-    for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
-      const key = d.toISOString().slice(0, 10);
-      dayMap[key] = { sales: 0, discount: 0, expense: 0, otherIncome: 0, profit: 0 };
-    }
 
     getFilteredTransactionsForDates(salesDateFrom, salesDateTo).forEach((tx) => {
       const key = tx.created_at.slice(0, 10);
@@ -420,7 +505,7 @@ export default function Export() {
         const entries = await storageService.getCashFlowEntries({ startDate, endDate });
         entries.forEach((e: CashFlowEntry) => {
           const key = e.entry_date.slice(0, 10);
-          if (!dayMap[key]) dayMap[key] = { sales: 0, discount: 0, expense: 0, otherIncome: 0, profit: 0 };
+          if (!dayMap[key]) return;
           const amt = typeof e.amount === 'string' ? parseFloat(e.amount) : (e.amount || 0);
           const val = isNaN(amt) ? 0 : amt;
           if (e.type === 'expense') dayMap[key].expense += val;
@@ -1069,6 +1154,10 @@ export default function Export() {
                 <input type="date" value={invDateTo} onChange={(e) => setInvDateTo(e.target.value)} />
               </>
             )}
+            <div className="export-radio-group" style={{ marginTop: '8px' }}>
+              <label><input type="radio" checked={!invHideCostPrice} onChange={() => setInvHideCostPrice(false)} /> Show cost & price</label>
+              <label><input type="radio" checked={invHideCostPrice} onChange={() => setInvHideCostPrice(true)} /> Hide cost & price</label>
+            </div>
           </div>
           <button
             className="btn btn-primary"
@@ -1081,8 +1170,23 @@ export default function Export() {
 
         <div className="export-card">
           <div className="export-card-header">
+            <span className="export-card-icon">🔢</span>
+            <h2>2. Item Name & Mapping Code</h2>
+          </div>
+          <p className="export-card-desc">Item list with mapping code and item name, sorted by mapping code (ascending). Use for quick reference or integration.</p>
+          <button
+            className="btn btn-primary"
+            onClick={handleExportItemNameMappingCode}
+            disabled={!!exportLoading}
+          >
+            {exportLoading === 'item-name-mapping' ? 'Generating...' : 'Export Item Name & Mapping Code'}
+          </button>
+        </div>
+
+        <div className="export-card">
+          <div className="export-card-header">
             <span className="export-card-icon">📋</span>
-            <h2>2. Daily Sales Report</h2>
+            <h2>3. Daily Sales Report</h2>
           </div>
           <p className="export-card-desc">Orders with Order ID, discount, subtotal, profit. Single date or date range.</p>
           <div className="export-filters">
@@ -1113,7 +1217,7 @@ export default function Export() {
         <div className="export-card">
           <div className="export-card-header">
             <span className="export-card-icon">💰</span>
-            <h2>3. Income & Expense Report</h2>
+            <h2>4. Income & Expense Report</h2>
           </div>
           <p className="export-card-desc">Cash flow entries by date. Single date or between dates.</p>
           <div className="export-filters">
@@ -1144,7 +1248,7 @@ export default function Export() {
         <div className="export-card">
           <div className="export-card-header">
             <span className="export-card-icon">📊</span>
-            <h2>4. Sales / Profit Report</h2>
+            <h2>5. Sales / Profit Report</h2>
           </div>
           <p className="export-card-desc">Day-wise sales subtotal, discount, expense, other income, profit/loss.</p>
           <div className="export-filters">
@@ -1165,7 +1269,7 @@ export default function Export() {
         <div className="export-card">
           <div className="export-card-header">
             <span className="export-card-icon">📁</span>
-            <h2>5. Category-wise Sales</h2>
+            <h2>6. Category-wise Sales</h2>
           </div>
           <p className="export-card-desc">Sales aggregated by category for a date range: qty sold, revenue, cost, profit.</p>
           <div className="export-filters">
@@ -1186,7 +1290,7 @@ export default function Export() {
         <div className="export-card">
           <div className="export-card-header">
             <span className="export-card-icon">⚠️</span>
-            <h2>6. Low Stock / Reorder Report</h2>
+            <h2>7. Low Stock / Reorder Report</h2>
           </div>
           <p className="export-card-desc">Items at or below threshold for reorder planning. Set threshold and export.</p>
           <div className="export-filters">
@@ -1211,7 +1315,7 @@ export default function Export() {
         <div className="export-card">
           <div className="export-card-header">
             <span className="export-card-icon">📄</span>
-            <h2>7. Item-wise Sales</h2>
+            <h2>8. Item-wise Sales</h2>
           </div>
           <p className="export-card-desc">Which items sold how many, revenue and profit in a period. Includes category.</p>
           <div className="export-filters">
@@ -1232,7 +1336,7 @@ export default function Export() {
         <div className="export-card">
           <div className="export-card-header">
             <span className="export-card-icon">💳</span>
-            <h2>8. Payment Method Summary</h2>
+            <h2>9. Payment Method Summary</h2>
           </div>
           <p className="export-card-desc">Cash vs Card vs UPI: order count and total amount for a date range.</p>
           <div className="export-filters">
@@ -1253,7 +1357,7 @@ export default function Export() {
         <div className="export-card">
           <div className="export-card-header">
             <span className="export-card-icon">🏆</span>
-            <h2>9. Top / Bottom Selling Items</h2>
+            <h2>10. Top / Bottom Selling Items</h2>
           </div>
           <p className="export-card-desc">Best and worst performers by revenue. Set how many to show (e.g. 10).</p>
           <div className="export-filters">
@@ -1283,7 +1387,7 @@ export default function Export() {
         <div className="export-card">
           <div className="export-card-header">
             <span className="export-card-icon">🌙</span>
-            <h2>10. End of Day Summary</h2>
+            <h2>11. End of Day Summary</h2>
           </div>
           <p className="export-card-desc">Single-day closing: orders, sales, discount, profit, expenses, other income, net.</p>
           <div className="export-filters">
@@ -1302,7 +1406,7 @@ export default function Export() {
         <div className="export-card">
           <div className="export-card-header">
             <span className="export-card-icon">📈</span>
-            <h2>11. Profit & Loss Statement</h2>
+            <h2>12. Profit & Loss Statement</h2>
           </div>
           <p className="export-card-desc">Sales, COGS, gross profit, other income, expenses, net profit/loss for a period.</p>
           <div className="export-filters">
@@ -1323,7 +1427,7 @@ export default function Export() {
         <div className="export-card">
           <div className="export-card-header">
             <span className="export-card-icon">👥</span>
-            <h2>12. Customer-wise Sales</h2>
+            <h2>13. Customer-wise Sales</h2>
           </div>
           <p className="export-card-desc">Sales by customer (sales customers). Walk-in for orders without a customer.</p>
           <div className="export-filters">

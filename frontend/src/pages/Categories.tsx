@@ -422,7 +422,16 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
           setModalVisible(false);
           setIsAddingSubcategory(false);
         }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !(e.target instanceof HTMLTextAreaElement)) {
+                e.preventDefault();
+                handleSave();
+              }
+            }}
+          >
             <h2>
               {isAddingSubcategory 
                 ? 'Add Subcategory' 

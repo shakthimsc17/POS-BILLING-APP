@@ -276,6 +276,14 @@
     grid-template-columns: 1fr;
   }
 
+  .modal-content.items-modal .items-modal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content.items-modal {
+    max-width: 100%;
+  }
+
   .filters-row {
     flex-direction: column;
   }
@@ -305,7 +313,7 @@
   background: white;
   border-radius: 12px;
   width: 100%;
-  max-width: 700px;
+  max-width: 920px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -364,6 +372,21 @@
   overflow-y: auto;
   flex: 1;
   background: #f8f9fa;
+}
+
+/* 3-column grid layout for item edit popup */
+.modal-content.items-modal .items-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem 1.25rem;
+}
+
+.modal-content.items-modal .items-modal-grid .form-field {
+  min-width: 0;
+}
+
+.modal-content.items-modal .items-modal-grid .form-field-full-width {
+  grid-column: 1 / -1;
 }
 
 .modal-content.items-modal .modal-body label {

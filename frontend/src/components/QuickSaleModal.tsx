@@ -181,9 +181,20 @@ export default function QuickSaleModal({ isOpen, onClose, onAddToQuickSale }: Qu
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !(e.target instanceof HTMLTextAreaElement)) {
+      e.preventDefault();
+      handleAddToCart();
+    }
+  };
+
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
-      <div className="modal-content quick-sale-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-content quick-sale-modal"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={handleKeyDown}
+      >
         <div className="modal-header">
           <h2>⚡ Quick Sale</h2>
           <button className="modal-close" onClick={onClose}>×</button>
