@@ -9,6 +9,7 @@ interface SearchBarcodeInputProps {
   onSearchChange: (query: string) => void;
   placeholder?: string;
   onItemAdded?: (item: Item) => void;
+  onNavigate?: (page: string) => void;
 }
 
 export default function SearchBarcodeInput({
@@ -16,6 +17,7 @@ export default function SearchBarcodeInput({
   onSearchChange,
   placeholder = '🔍 Search items...',
   onItemAdded,
+  onNavigate,
 }: SearchBarcodeInputProps) {
   const [showBarcode, setShowBarcode] = useState(false);
   const [barcode, setBarcode] = useState('');
@@ -55,9 +57,19 @@ export default function SearchBarcodeInput({
   }, [barcode, showBarcode]);
 
   const handleBarcodeKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && barcode.trim().length > 0) {
+    if (e.key === 'Tab' && onNavigate) {
+      e.preventDefault();
+      onNavigate('cart');
+    } else if (e.key === 'Enter' && barcode.trim().length > 0) {
       e.preventDefault();
       await searchAndAddItem(barcode.trim());
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Tab' && onNavigate) {
+      e.preventDefault();
+      onNavigate('cart');
     }
   };
 
@@ -137,6 +149,7 @@ export default function SearchBarcodeInput({
             placeholder={placeholder}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
           />
           <button
             type="button"
