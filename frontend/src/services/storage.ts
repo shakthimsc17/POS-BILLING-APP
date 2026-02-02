@@ -230,7 +230,7 @@ export const storageService = {
     return apiClient.get<QuickSaleItem[]>(`/quick-sale-items${query}`);
   },
 
-  addQuickSaleItem: async (item: { name: string; quantity: number; price: number }): Promise<QuickSaleItem> => {
+  addQuickSaleItem: async (item: { name: string; quantity: number; price: number; cost?: number }): Promise<QuickSaleItem> => {
     return apiClient.post<QuickSaleItem>('/quick-sale-items', item);
   },
 

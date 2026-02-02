@@ -8,7 +8,11 @@ import { formatCurrency } from '../utils/formatters';
 import AddToInventoryModal from '../components/AddToInventoryModal';
 import './QuickSaleItems.css';
 
-export default function QuickSaleItems() {
+interface QuickSaleItemsProps {
+  onViewOrder?: (orderId: string) => void;
+}
+
+export default function QuickSaleItems({ onViewOrder }: QuickSaleItemsProps) {
   const [quickSaleItems, setQuickSaleItems] = useState<QuickSaleItem[]>([]);
   const [filter, setFilter] = useState<'all' | 'pending' | 'added'>('all');
   const [loading, setLoading] = useState(true);
@@ -59,14 +63,17 @@ export default function QuickSaleItems() {
   };
 
   const handleAddToCart = (item: QuickSaleItem) => {
-    // Create a temporary item for the cart
+    const costVal = item.cost != null && item.cost !== ''
+      ? (typeof item.cost === 'string' ? parseFloat(item.cost) : item.cost)
+      : 0;
+    // Create a temporary item for the cart (cost for profit calculation)
     const tempItem = {
       id: `quick-sale-${item.id}`,
       customer_id: '',
       name: item.name,
       code: `QS-${item.id.substring(0, 8)}`,
       price: typeof item.price === 'string' ? parseFloat(item.price) : item.price,
-      cost: 0,
+      cost: typeof costVal === 'number' && !isNaN(costVal) ? costVal : 0,
       stock: 0,
       created_at: item.created_at,
     };
@@ -165,6 +172,7 @@ export default function QuickSaleItems() {
                   <th>Name</th>
                   <th>Quantity</th>
                   <th>Price</th>
+                  <th>Cost</th>
                   <th>Total</th>
                   <th>Sold At</th>
                   <th>Status</th>
@@ -174,14 +182,19 @@ export default function QuickSaleItems() {
               <tbody>
                 {filteredItems.map((item) => {
                   const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
+                  const costVal = item.cost != null && item.cost !== ''
+                    ? (typeof item.cost === 'string' ? parseFloat(item.cost) : item.cost)
+                    : null;
                   const total = typeof item.total_amount === 'string' ? parseFloat(item.total_amount) : item.total_amount;
                   const soldAt = new Date(item.sold_at);
-                  
+                  const hasTransaction = !!item.transaction_id;
+
                   return (
                     <tr key={item.id}>
                       <td className="item-name">{item.name}</td>
                       <td>{item.quantity}</td>
                       <td>{formatCurrency(price)}</td>
+                      <td>{costVal != null && !isNaN(costVal) ? formatCurrency(costVal) : '–'}</td>
                       <td className="total-cell">{formatCurrency(total)}</td>
                       <td className="date-cell">
                         {soldAt.toLocaleDateString()} {soldAt.toLocaleTimeString()}
@@ -191,6 +204,23 @@ export default function QuickSaleItems() {
                           <span className="status-badge added">✓ Added</span>
                         ) : (
                           <span className="status-badge pending">Pending</span>
+                        )}
+                        {hasTransaction && (
+                          <>
+                            <span className="status-badge in-transaction" title="Included in a sale">
+                              In transaction
+                            </span>
+                            {onViewOrder && (
+                              <button
+                                type="button"
+                                className="btn btn-small btn-link view-order-link"
+                                onClick={() => onViewOrder(item.transaction_id!)}
+                                title="View order"
+                              >
+                                View order
+                              </button>
+                            )}
+                          </>
                         )}
                       </td>
                       <td className="actions-cell">

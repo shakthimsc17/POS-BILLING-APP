@@ -368,7 +368,7 @@ function App() {
             {currentPage === 'cash-flow' && (canView('cash-flow') && !isHidden('cash-flow') ? <CashFlow /> : <AccessDenied />)}
             {currentPage === 'customers' && ((customer?.isAdmin || canView('customers')) && !isHidden('customers') ? <Customers /> : <AccessDenied />)}
             {currentPage === 'import' && (canView('import') && !isHidden('import') ? <Import /> : <AccessDenied />)}
-            {currentPage === 'quick-sale-items' && (canView('quick-sale-items') && !isHidden('quick-sale-items') ? <QuickSaleItems /> : <AccessDenied />)}
+            {currentPage === 'quick-sale-items' && (canView('quick-sale-items') && !isHidden('quick-sale-items') ? <QuickSaleItems onViewOrder={(orderId) => { setSelectedOrderId(orderId); setCurrentPage('order-details'); }} /> : <AccessDenied />)}
             {currentPage === 'quick-item-sales' && (canView('quick-item-sales') && !isHidden('quick-item-sales') ? <QuickItemSales onNavigate={setCurrentPage} /> : <AccessDenied />)}
             {currentPage === 'reports' && ((customer?.isAdmin || canView('reports')) && !isHidden('reports') ? <Reports /> : <AccessDenied />)}
             {currentPage === 'export' && ((customer?.isAdmin || canView('export')) && !isHidden('export') ? <Export /> : <AccessDenied />)}

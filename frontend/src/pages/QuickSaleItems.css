@@ -156,6 +156,26 @@
   color: #155724;
 }
 
+.status-badge.in-transaction {
+  background: #cce5ff;
+  color: #004085;
+  margin-right: 0.5rem;
+}
+
+.quick-sale-items .view-order-link {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  background: transparent;
+  border: none;
+  color: #3498db;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.quick-sale-items .view-order-link:hover {
+  color: #2980b9;
+}
+
 .actions-cell {
   display: flex;
   gap: 0.5rem;
