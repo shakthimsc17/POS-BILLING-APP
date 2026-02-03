@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { storageService } from '../services/storage';
 import { useCompanyStore } from '../store/companyStore';
+import { useAuthStore } from '../store/authStore';
 import { Transaction, Customer, SalesCustomer, Item } from '../types';
 import { formatCurrency, formatOrderId, numberToWords } from '../utils/formatters';
 import './OrderDetails.css';
@@ -24,7 +25,12 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
   const [salesCustomer, setSalesCustomer] = useState<SalesCustomer | null>(null);
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedItems, setEditedItems] = useState<CartItem[]>([]);
+  const [editedTransaction, setEditedTransaction] = useState<Transaction | null>(null);
+  const [saving, setSaving] = useState(false);
   const { company, loadCompany } = useCompanyStore();
+  const { customer: currentUser } = useAuthStore();
 
   useEffect(() => {
     loadData();
@@ -85,6 +91,238 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
       : originalPrice;
     const quantity = cartItem.quantity || 1;
     return Math.max(0, (originalPrice - sellingPrice) * quantity);
+  };
+
+  const handleEditToggle = () => {
+    if (isEditMode) {
+      // Cancel edit mode - reset to original values
+      setIsEditMode(false);
+      setEditedItems([]);
+      setEditedTransaction(null);
+    } else {
+      // Enter edit mode - create copies for editing
+      setIsEditMode(true);
+      setEditedItems([...items]);
+      setEditedTransaction(transaction ? { ...transaction } : null);
+    }
+  };
+
+  const handleQuantityChange = (index: number, newQuantity: number) => {
+    if (newQuantity < 0) return;
+    
+    const updatedItems = [...editedItems];
+    const item = updatedItems[index];
+    
+    // Update quantity
+    item.quantity = newQuantity;
+    item.subtotal = (item.customPrice !== undefined ? item.customPrice : item.originalPrice || 0) * newQuantity;
+    
+    setEditedItems(updatedItems);
+  };
+
+  const handlePriceChange = (index: number, newPrice: number) => {
+    if (newPrice < 0) return;
+    
+    const updatedItems = [...editedItems];
+    const item = updatedItems[index];
+    
+    // Update custom price
+    item.customPrice = newPrice;
+    item.subtotal = newPrice * item.quantity;
+    
+    setEditedItems(updatedItems);
+  };
+
+  const handleDateChange = (newDate: string) => {
+    if (!editedTransaction) return;
+    setEditedTransaction({
+      ...editedTransaction,
+      created_at: newDate
+    });
+  };
+
+  const handlePaymentMethodChange = (newMethod: string) => {
+    if (!editedTransaction) return;
+    setEditedTransaction({
+      ...editedTransaction,
+      payment_method: newMethod as 'cash' | 'card' | 'upi'
+    });
+  };
+
+  const calculateEditedTotals = () => {
+    let totalQuantity = 0;
+    let subtotal = 0;
+    let totalItemDiscount = 0;
+    let grossProfit = 0;
+    let grossLoss = 0;
+
+    editedItems.forEach((cartItem) => {
+      const item = cartItem.item || cartItem;
+      const quantity = cartItem.quantity || 1;
+      totalQuantity += quantity;
+
+      const originalPrice = cartItem.originalPrice || (typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0);
+      const sellingPrice = cartItem.customPrice !== undefined
+        ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
+        : originalPrice;
+      
+      const itemSubtotal = sellingPrice * quantity;
+      subtotal += itemSubtotal;
+      
+      const itemDiscount = calculateItemDiscount(cartItem);
+      totalItemDiscount += itemDiscount;
+
+      // Calculate profit/loss: (sellingPrice - cost) * quantity
+      const cost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
+      const diff = (sellingPrice - cost) * quantity;
+      if (diff >= 0) {
+        grossProfit += diff;
+      } else {
+        grossLoss += Math.abs(diff);
+      }
+    });
+
+    const totalAmount = typeof editedTransaction?.total_amount === 'string' 
+      ? parseFloat(editedTransaction.total_amount) 
+      : (editedTransaction?.total_amount || 0);
+    
+    // Overall discount = subtotal - totalAmount
+    const overallDiscount = Math.max(0, subtotal - totalAmount);
+    const totalDiscount = totalItemDiscount + overallDiscount;
+
+    // Tax calculation: if totalAmount < subtotal, there's a discount; if > subtotal, there's tax
+    const tax = totalAmount > subtotal ? totalAmount - subtotal : 0;
+    const grandTotal = totalAmount;
+
+    // Net Profit = grossProfit - grossLoss - overallDiscount
+    const netProfit = grossProfit - grossLoss - overallDiscount;
+
+    return {
+      totalQuantity,
+      subtotal,
+      discount: overallDiscount,
+      tax,
+      grandTotal,
+      grossProfit,
+      grossLoss,
+      netProfit,
+      totalDiscount,
+    };
+  };
+
+  const handleSave = async () => {
+    if (!editedTransaction) return;
+
+    try {
+      setSaving(true);
+
+      // Calculate new totals based on edited items
+      const totals = calculateEditedTotals();
+      
+      // Prepare update data
+      const updateData: Partial<Transaction> = {
+        items_json: JSON.stringify(editedItems),
+        total_amount: totals.grandTotal,
+        created_at: editedTransaction.created_at,
+        payment_method: editedTransaction.payment_method,
+      };
+
+      // Update transaction
+      const updatedTransaction = await storageService.updateTransaction(transaction!.id, updateData);
+      
+      // Update local state
+      setTransaction(updatedTransaction);
+      setItems(editedItems);
+      
+      // Exit edit mode
+      setIsEditMode(false);
+      setEditedItems([]);
+      setEditedTransaction(null);
+      
+      alert('Order updated successfully!');
+    } catch (error: any) {
+      console.error('Error updating order:', error);
+      alert(`Failed to update order: ${error.message || 'Unknown error'}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReturnRequest = () => {
+    if (!transaction) return;
+    
+    const returnType = prompt('Select return type:\n1. Full Return\n2. Partial Return\n3. Exchange\n4. Refund\n\nEnter number (1-4):');
+    
+    let returnTypeName: 'full' | 'partial' | 'exchange' | 'refund';
+    switch (returnType) {
+      case '1':
+        returnTypeName = 'full';
+        break;
+      case '2':
+        returnTypeName = 'partial';
+        break;
+      case '3':
+        returnTypeName = 'exchange';
+        break;
+      case '4':
+        returnTypeName = 'refund';
+        break;
+      default:
+        alert('Invalid selection');
+        return;
+    }
+    
+    const reason = prompt('Enter reason for return:');
+    if (!reason) {
+      alert('Reason is required');
+      return;
+    }
+    
+    // For partial returns, let user select items
+    let restockedItems = null;
+    if (returnTypeName === 'partial') {
+      const itemSelections = items.map((item, index) => 
+        `${index + 1}. ${item.item.name} (Qty: ${item.quantity})`
+      ).join('\n');
+      
+      const selectedItems = prompt(`Select items to return (enter numbers separated by commas):\n${itemSelections}`);
+      if (!selectedItems) {
+        alert('No items selected');
+        return;
+      }
+      
+      const selectedIndexes = selectedItems.split(',').map(n => parseInt(n.trim()) - 1);
+      restockedItems = selectedIndexes
+        .filter(index => index >= 0 && index < items.length)
+        .map(index => ({
+          itemId: items[index].item.id,
+          quantity: items[index].quantity,
+          name: items[index].item.name
+        }));
+    }
+    
+    // Create return request
+    createReturnRequest({
+      originalTransactionId: transaction.id,
+      returnType: returnTypeName,
+      reason,
+      restockedItems
+    });
+  };
+
+  const createReturnRequest = async (returnData: any) => {
+    try {
+      const returnRecord = await storageService.createReturn(returnData);
+      alert(`Return request created successfully!\nReturn ID: ${returnRecord.id.slice(0, 8)}...\nStatus: ${returnRecord.status}\n\nYour request will be reviewed by an admin.`);
+    } catch (error: any) {
+      console.error('Error creating return:', error);
+      alert(`Failed to create return: ${error.message || 'Unknown error'}`);
+    }
+  };
+
+  const canEdit = () => {
+    const isAdmin = currentUser?.isAdmin || false;
+    return isAdmin || transaction?.customer_id === currentUser?.id;
   };
 
   const calculateTotals = () => {
@@ -647,6 +885,33 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
           ← Back to Orders
         </button>
         <div className="header-actions">
+          {canEdit() && (
+            <button 
+              className={`btn ${isEditMode ? 'btn-danger' : 'btn-primary'}`} 
+              onClick={handleEditToggle}
+              disabled={saving}
+            >
+              {isEditMode ? '❌ Cancel' : '✏️ Edit'}
+            </button>
+          )}
+          {isEditMode && (
+            <button 
+              className="btn btn-success" 
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? '💾 Saving...' : '💾 Save'}
+            </button>
+          )}
+          {!isEditMode && (
+            <button 
+              className="btn btn-warning" 
+              onClick={() => handleReturnRequest()}
+              title="Request Return"
+            >
+              🔄 Return
+            </button>
+          )}
           <button className="btn btn-primary" onClick={handlePrint}>
             🖨️ Print
           </button>
@@ -680,10 +945,37 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
             <div className="info-label">Order ID:</div>
             <div className="info-value">{transaction.id}</div>
             <div className="info-label" style={{ marginTop: '15px' }}>Date:</div>
-            <div className="info-value">{date.toLocaleDateString()}</div>
+            <div className="info-value">
+              {isEditMode ? (
+                <input
+                  type="datetime-local"
+                  value={editedTransaction?.created_at ? new Date(editedTransaction.created_at).toISOString().slice(0, 16) : ''}
+                  onChange={(e) => handleDateChange(e.target.value)}
+                  className="form-input"
+                />
+              ) : (
+                date.toLocaleDateString()
+              )}
+            </div>
           </div>
           <div className="invoice-info-right">
-            <div className="info-label">Time:</div>
+            <div className="info-label">Payment:</div>
+            <div className="info-value">
+              {isEditMode ? (
+                <select
+                  value={editedTransaction?.payment_method || transaction.payment_method}
+                  onChange={(e) => handlePaymentMethodChange(e.target.value)}
+                  className="form-input"
+                >
+                  <option value="cash">Cash</option>
+                  <option value="card">Card</option>
+                  <option value="upi">UPI</option>
+                </select>
+              ) : (
+                transaction.payment_method.toUpperCase()
+              )}
+            </div>
+            <div className="info-label" style={{ marginTop: '15px' }}>Time:</div>
             <div className="info-value">{date.toLocaleTimeString()}</div>
           </div>
         </div>
@@ -724,7 +1016,7 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
               </tr>
             </thead>
             <tbody>
-              {items.map((cartItem, index) => {
+              {(isEditMode ? editedItems : items).map((cartItem, index) => {
                 const item = cartItem.item || cartItem;
                 const quantity = cartItem.quantity || 1;
                 const originalPrice = cartItem.originalPrice || (typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0);
@@ -738,8 +1030,50 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
                   <tr key={index}>
                     <td className="text-center">{index + 1}</td>
                     <td>{item.name || item.display_name || 'N/A'}</td>
-                    <td className="text-center">{quantity}</td>
-                    <td className="text-right">{formatCurrency(sellingPrice)}</td>
+                    <td className="text-center">
+                      {isEditMode ? (
+                        <div className="quantity-editor">
+                          <button 
+                            className="btn btn-xs btn-secondary"
+                            onClick={() => handleQuantityChange(index, quantity - 1)}
+                            disabled={quantity <= 0}
+                          >
+                            -
+                          </button>
+                          <input
+                            type="number"
+                            value={quantity}
+                            onChange={(e) => handleQuantityChange(index, parseInt(e.target.value) || 0)}
+                            className="quantity-input"
+                            min="0"
+                            style={{ width: '60px', textAlign: 'center', margin: '0 5px' }}
+                          />
+                          <button 
+                            className="btn btn-xs btn-secondary"
+                            onClick={() => handleQuantityChange(index, quantity + 1)}
+                          >
+                            +
+                          </button>
+                        </div>
+                      ) : (
+                        quantity
+                      )}
+                    </td>
+                    <td className="text-right">
+                      {isEditMode ? (
+                        <input
+                          type="number"
+                          value={sellingPrice}
+                          onChange={(e) => handlePriceChange(index, parseFloat(e.target.value) || 0)}
+                          className="price-input"
+                          min="0"
+                          step="0.01"
+                          style={{ width: '80px', textAlign: 'right' }}
+                        />
+                      ) : (
+                        formatCurrency(sellingPrice)
+                      )}
+                    </td>
                     <td className="text-right">{itemDiscount > 0 ? formatCurrency(itemDiscount) : '-'}</td>
                     <td className="text-right">{formatCurrency(amount)}</td>
                   </tr>
@@ -752,27 +1086,27 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
         <div className="totals-section">
           <div className="total-row">
             <span>Total Quantity:</span>
-            <span>{totals.totalQuantity}</span>
+            <span>{isEditMode ? calculateEditedTotals().totalQuantity : totals.totalQuantity}</span>
           </div>
           <div className="total-row">
             <span>Subtotal:</span>
-            <span>{formatCurrency(totals.subtotal)}</span>
+            <span>{formatCurrency(isEditMode ? calculateEditedTotals().subtotal : totals.subtotal)}</span>
           </div>
-          {totals.discount > 0 && (
+          {(isEditMode ? calculateEditedTotals().discount : totals.discount) > 0 && (
             <div className="total-row">
               <span>Discount:</span>
-              <span>{formatCurrency(totals.discount)}</span>
+              <span>{formatCurrency(isEditMode ? calculateEditedTotals().discount : totals.discount)}</span>
             </div>
           )}
-          {totals.tax > 0 && (
+          {(isEditMode ? calculateEditedTotals().tax : totals.tax) > 0 && (
             <div className="total-row">
               <span>Tax:</span>
-              <span>{formatCurrency(totals.tax)}</span>
+              <span>{formatCurrency(isEditMode ? calculateEditedTotals().tax : totals.tax)}</span>
             </div>
           )}
           <div className="total-row grand-total">
             <span>Grand Total:</span>
-            <span>{formatCurrency(totals.grandTotal)}</span>
+            <span>{formatCurrency(isEditMode ? calculateEditedTotals().grandTotal : totals.grandTotal)}</span>
           </div>
         </div>
 

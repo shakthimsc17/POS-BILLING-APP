@@ -260,6 +260,180 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
   }
 });
 
+// Update transaction
+router.put('/:id', async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const isAdmin = req.customer?.isAdmin || false;
+
+    // Find existing transaction
+    const existingTransaction = await prisma.transaction.findUnique({
+      where: { id },
+    });
+
+    if (!existingTransaction) {
+      return res.status(404).json({ error: 'Transaction not found' });
+    }
+
+    // Check if user is admin or owner
+    if (!isAdmin && existingTransaction.customerId !== req.customerId) {
+      return res.status(403).json({ error: 'You can only edit your own transactions, or you must be an admin' });
+    }
+
+    // Support both snake_case (from frontend) and camelCase
+    const totalAmount = req.body.totalAmount || req.body.total_amount;
+    const paymentMethod = req.body.paymentMethod || req.body.payment_method;
+    const itemsJson = req.body.itemsJson || req.body.items_json;
+    const transactionCustomerId = req.body.transactionCustomerId || req.body.transaction_customer_id;
+    const salesCustomerId = req.body.salesCustomerId || req.body.sales_customer_id;
+    const receivedAmount = req.body.receivedAmount || req.body.received_amount;
+    const changeAmount = req.body.changeAmount || req.body.change_amount;
+    const createdAt = req.body.createdAt || req.body.created_at;
+
+    // Validate required fields
+    const validationErrors: any[] = [];
+    
+    if (totalAmount !== undefined && (isNaN(parseFloat(totalAmount)) || parseFloat(totalAmount) < 0)) {
+      validationErrors.push({
+        type: 'field',
+        msg: 'Invalid value',
+        path: 'totalAmount',
+        location: 'body'
+      });
+    }
+    
+    if (paymentMethod && !['cash', 'card', 'upi'].includes(paymentMethod)) {
+      validationErrors.push({
+        type: 'field',
+        msg: 'Invalid value',
+        path: 'paymentMethod',
+        location: 'body'
+      });
+    }
+
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ errors: validationErrors });
+    }
+
+    // Parse old and new items for inventory reconciliation
+    const oldItems = JSON.parse(existingTransaction.itemsJson);
+    const newItems = itemsJson ? (typeof itemsJson === 'string' ? JSON.parse(itemsJson) : itemsJson) : oldItems;
+
+    // Calculate inventory deltas and update stocks
+    try {
+      const oldItemMap = new Map();
+      const newItemMap = new Map();
+
+      // Create maps for easy lookup
+      oldItems.forEach((cartItem: any) => {
+        const item = cartItem.item || cartItem;
+        const quantity = cartItem.quantity || 1;
+        oldItemMap.set(item.id, quantity);
+      });
+
+      newItems.forEach((cartItem: any) => {
+        const item = cartItem.item || cartItem;
+        const quantity = cartItem.quantity || 1;
+        newItemMap.set(item.id, quantity);
+      });
+
+      // Process each unique item
+      const allItemIds = new Set([...oldItemMap.keys(), ...newItemMap.keys()]);
+      
+      for (const itemId of allItemIds) {
+        const oldQty = oldItemMap.get(itemId) || 0;
+        const newQty = newItemMap.get(itemId) || 0;
+        const delta = newQty - oldQty;
+
+        if (delta !== 0) {
+          // Find item and update stock
+          const existingItem = await prisma.item.findUnique({
+            where: { id: itemId },
+          });
+
+          if (existingItem) {
+            const newStock = existingItem.stock - delta;
+            const newPurchaseQty = Math.max(0, (existingItem.purchaseQty || 0) + delta);
+            
+            // Validate stock availability for increases
+            if (delta > 0 && newStock < 0) {
+              return res.status(400).json({ 
+                error: `Insufficient stock for item ${existingItem.name}. Available: ${existingItem.stock}, Required: ${delta}` 
+              });
+            }
+
+            await prisma.item.update({
+              where: { id: itemId },
+              data: { 
+                stock: newStock,
+                purchaseQty: newPurchaseQty,
+              },
+            });
+          }
+        }
+      }
+    } catch (stockError) {
+      console.error('Error updating inventory:', stockError);
+      return res.status(500).json({ error: 'Failed to update inventory' });
+    }
+
+    // Update transaction
+    const updateData: any = {};
+    if (totalAmount !== undefined) updateData.totalAmount = parseFloat(totalAmount);
+    if (paymentMethod !== undefined) updateData.paymentMethod = paymentMethod;
+    if (itemsJson !== undefined) updateData.itemsJson = typeof itemsJson === 'string' ? itemsJson : JSON.stringify(itemsJson);
+    if (transactionCustomerId !== undefined) updateData.transactionCustomerId = transactionCustomerId;
+    if (salesCustomerId !== undefined) updateData.salesCustomerId = salesCustomerId;
+    if (receivedAmount !== undefined) updateData.receivedAmount = receivedAmount ? parseFloat(receivedAmount) : null;
+    if (changeAmount !== undefined) updateData.changeAmount = changeAmount ? parseFloat(changeAmount) : null;
+    if (createdAt !== undefined) updateData.createdAt = new Date(createdAt);
+
+    const updatedTransaction = await prisma.transaction.update({
+      where: { id },
+      data: updateData,
+    });
+
+    // Log activity
+    await logActivity({
+      entityType: 'transaction',
+      entityId: updatedTransaction.id,
+      action: 'update',
+      changedBy: req.customerId!,
+      changes: {
+        oldValues: {
+          totalAmount: existingTransaction.totalAmount.toString(),
+          paymentMethod: existingTransaction.paymentMethod,
+          itemsCount: oldItems.length,
+        },
+        newValues: {
+          totalAmount: updatedTransaction.totalAmount.toString(),
+          paymentMethod: updatedTransaction.paymentMethod,
+          itemsCount: newItems.length,
+        },
+      },
+    });
+
+    // Transform response to snake_case for frontend compatibility
+    const transformedTransaction = {
+      id: updatedTransaction.id,
+      customer_id: updatedTransaction.customerId,
+      transaction_customer_id: updatedTransaction.transactionCustomerId,
+      sales_customer_id: updatedTransaction.salesCustomerId,
+      total_amount: updatedTransaction.totalAmount.toString(),
+      payment_method: updatedTransaction.paymentMethod,
+      received_amount: updatedTransaction.receivedAmount ? updatedTransaction.receivedAmount.toString() : null,
+      change_amount: updatedTransaction.changeAmount ? updatedTransaction.changeAmount.toString() : null,
+      items_json: updatedTransaction.itemsJson,
+      created_at: updatedTransaction.createdAt.toISOString(),
+    };
+
+    res.json(transformedTransaction);
+  } catch (error: any) {
+    console.error('Error updating transaction:', error);
+    res.status(500).json({ error: error.message || 'Failed to update transaction' });
+  }
+});
+
 // Delete transaction
 router.delete('/:id', async (req: AuthRequest, res) => {
   try {
@@ -323,6 +497,39 @@ router.delete('/:id', async (req: AuthRequest, res) => {
       });
     } catch (linkError) {
       console.error('Error clearing quick sale item transaction link:', linkError);
+    }
+
+    // Check and handle related returns before deletion
+    try {
+      const relatedReturns = await prisma.returnRecord.findMany({
+        where: { originalTransactionId: id }
+      });
+
+      if (relatedReturns.length > 0) {
+        // Delete related return transactions first
+        const returnTransactionIds = relatedReturns
+          .filter(r => r.originalTransactionId)
+          .map(r => r.originalTransactionId);
+
+        if (returnTransactionIds.length > 0) {
+          await prisma.transaction.deleteMany({
+            where: {
+              originalTransactionId: id,
+              transactionType: 'return'
+            }
+          });
+        }
+
+        // Delete return records
+        await prisma.returnRecord.deleteMany({
+          where: { originalTransactionId: id }
+        });
+      }
+    } catch (returnError) {
+      console.error('Error handling related returns:', returnError);
+      return res.status(400).json({ 
+        error: 'Cannot delete transaction: it has related returns. Please delete returns first.' 
+      });
     }
 
     // Log activity before deletion

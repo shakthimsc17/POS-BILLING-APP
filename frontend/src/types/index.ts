@@ -272,3 +272,32 @@ export const EXPENSE_CATEGORIES: CashFlowCategory[] = [
   { name: 'Custom', icon: '➕', type: 'expense' }
 ];
 
+export interface ReturnRecord {
+  id: string;
+  original_transaction_id: string;
+  customer_id: string;
+  return_type: 'full' | 'partial' | 'exchange' | 'refund';
+  reason?: string;
+  status: 'pending' | 'approved' | 'processed' | 'rejected';
+  refund_amount?: number | string;
+  restocked_items?: any;
+  exchange_items?: any;
+  notes?: string;
+  approved_by?: string;
+  processed_by?: string;
+  approved_at?: string;
+  processed_at?: string;
+  created_at: string;
+  updated_at: string;
+  customer?: Customer;
+  originalTransaction?: Transaction;
+  approvedByUser?: {
+    id: string;
+    name: string;
+  };
+  processedByUser?: {
+    id: string;
+    name: string;
+  };
+}
+

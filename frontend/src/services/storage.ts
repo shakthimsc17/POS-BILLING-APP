@@ -1,4 +1,4 @@
-import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer, QuickSaleItem, CashFlowEntry, CashFlowSummary, Permission, PagePermission, Cart, Table, TableOrder } from '../types';
+import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer, QuickSaleItem, CashFlowEntry, CashFlowSummary, Permission, PagePermission, Cart, Table, TableOrder, ReturnRecord } from '../types';
 import apiClient from '../lib/apiClient';
 
 export const storageService = {
@@ -106,6 +106,10 @@ export const storageService = {
 
   addTransaction: async (transaction: Omit<Transaction, 'id' | 'created_at' | 'customer_id'>): Promise<Transaction> => {
     return apiClient.post<Transaction>('/transactions', transaction);
+  },
+
+  updateTransaction: async (id: string, updates: Partial<Transaction>): Promise<Transaction> => {
+    return apiClient.put<Transaction>(`/transactions/${id}`, updates);
   },
 
   deleteTransaction: async (id: string): Promise<void> => {
@@ -480,5 +484,42 @@ export const storageService = {
 
   cancelTableOrder: async (id: string): Promise<void> => {
     await apiClient.post(`/table-orders/${id}/cancel`);
+  },
+
+  // Returns
+  getReturns: async (): Promise<ReturnRecord[]> => {
+    return apiClient.get<ReturnRecord[]>('/returns');
+  },
+
+  getReturn: async (id: string): Promise<ReturnRecord> => {
+    return apiClient.get<ReturnRecord>(`/returns/${id}`);
+  },
+
+  createReturn: async (returnData: {
+    originalTransactionId: string;
+    returnType: 'full' | 'partial' | 'exchange' | 'refund';
+    reason?: string;
+    refundAmount?: number;
+    restockedItems?: any;
+    exchangeItems?: any;
+    notes?: string;
+  }): Promise<ReturnRecord> => {
+    return apiClient.post<ReturnRecord>('/returns', returnData);
+  },
+
+  approveReturn: async (id: string): Promise<{ message: string; return: ReturnRecord }> => {
+    return apiClient.post<{ message: string; return: ReturnRecord }>(`/returns/${id}/approve`);
+  },
+
+  processReturn: async (id: string): Promise<{ message: string; return: ReturnRecord; returnTransaction?: any }> => {
+    return apiClient.post<{ message: string; return: ReturnRecord; returnTransaction?: any }>(`/returns/${id}/process`);
+  },
+
+  rejectReturn: async (id: string, rejectionReason?: string): Promise<{ message: string; return: ReturnRecord }> => {
+    return apiClient.post<{ message: string; return: ReturnRecord }>(`/returns/${id}/reject`, { rejectionReason });
+  },
+
+  deleteReturn: async (id: string): Promise<{ message: string }> => {
+    return apiClient.delete<{ message: string }>(`/returns/${id}`);
   },
 };

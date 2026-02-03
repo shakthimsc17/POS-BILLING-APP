@@ -1,9 +1,9 @@
 import prisma from '../db/prisma.js';
 
 export interface ActivityLogData {
-  entityType: 'item' | 'category' | 'transaction' | 'company';
+  entityType: 'item' | 'category' | 'transaction' | 'company' | 'return';
   entityId: string;
-  action: 'create' | 'update' | 'delete';
+  action: 'create' | 'update' | 'delete' | 'approve' | 'process' | 'reject';
   changedBy: string;
   changes?: any; // JSON object with old/new values
 }

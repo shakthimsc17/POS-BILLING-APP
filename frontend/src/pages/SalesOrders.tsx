@@ -640,6 +640,19 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
                       <td>{formatDate(transaction.created_at)}</td>
                       <td>
                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          {(isAdmin || transaction.customer_id === currentUser?.id) && (
+                            <button
+                              className="btn btn-primary btn-sm"
+                              onClick={() => {
+                                if (onNavigate) {
+                                  onNavigate('order-details', transaction.id);
+                                }
+                              }}
+                              title="Edit Order"
+                            >
+                              ✏️
+                            </button>
+                          )}
                           <button
                             className="btn btn-secondary btn-sm"
                             onClick={() => handlePrintReceipt(transaction)}
