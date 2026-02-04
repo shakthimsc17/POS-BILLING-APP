@@ -7,7 +7,7 @@ import { useCompanyStore } from '../store/companyStore';
 import './Returns.css';
 
 interface ReturnsProps {
-  onNavigate?: (page: string) => void;
+  onNavigate?: (page: string, orderId?: string) => void;
 }
 
 export default function Returns({ onNavigate }: ReturnsProps = { onNavigate: undefined }) {
@@ -52,8 +52,14 @@ export default function Returns({ onNavigate }: ReturnsProps = { onNavigate: und
 
     try {
       const result = await storageService.processReturn(returnId);
+      const processedReturn = result?.return;
+      if (processedReturn) {
+        setReturns((prev) =>
+          prev.map((r) => (r.id === processedReturn.id ? { ...r, ...processedReturn } : r))
+        );
+      }
       alert('Return processed successfully! Items have been restocked.');
-      loadReturns();
+      await loadReturns();
     } catch (error: any) {
       console.error('Error processing return:', error);
       alert(`Failed to process return: ${error.message || 'Unknown error'}`);
@@ -99,11 +105,7 @@ export default function Returns({ onNavigate }: ReturnsProps = { onNavigate: und
 
   const handleViewOriginalOrder = (orderId: string) => {
     if (onNavigate) {
-      // Navigate to order details
-      onNavigate('sales');
-      // Note: In a real implementation, you'd need to pass the orderId to the SalesOrders component
-      // and have it automatically navigate to the OrderDetails page
-      alert(`Navigate to Order: ${formatOrderId(orderId)}\n\nThis would navigate to the order details page. In a full implementation, this would open the OrderDetails page for this specific order.`);
+      onNavigate('order-details', orderId);
     }
   };
 

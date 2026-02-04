@@ -64,10 +64,18 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
     applyFilter();
   }, [filter, transactions, customStartDate, customEndDate]);
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') loadTransactions();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   const loadTransactions = async () => {
     try {
       setLoading(true);
-      const data = await storageService.getTransactions();
+      const data = await storageService.getTransactions({ limit: 500 });
       console.log('Loaded transactions:', data);
       // Ensure data is an array
       const transactionsArray = Array.isArray(data) ? data : [];
@@ -158,78 +166,93 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
     }, 0);
   };
 
+  const getTotalReturns = () => {
+    return filteredTransactions.reduce((sum, tx) => {
+      const amount = typeof tx.total_amount === 'string' ? parseFloat(tx.total_amount) : tx.total_amount;
+      const num = isNaN(amount) ? 0 : amount;
+      return num < 0 ? sum + Math.abs(num) : sum;
+    }, 0);
+  };
+
   const getTotalTransactions = () => {
     return filteredTransactions.length;
   };
 
-  // Calculate profit/loss for a single transaction
+  const isReturnTransaction = (tx: Transaction) => {
+    if (tx.transaction_type === 'return') return true;
+    const amount = typeof tx.total_amount === 'string' ? parseFloat(tx.total_amount) : tx.total_amount;
+    return typeof amount === 'number' && amount < 0;
+  };
+
+  // Calculate profit/loss for a single transaction (same formula as Sales Performance backend: grossProfit - grossLoss - billDiscount)
   const calculateTransactionProfitLoss = (transaction: Transaction) => {
     try {
       const items = JSON.parse(transaction.items_json);
       let totalProfit = 0;
       let totalLoss = 0;
-      let originalSubtotal = 0;
+      let subtotal = 0;
 
       items.forEach((cartItem: any) => {
-        const item = cartItem.item || cartItem; // Handle both CartItem and Item formats
-        const quantity = cartItem.quantity || 1;
-        
-        // Get selling price - use customPrice if available, otherwise use item price
-        const sellingPrice = cartItem.customPrice !== undefined
-          ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
-          : (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
-        
-        const cost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
+        const item = cartItem.item || cartItem;
+        const quantity = cartItem.quantity || item.quantity || 1;
 
-        // Calculate original subtotal (before discount)
-        originalSubtotal += sellingPrice * quantity;
-
-        if (cost > 0) {
-          const difference = sellingPrice - cost;
-          if (difference > 0) {
-            // Profit: selling price is higher than cost
-            totalProfit += difference * quantity;
-          } else if (difference < 0) {
-            // Loss: selling price is lower than cost (selling at a loss)
-            totalLoss += Math.abs(difference) * quantity;
-          }
+        let itemCost = 0;
+        if (item.cost !== undefined) {
+          itemCost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
         }
+
+        let itemPrice = 0;
+        if (cartItem.customPrice !== undefined) {
+          itemPrice = typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : (cartItem.customPrice || 0);
+        } else if (item.price !== undefined) {
+          itemPrice = typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0);
+        } else if (cartItem.originalPrice !== undefined) {
+          itemPrice = typeof cartItem.originalPrice === 'string' ? parseFloat(cartItem.originalPrice) : (cartItem.originalPrice || 0);
+        }
+
+        subtotal += itemPrice * quantity;
+        const diff = (itemPrice - itemCost) * quantity;
+        if (diff >= 0) totalProfit += diff;
+        else totalLoss += Math.abs(diff);
       });
 
-      // Calculate discount: original subtotal - actual total amount
-      const totalAmount = typeof transaction.total_amount === 'string' 
-        ? parseFloat(transaction.total_amount) 
+      const totalAmount = typeof transaction.total_amount === 'string'
+        ? parseFloat(transaction.total_amount)
         : transaction.total_amount;
-      const discount = Math.max(0, originalSubtotal - totalAmount);
+      const billDiscount = Math.max(0, subtotal - totalAmount);
+      const netProfit = totalProfit - totalLoss - billDiscount;
 
-      // Adjust profit by discount (discount reduces profit)
-      const adjustedProfit = Math.max(0, totalProfit - discount);
-
-      return { 
-        profit: adjustedProfit, 
+      return {
+        profit: totalProfit,
         loss: totalLoss,
-        discount: discount,
-        originalProfit: totalProfit
+        discount: billDiscount,
+        netProfit,
       };
     } catch (error) {
       console.error('Error calculating profit/loss:', error);
-      return { profit: 0, loss: 0, discount: 0, originalProfit: 0 };
+      return { profit: 0, loss: 0, discount: 0, netProfit: 0 };
     }
   };
 
-  // Calculate total profit and loss for filtered transactions
+  // Calculate total profit, loss, discount for filtered transactions (same formula as Sales Performance: net = profit - loss - billDiscount)
   const getTotalProfitLoss = () => {
     const totals = filteredTransactions.reduce(
       (acc, tx) => {
-        const { profit, loss } = calculateTransactionProfitLoss(tx);
+        const { profit, loss, discount } = calculateTransactionProfitLoss(tx);
         return {
           profit: acc.profit + profit,
           loss: acc.loss + loss,
+          discount: acc.discount + discount,
         };
       },
-      { profit: 0, loss: 0 }
+      { profit: 0, loss: 0, discount: 0 }
     );
     return totals;
+  };
+
+  const getTotalNetProfit = () => {
+    const { profit, loss, discount } = getTotalProfitLoss();
+    return profit - loss - discount;
   };
 
   const handlePrintReceipt = async (transaction: Transaction) => {
@@ -281,8 +304,7 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
       ];
       
       if (canViewProfitData) {
-        const { profit, loss } = calculateTransactionProfitLoss(tx);
-        const netProfit = profit - loss;
+        const { netProfit } = calculateTransactionProfitLoss(tx);
         row.push(formatCurrency(netProfit));
       }
       
@@ -357,8 +379,7 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
                   : 'Walk-in';
                 let profitLossCell = '';
                 if (canViewProfitData) {
-                  const { profit, loss } = calculateTransactionProfitLoss(tx);
-                  const netProfit = profit - loss;
+                  const { netProfit } = calculateTransactionProfitLoss(tx);
                   profitLossCell = `<td>${formatCurrency(netProfit)}</td>`;
                 }
                 return `
@@ -378,7 +399,7 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
           <div class="summary">
             <div class="summary-row"><strong>Total Orders:</strong> ${getTotalTransactions()}</div>
             <div class="summary-row"><strong>Total Sales:</strong> ${formatCurrency(getTotalSales())}</div>
-            ${canViewProfitData ? `<div class="summary-row"><strong>Total Profit:</strong> ${formatCurrency(getTotalProfitLoss().profit - getTotalProfitLoss().loss)}</div>` : ''}
+            ${canViewProfitData ? `<div class="summary-row"><strong>Net Profit:</strong> ${formatCurrency(getTotalNetProfit())}</div>` : ''}
           </div>
         </body>
       </html>
@@ -539,6 +560,15 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
             </p>
           </div>
         </div>
+        {getTotalReturns() > 0 && (
+          <div className="summary-card returns-card">
+            <div className="summary-icon">↩️</div>
+            <div className="summary-content">
+              <h3>Returns</h3>
+              <p className="summary-value returns-value">{formatCurrency(getTotalReturns())}</p>
+            </div>
+          </div>
+        )}
         {canViewProfitData && (
           <>
             <div className="summary-card profit-card">
@@ -564,8 +594,9 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
               <div className="summary-content">
                 <h3>Net Profit</h3>
                 <p className="summary-value net-value">
-                  {formatCurrency(getTotalProfitLoss().profit - getTotalProfitLoss().loss)}
+                  {formatCurrency(getTotalNetProfit())}
                 </p>
+                <p className="summary-subtext">Total Profit − Total Loss − Bill Discount</p>
               </div>
             </div>
           </>
@@ -580,9 +611,11 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
               <thead>
                 <tr>
                   <th>S.No</th>
+                  <th>Type</th>
                   <th>Order ID</th>
                   <th>Customer</th>
                   <th>Amount</th>
+                  {canViewProfitData && <th>Profit</th>}
                   <th>Payment</th>
                   <th>Date</th>
                   <th>Actions</th>
@@ -597,9 +630,17 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
                   const customer = !salesCustomer && transaction.transaction_customer_id
                     ? customers.find(c => c.id === transaction.transaction_customer_id)
                     : null;
+                  const isReturn = isReturnTransaction(transaction);
+                  const profitLoss = canViewProfitData ? calculateTransactionProfitLoss(transaction) : null;
+                  const rowNetProfit = profitLoss ? profitLoss.netProfit : 0;
                   return (
-                    <tr key={transaction.id}>
+                    <tr key={transaction.id} className={isReturn ? 'return-row' : ''}>
                       <td>{index + 1}</td>
+                      <td>
+                        <span className={`tx-type-badge ${isReturn ? 'tx-type-return' : 'tx-type-sale'}`}>
+                          {isReturn ? 'Return' : 'Sale'}
+                        </span>
+                      </td>
                       <td>
                         <a
                           href="#"
@@ -630,7 +671,12 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
                           <span className="walk-in">Walk-in</span>
                         )}
                       </td>
-                      <td className="amount">{formatCurrency(transaction.total_amount)}</td>
+                      <td className={`amount ${isReturn ? 'amount-return' : ''}`}>{formatCurrency(transaction.total_amount)}</td>
+                      {canViewProfitData && (
+                        <td className={rowNetProfit < 0 ? 'profit-cell negative' : 'profit-cell'}>
+                          {formatCurrency(rowNetProfit)}
+                        </td>
+                      )}
                       <td>
                         <span className="payment-method">
                           {getPaymentMethodIcon(transaction.payment_method)}{' '}

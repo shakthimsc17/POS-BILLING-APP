@@ -330,8 +330,8 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
     // Process inventory restocking
     let itemsToRestock: any[] = [];
     
-    if (returnRecord.returnType === 'full') {
-      // For full returns, get all items from original transaction
+    if (returnRecord.returnType === 'full' || (returnRecord.returnType === 'exchange' && !returnRecord.restockedItems)) {
+      // Full returns, or exchange without restockedItems (customer returns entire order)
       if (returnRecord.originalTransaction) {
         const originalItems = JSON.parse(returnRecord.originalTransaction.itemsJson || '[]');
         itemsToRestock = originalItems.map((item: any) => ({
@@ -340,8 +340,8 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
           name: item.item?.name || item.name
         }));
       }
-    } else if (returnRecord.restockedItems) {
-      // For partial returns, use specified restocked items
+    } else if (returnRecord.restockedItems && (returnRecord.returnType === 'partial' || returnRecord.returnType === 'exchange')) {
+      // For partial or exchange returns, use specified restocked items (items being returned)
       itemsToRestock = returnRecord.restockedItems as any[];
     }
 
@@ -379,11 +379,11 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
     let refundAmount = returnRecord.refundAmount ? parseFloat(returnRecord.refundAmount.toString()) : 0;
     let returnItems = [];
     
-    // For full returns, get complete item details from original transaction
-    if (returnRecord.returnType === 'full' && returnRecord.originalTransaction) {
-      refundAmount = parseFloat(returnRecord.originalTransaction.totalAmount.toString());
-      // Parse original items to get complete details including prices
-      const originalItems = JSON.parse(returnRecord.originalTransaction.itemsJson || '[]');
+    // For full returns, or exchange without restockedItems (full exchange), get complete item details from original transaction
+    const isFullReturnOrFullExchange = (returnRecord.returnType === 'full' || (returnRecord.returnType === 'exchange' && !returnRecord.restockedItems)) && returnRecord.originalTransaction;
+    if (isFullReturnOrFullExchange) {
+      refundAmount = parseFloat(returnRecord.originalTransaction!.totalAmount.toString());
+      const originalItems = JSON.parse(returnRecord.originalTransaction!.itemsJson || '[]');
       returnItems = originalItems.map((item: any) => ({
         item: {
           id: item.item?.id || item.id,
@@ -397,8 +397,8 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
         customPrice: item.customPrice,
         subtotal: -Math.abs((item.customPrice !== undefined ? item.customPrice : item.originalPrice || (item.item?.price || item.price || 0)) * (item.quantity || 1))
       }));
-    } else if (returnRecord.restockedItems && returnRecord.originalTransaction) {
-      // For partial returns, get complete item details for returned items
+    } else if ((returnRecord.returnType === 'partial' || returnRecord.returnType === 'exchange') && returnRecord.restockedItems && returnRecord.originalTransaction) {
+      // For partial or exchange returns, get complete item details for returned items
       const originalItems = JSON.parse(returnRecord.originalTransaction.itemsJson || '[]');
       const restockedItems = returnRecord.restockedItems as any[];
       
@@ -439,14 +439,20 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
           subtotal: 0
         };
       });
+      // Compute refund amount from return items when not provided (partial return)
+      if (!refundAmount && returnItems.length > 0) {
+        refundAmount = returnItems.reduce((sum: number, it: any) => sum + Math.abs(it.subtotal || 0), 0);
+      }
     }
+    
+    const paymentMethod = returnRecord.originalTransaction?.paymentMethod || 'cash';
     
     if (refundAmount > 0 || returnRecord.returnType === 'full' || returnRecord.returnType === 'partial') {
       returnTransaction = await prisma.transaction.create({
         data: {
           customerId: returnRecord.customerId,
           totalAmount: -Math.abs(refundAmount), // Negative for refund
-          paymentMethod: 'cash', // Default to cash for refunds
+          paymentMethod, // Use original transaction's payment method
           itemsJson: JSON.stringify(returnItems),
           transactionType: 'return',
           originalTransactionId: returnRecord.originalTransactionId
@@ -454,14 +460,79 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
       });
     }
 
-    // Update return status
+    // Exchange: create new sale transaction and deduct stock for exchange items
+    let exchangeTransaction = null;
+    const exchangeItems = returnRecord.exchangeItems as any[] | null;
+    if (returnRecord.returnType === 'exchange' && Array.isArray(exchangeItems) && exchangeItems.length > 0) {
+      const exchangeSaleItems: any[] = [];
+      let exchangeTotal = 0;
+      for (const ex of exchangeItems) {
+        const itemId = ex.itemId || ex.item_id;
+        const qty = ex.quantity || 1;
+        if (!itemId || qty < 1) continue;
+        const item = await prisma.item.findUnique({ where: { id: itemId } });
+        if (!item || item.stock < qty) {
+          throw new Error(`Exchange item ${item.name || itemId} has insufficient stock (need ${qty}, have ${item?.stock ?? 0})`);
+        }
+        const price = Number(item.price);
+        const cost = Number(item.cost);
+        const subtotal = price * qty;
+        exchangeTotal += subtotal;
+        exchangeSaleItems.push({
+          item: {
+            id: item.id,
+            name: item.name,
+            display_name: item.displayName,
+            price,
+            cost,
+          },
+          quantity: qty,
+          originalPrice: price,
+          subtotal,
+        });
+      }
+      if (exchangeSaleItems.length > 0 && exchangeTotal > 0) {
+        exchangeTransaction = await prisma.transaction.create({
+          data: {
+            customerId: returnRecord.customerId,
+            totalAmount: exchangeTotal,
+            paymentMethod,
+            itemsJson: JSON.stringify(exchangeSaleItems),
+            transactionType: 'sale',
+          },
+        });
+        for (const ex of exchangeItems) {
+          const itemId = ex.itemId || ex.item_id;
+          const qty = ex.quantity || 1;
+          if (!itemId || qty < 1) continue;
+          await prisma.item.update({
+            where: { id: itemId },
+            data: {
+              stock: { decrement: qty },
+              purchaseQty: { increment: qty },
+            },
+          });
+        }
+      }
+    }
+
+    // Refunds are reflected only via return transactions (profit/sales); no separate cash flow entry
+    // to avoid double-counting in Net = Profit + Income - Expense.
+
+    const updateData: { status: string; processedBy: string | null; processedAt: Date; refundAmount?: number } = {
+      status: 'processed',
+      processedBy: req.customerId,
+      processedAt: new Date(),
+    };
+    // Always persist refund amount when we have one (full, partial, or exchange with refund) so Returns page shows it
+    if (refundAmount > 0) {
+      updateData.refundAmount = refundAmount;
+    }
+
+    // Update return status and refund_amount for display on Returns page
     const updatedReturn = await prisma.returnRecord.update({
       where: { id },
-      data: {
-        status: 'processed',
-        processedBy: req.customerId,
-        processedAt: new Date()
-      }
+      data: updateData,
     });
 
     // Log activity
@@ -473,14 +544,36 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
       changes: {
         status: 'processed',
         processedAt: updatedReturn.processedAt,
-        returnTransactionId: returnTransaction?.id || null
+        returnTransactionId: returnTransaction?.id || null,
+        exchangeTransactionId: exchangeTransaction?.id || null,
       }
     });
 
-    res.json({ 
-      message: 'Return processed successfully', 
-      return: updatedReturn,
-      returnTransaction
+    // Return in snake_case so frontend can show refund_amount immediately
+    const returnPayload = {
+      id: updatedReturn.id,
+      original_transaction_id: updatedReturn.originalTransactionId,
+      customer_id: updatedReturn.customerId,
+      return_type: updatedReturn.returnType,
+      reason: updatedReturn.reason,
+      status: updatedReturn.status,
+      refund_amount: updatedReturn.refundAmount != null ? String(updatedReturn.refundAmount) : null,
+      restocked_items: updatedReturn.restockedItems,
+      exchange_items: updatedReturn.exchangeItems,
+      notes: updatedReturn.notes,
+      approved_by: updatedReturn.approvedBy,
+      processed_by: updatedReturn.processedBy,
+      approved_at: updatedReturn.approvedAt?.toISOString() ?? null,
+      processed_at: updatedReturn.processedAt?.toISOString() ?? null,
+      created_at: updatedReturn.createdAt.toISOString(),
+      updated_at: updatedReturn.updatedAt.toISOString(),
+    };
+
+    res.json({
+      message: 'Return processed successfully',
+      return: returnPayload,
+      returnTransaction,
+      exchangeTransaction: exchangeTransaction || undefined,
     });
   } catch (error: any) {
     console.error('Error processing return:', error);

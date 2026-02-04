@@ -383,7 +383,7 @@ function App() {
             {currentPage === 'reports' && ((customer?.isAdmin || canView('reports')) && !isHidden('reports') ? <Reports /> : <AccessDenied />)}
             {currentPage === 'export' && ((customer?.isAdmin || canView('export')) && !isHidden('export') ? <Export /> : <AccessDenied />)}
             {currentPage === 'activity-logs' && ((customer?.isAdmin || canView('activity-logs')) && !isHidden('activity-logs') ? <ActivityLogs /> : <AccessDenied />)}
-            {currentPage === 'returns' && customer?.isAdmin && <Returns onNavigate={setCurrentPage} />}
+            {currentPage === 'returns' && customer?.isAdmin && <Returns onNavigate={(page, orderId) => { if (page === 'order-details' && orderId) setSelectedOrderId(orderId); setCurrentPage(page); }} />}
             {currentPage === 'bulk-operations' && (canView('bulk-operations') && !isHidden('bulk-operations') ? <BulkOperations /> : <AccessDenied />)}
             {currentPage === 'calculators' && (canView('calculators') && !isHidden('calculators') ? <Calculators /> : <AccessDenied />)}
             {currentPage === 'barcode-generator' && (canView('barcode-generator') && !isHidden('barcode-generator') ? <BarcodeGenerator /> : <AccessDenied />)}

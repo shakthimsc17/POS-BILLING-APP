@@ -93,10 +93,10 @@ export const storageService = {
     return apiClient.get<Item[]>(`/items/by-categories?categoryIds=${encodeURIComponent(categoryIds)}`);
   },
 
-  // Transactions
-  getTransactions: async (): Promise<Transaction[]> => {
-    const response = await apiClient.get<{ transactions: Transaction[]; pagination?: any } | Transaction[]>('/transactions');
-    // Handle both response formats: { transactions: [...], pagination: {...} } or array
+  // Transactions (optional limit to fetch more for date-filtered views; default 50)
+  getTransactions: async (opts?: { limit?: number }): Promise<Transaction[]> => {
+    const params = opts?.limit != null ? `?limit=${Math.min(1000, Math.max(1, opts.limit))}` : '';
+    const response = await apiClient.get<{ transactions: Transaction[]; pagination?: any } | Transaction[]>(`/transactions${params}`);
     return Array.isArray(response) ? response : (response?.transactions || []);
   },
 

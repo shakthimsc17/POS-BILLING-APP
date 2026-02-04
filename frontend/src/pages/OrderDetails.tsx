@@ -4,6 +4,7 @@ import { useCompanyStore } from '../store/companyStore';
 import { useAuthStore } from '../store/authStore';
 import { Transaction, Customer, SalesCustomer, Item } from '../types';
 import { formatCurrency, formatOrderId, numberToWords } from '../utils/formatters';
+import ReturnModal, { ReturnFormData } from '../components/ReturnModal';
 import './OrderDetails.css';
 
 interface OrderDetailsProps {
@@ -29,6 +30,8 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
   const [editedItems, setEditedItems] = useState<CartItem[]>([]);
   const [editedTransaction, setEditedTransaction] = useState<Transaction | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnSubmitting, setReturnSubmitting] = useState(false);
   const { company, loadCompany } = useCompanyStore();
   const { customer: currentUser } = useAuthStore();
 
@@ -250,73 +253,26 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
 
   const handleReturnRequest = () => {
     if (!transaction) return;
-    
-    const returnType = prompt('Select return type:\n1. Full Return\n2. Partial Return\n3. Exchange\n4. Refund\n\nEnter number (1-4):');
-    
-    let returnTypeName: 'full' | 'partial' | 'exchange' | 'refund';
-    switch (returnType) {
-      case '1':
-        returnTypeName = 'full';
-        break;
-      case '2':
-        returnTypeName = 'partial';
-        break;
-      case '3':
-        returnTypeName = 'exchange';
-        break;
-      case '4':
-        returnTypeName = 'refund';
-        break;
-      default:
-        alert('Invalid selection');
-        return;
-    }
-    
-    const reason = prompt('Enter reason for return:');
-    if (!reason) {
-      alert('Reason is required');
-      return;
-    }
-    
-    // For partial returns, let user select items
-    let restockedItems = null;
-    if (returnTypeName === 'partial') {
-      const itemSelections = items.map((item, index) => 
-        `${index + 1}. ${item.item.name} (Qty: ${item.quantity})`
-      ).join('\n');
-      
-      const selectedItems = prompt(`Select items to return (enter numbers separated by commas):\n${itemSelections}`);
-      if (!selectedItems) {
-        alert('No items selected');
-        return;
-      }
-      
-      const selectedIndexes = selectedItems.split(',').map(n => parseInt(n.trim()) - 1);
-      restockedItems = selectedIndexes
-        .filter(index => index >= 0 && index < items.length)
-        .map(index => ({
-          itemId: items[index].item.id,
-          quantity: items[index].quantity,
-          name: items[index].item.name
-        }));
-    }
-    
-    // Create return request
-    createReturnRequest({
-      originalTransactionId: transaction.id,
-      returnType: returnTypeName,
-      reason,
-      restockedItems
-    });
+    setShowReturnModal(true);
   };
 
-  const createReturnRequest = async (returnData: any) => {
+  const handleReturnModalSubmit = async (formData: ReturnFormData) => {
+    if (!transaction) return;
+    setReturnSubmitting(true);
     try {
-      const returnRecord = await storageService.createReturn(returnData);
-      alert(`Return request created successfully!\nReturn ID: ${returnRecord.id.slice(0, 8)}...\nStatus: ${returnRecord.status}\n\nYour request will be reviewed by an admin.`);
+      const returnRecord = await storageService.createReturn({
+        originalTransactionId: transaction.id,
+        returnType: formData.returnType,
+        reason: formData.reason,
+        restockedItems: formData.restockedItems,
+      });
+      setShowReturnModal(false);
+      alert(`Return request created successfully!\nReturn ID: ${returnRecord.id.slice(0, 8).toUpperCase()}…\nStatus: ${returnRecord.status}\n\nYour request will be reviewed by an admin.`);
     } catch (error: any) {
       console.error('Error creating return:', error);
       alert(`Failed to create return: ${error.message || 'Unknown error'}`);
+    } finally {
+      setReturnSubmitting(false);
     }
   };
 
@@ -906,7 +862,7 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
           {!isEditMode && (
             <button 
               className="btn btn-warning" 
-              onClick={() => handleReturnRequest()}
+              onClick={handleReturnRequest}
               title="Request Return"
             >
               🔄 Return
@@ -1135,6 +1091,15 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
           </div>
         </div>
       </div>
+
+      <ReturnModal
+        isOpen={showReturnModal}
+        orderId={transaction?.id ?? ''}
+        items={items}
+        onClose={() => setShowReturnModal(false)}
+        onSubmit={handleReturnModalSubmit}
+        submitting={returnSubmitting}
+      />
     </div>
   );
 }
