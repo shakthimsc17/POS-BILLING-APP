@@ -69,8 +69,8 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
   useEffect(() => {
     const loadData = async () => {
       await Promise.all([
-        loadCategories(),
-        loadItems(),
+        loadCategories(true),  // Load all categories for filter dropdown
+        loadItems(true),       // Load all items so the Items page shows full list
         loadPrefixes(),
       ]);
     };
@@ -257,7 +257,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
           name,
           display_name: displayName || undefined,
           code: finalCode,
-          barcode: company.business_type === 'cafe' ? undefined : (barcode || undefined),
+          barcode: (barcode || undefined),
           mapping_code: mappingCode.trim() || undefined,
           category_id: company.business_type === 'cafe' ? undefined : (categoryId || undefined),
           subcategory: company.business_type === 'cafe' ? undefined : (subcategory || undefined),
@@ -275,7 +275,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
           name,
           display_name: displayName || undefined,
           code: finalCode,
-          barcode: company.business_type === 'cafe' ? undefined : (barcode || undefined),
+          barcode: (barcode || undefined),
           mapping_code: mappingCode.trim() || undefined,
           category_id: company.business_type === 'cafe' ? undefined : (categoryId || undefined),
           subcategory: company.business_type === 'cafe' ? undefined : (subcategory || undefined),
@@ -760,14 +760,24 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
 
       {modalVisible && (
         <div className="modal-overlay" onClick={() => setModalVisible(false)}>
-          <div className="modal-content items-modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal-content items-modal"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !(e.target instanceof HTMLTextAreaElement)) {
+                e.preventDefault();
+                handleSave();
+              }
+            }}
+          >
             <div className="modal-header">
               <h2>{editingItem ? 'Edit Item' : 'Add Item'}</h2>
               <button className="modal-close" onClick={() => setModalVisible(false)}>×</button>
             </div>
             <div className="modal-body">
-            {/* Basic Information */}
-            <div className="form-row">
+            <div className="items-modal-grid">
+            {/* Basic Information - 3 columns */}
+            <div className="form-field">
               <label>
                 Name *:
                 <input
@@ -777,15 +787,16 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                   onChange={(e) => {
                     const newName = e.target.value;
                     setName(newName);
-                    // Auto-update display_name if it matches the old name or is empty
                     if (!displayName || displayName === name || displayName === editingItem?.name) {
                       setDisplayName(newName);
                     }
                   }}
                 />
               </label>
+            </div>
+            <div className="form-field">
               <label>
-                Display Name (for receipt):
+                Display Name:
                 <input
                   type="text"
                   className="input"
@@ -794,7 +805,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                   placeholder="Auto-filled from name, can be modified"
                 />
                 <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
-                  This name will be shown on receipts. Leave empty to use item name.
+                  for receipts
                 </small>
               </label>
             </div>
@@ -802,16 +813,42 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
             {/* Code Entry - Simplified for cafe, full for others */}
             {company?.business_type === 'cafe' ? (
               <>
+                <div className="form-field">
                 <label>
                   Item Code *:
                   <input
                     type="text"
                     className="input"
                     value={code}
-                    onChange={(e) => setCode(e.target.value)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setCode(v);
+                      setBarcode(v);
+                    }}
                     placeholder="Enter item code"
                   />
                 </label>
+                </div>
+                <div className="form-field">
+                <label>
+                  Barcode:
+                  <input
+                    type="text"
+                    className="input"
+                    value={barcode}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setBarcode(v);
+                      setCode(v);
+                    }}
+                    placeholder="Auto-updates with item code"
+                  />
+                  <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                    Updates with item code; edit here if barcode should differ.
+                  </small>
+                </label>
+                </div>
+                <div className="form-field">
                 <label>
                   Mapping Code (for Quick Search):
                   <input
@@ -825,6 +862,8 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                     Enter a number or code for quick item search in cafe mode
                   </small>
                 </label>
+                </div>
+                <div className="form-field">
                 <label>
                   Stock:
                   <input
@@ -846,107 +885,191 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                     min="0"
                   />
                 </label>
-              </>
-            ) : (
-              <>
-                {/* Code Entry Method */}
-                <div style={{ marginBottom: '10px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                    <input
-                      type="radio"
-                      checked={!useManualCode}
-                      onChange={() => {
-                        setUseManualCode(false);
-                        setCode('');
-                        setBarcode('');
+                </div>
+                <div className="form-field">
+                  <label>
+                    Category:
+                    <select
+                      className="input"
+                      value={categoryId}
+                      onChange={(e) => {
+                        setCategoryId(e.target.value);
+                        setSubcategory('');
                       }}
-                    />
-                    <span>Use Prefix Dropdown</span>
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <input
-                      type="radio"
-                      checked={useManualCode}
-                      onChange={() => {
-                        setUseManualCode(true);
-                        setSelectedPrefixId('');
-                        setProductCodeSize('');
-                      }}
-                    />
-                    <span>Enter Code Manually</span>
+                    >
+                      <option value="">None</option>
+                      {categories.length === 0 ? (
+                        <option value="" disabled>Loading categories...</option>
+                      ) : (
+                        getUniqueMainCategories().map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
+                        ))
+                      )}
+                    </select>
                   </label>
                 </div>
-
-                {/* Code Information */}
-                {!useManualCode ? (
-                  <div className="form-row">
+                {categoryId && getSubcategories().length > 0 ? (
+                  <div className="form-field">
                     <label>
-                      Item Code Prefix *:
+                      Subcategory:
                       <select
                         className="input"
-                        value={selectedPrefixId}
-                        onChange={(e) => {
-                          setSelectedPrefixId(e.target.value);
-                          setProductCodeSize('');
-                          setCode('');
-                          setBarcode('');
-                        }}
+                        value={subcategory}
+                        onChange={(e) => setSubcategory(e.target.value)}
                       >
-                        <option value="">Select prefix...</option>
-                        {prefixes.map((prefix) => (
-                          <option key={prefix.id} value={prefix.id}>
-                            {prefix.prefix} {prefix.description ? `(${prefix.description})` : ''}
+                        <option value="">None</option>
+                        {getSubcategories().map((subcat, idx) => (
+                          <option key={idx} value={subcat}>
+                            {subcat}
                           </option>
                         ))}
                       </select>
                     </label>
-                    {selectedPrefixId && (
-                      <label>
-                        Product Code-Size (e.g., "PROD001-L"):
-                        <input
-                          type="text"
-                          className="input"
-                          value={productCodeSize}
-                          onChange={(e) => setProductCodeSize(e.target.value)}
-                          placeholder="PROD001-L"
-                        />
-                        <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
-                          This will auto-fill the barcode and code fields
-                        </small>
-                      </label>
-                    )}
+                  </div>
+                ) : categoryId && getSubcategories().length === 0 ? (
+                  <div className="form-field">
+                    <label>
+                      Subcategory (Optional):
+                      <input
+                        type="text"
+                        className="input"
+                        placeholder="Enter subcategory"
+                        value={subcategory}
+                        onChange={(e) => setSubcategory(e.target.value)}
+                      />
+                    </label>
                   </div>
                 ) : (
-                  <label>
-                    Item Code * (Manual Entry):
-                    <input
-                      type="text"
-                      className="input"
-                      value={code}
-                      onChange={(e) => {
-                        setCode(e.target.value);
-                        // Auto-fill barcode with the same value
-                        setBarcode(e.target.value);
-                      }}
-                      placeholder="Enter item code (e.g., shopname-place-PROD001-L)"
-                    />
-                    <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
-                      New codes will be automatically added to the prefix list
-                    </small>
-                  </label>
+                  <div className="form-field">
+                    <label>
+                      Subcategory:
+                      <input
+                        type="text"
+                        className="input"
+                        placeholder="Select category first"
+                        value={subcategory}
+                        disabled
+                      />
+                    </label>
+                  </div>
                 )}
-                
-                <div className="form-row">
+              </>
+            ) : (
+              <>
+                <div className="form-field form-field-full-width">
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: 0 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input
+                        type="radio"
+                        checked={!useManualCode}
+                        onChange={() => {
+                          setUseManualCode(false);
+                          setCode('');
+                          setBarcode('');
+                        }}
+                      />
+                      <span>Use Prefix Dropdown</span>
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input
+                        type="radio"
+                        checked={useManualCode}
+                        onChange={() => {
+                          setUseManualCode(true);
+                          setSelectedPrefixId('');
+                          setProductCodeSize('');
+                        }}
+                      />
+                      <span>Enter Code Manually</span>
+                    </span>
+                  </label>
+                </div>
+
+                {!useManualCode ? (
+                  <>
+                    <div className="form-field">
+                      <label>
+                        Item Code Prefix *:
+                        <select
+                          className="input"
+                          value={selectedPrefixId}
+                          onChange={(e) => {
+                            setSelectedPrefixId(e.target.value);
+                            setProductCodeSize('');
+                            setCode('');
+                            setBarcode('');
+                          }}
+                        >
+                          <option value="">Select prefix...</option>
+                          {prefixes.map((prefix) => (
+                            <option key={prefix.id} value={prefix.id}>
+                              {prefix.prefix} {prefix.description ? `(${prefix.description})` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    {selectedPrefixId && (
+                      <div className="form-field">
+                        <label>
+                          Product Code-Size (e.g., "PROD001-L"):
+                          <input
+                            type="text"
+                            className="input"
+                            value={productCodeSize}
+                            onChange={(e) => setProductCodeSize(e.target.value)}
+                            placeholder="PROD001-L"
+                          />
+                          <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                            This will auto-fill the barcode and code fields
+                          </small>
+                        </label>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="form-field">
+                    <label>
+                      Item Code * (Manual Entry):
+                      <input
+                        type="text"
+                        className="input"
+                        value={code}
+                        onChange={(e) => {
+                          setCode(e.target.value);
+                          setBarcode(e.target.value);
+                        }}
+                        placeholder="Enter item code (e.g., shopname-place-PROD001-L)"
+                      />
+                      <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                        New codes will be automatically added to the prefix list
+                      </small>
+                    </label>
+                  </div>
+                )}
+
+                <div className="form-field">
                   <label>
                     Barcode:
                     <input
                       type="text"
                       className="input"
                       value={barcode}
-                      onChange={(e) => setBarcode(e.target.value)}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setBarcode(v);
+                        setCode(v);
+                      }}
                       placeholder="Auto-filled from prefix + product code-size"
                     />
+                    <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                      Updates with item code (prefix + product code-size or manual entry).
+                    </small>
                   </label>
+                </div>
+                <div className="form-field">
                   <label>
                     Mapping Code (for Quick Search):
                     <input
@@ -961,7 +1084,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                     </small>
                   </label>
                 </div>
-                <div className="form-row">
+                <div className="form-field">
                   <label>
                     Stock:
                     <input
@@ -985,83 +1108,89 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                   </label>
                 </div>
 
-                {/* Category Information - Always show when editing, optional for cafe */}
                 {(!company?.business_type || company?.business_type !== 'cafe' || editingItem) && (
-                <div className="form-row">
-                  <label>
-                    Category:
-                    <select
-                      className="input"
-                      value={categoryId}
-                      onChange={(e) => {
-                        setCategoryId(e.target.value);
-                        setSubcategory(''); // Reset subcategory when category changes
-                      }}
-                    >
-                      <option value="">None</option>
-                      {categories.length === 0 ? (
-                        <option value="" disabled>Loading categories...</option>
-                      ) : (
-                        getUniqueMainCategories().map((cat) => (
-                          <option key={cat.id} value={cat.id}>
-                            {cat.name}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                    {categories.length === 0 && (
-                      <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
-                        No categories available. Create categories first.
-                      </small>
+                  <>
+                    <div className="form-field">
+                      <label>
+                        Category:
+                        <select
+                          className="input"
+                          value={categoryId}
+                          onChange={(e) => {
+                            setCategoryId(e.target.value);
+                            setSubcategory('');
+                          }}
+                        >
+                          <option value="">None</option>
+                          {categories.length === 0 ? (
+                            <option value="" disabled>Loading categories...</option>
+                          ) : (
+                            getUniqueMainCategories().map((cat) => (
+                              <option key={cat.id} value={cat.id}>
+                                {cat.name}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                        {categories.length === 0 && (
+                          <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                            No categories available. Create categories first.
+                          </small>
+                        )}
+                      </label>
+                    </div>
+                    {categoryId && getSubcategories().length > 0 ? (
+                      <div className="form-field">
+                        <label>
+                          Subcategory:
+                          <select
+                            className="input"
+                            value={subcategory}
+                            onChange={(e) => setSubcategory(e.target.value)}
+                          >
+                            <option value="">None</option>
+                            {getSubcategories().map((subcat, idx) => (
+                              <option key={idx} value={subcat}>
+                                {subcat}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+                    ) : categoryId && getSubcategories().length === 0 ? (
+                      <div className="form-field">
+                        <label>
+                          Subcategory (Optional):
+                          <input
+                            type="text"
+                            className="input"
+                            placeholder="Enter subcategory"
+                            value={subcategory}
+                            onChange={(e) => setSubcategory(e.target.value)}
+                          />
+                        </label>
+                      </div>
+                    ) : (
+                      <div className="form-field">
+                        <label>
+                          Subcategory:
+                          <input
+                            type="text"
+                            className="input"
+                            placeholder="Select category first"
+                            value={subcategory}
+                            disabled
+                          />
+                        </label>
+                      </div>
                     )}
-                  </label>
-                  {categoryId && getSubcategories().length > 0 ? (
-                    <label>
-                      Subcategory:
-                      <select
-                        className="input"
-                        value={subcategory}
-                        onChange={(e) => setSubcategory(e.target.value)}
-                      >
-                        <option value="">None</option>
-                        {getSubcategories().map((subcat, idx) => (
-                          <option key={idx} value={subcat}>
-                            {subcat}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  ) : categoryId && getSubcategories().length === 0 ? (
-                    <label>
-                      Subcategory (Optional):
-                      <input
-                        type="text"
-                        className="input"
-                        placeholder="Enter subcategory"
-                        value={subcategory}
-                        onChange={(e) => setSubcategory(e.target.value)}
-                      />
-                    </label>
-                  ) : (
-                    <label>
-                      Subcategory:
-                      <input
-                        type="text"
-                        className="input"
-                        placeholder="Select category first"
-                        value={subcategory}
-                        disabled
-                      />
-                    </label>
-                  )}
-                </div>
+                  </>
                 )}
               </>
             )}
 
-
-            {/* Pricing Information */}
-            <div className="form-row">
+            {/* Pricing - 3 columns */}
+            <div className="form-field">
               <label>
                 Cost (₹) *:
                 <input
@@ -1074,6 +1203,8 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                   placeholder="Purchase cost"
                 />
               </label>
+            </div>
+            <div className="form-field">
               <label>
                 Sale Price (₹) *:
                 <input
@@ -1087,18 +1218,21 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                 />
               </label>
             </div>
-            <label>
-              MRP (₹) (Optional - for display):
-              <input
-                type="number"
-                className="input"
-                value={mrp}
-                onChange={(e) => setMrp(e.target.value)}
-                step="0.01"
-                min="0"
-                placeholder="Maximum Retail Price"
-              />
-            </label>
+            <div className="form-field">
+              <label>
+                MRP (₹) (Optional - for display):
+                <input
+                  type="number"
+                  className="input"
+                  value={mrp}
+                  onChange={(e) => setMrp(e.target.value)}
+                  step="0.01"
+                  min="0"
+                  placeholder="Maximum Retail Price"
+                />
+              </label>
+            </div>
+            </div>
             </div>
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setModalVisible(false)}>

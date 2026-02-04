@@ -163,6 +163,27 @@ router.post(
         // Don't fail transaction if stock update fails
       }
 
+      // Link quick sale items to this transaction (for later cost backfill)
+      try {
+        const quickSalePrefix = 'quick-sale-';
+        for (const cartItem of items) {
+          const item = cartItem.item || cartItem;
+          const itemId = item?.id;
+          if (typeof itemId === 'string' && itemId.startsWith(quickSalePrefix)) {
+            const quickSaleItemId = itemId.slice(quickSalePrefix.length);
+            if (quickSaleItemId) {
+              await prisma.quickSaleItem.updateMany({
+                where: { id: quickSaleItemId },
+                data: { transactionId: transaction.id },
+              });
+            }
+          }
+        }
+      } catch (linkError) {
+        console.error('Error linking quick sale items to transaction:', linkError);
+        // Don't fail transaction creation
+      }
+
       // Transform response to snake_case for frontend compatibility
       const transformedTransaction = {
         id: transaction.id,
@@ -292,6 +313,16 @@ router.delete('/:id', async (req: AuthRequest, res) => {
     } catch (stockError) {
       console.error('Error restoring stock:', stockError);
       // Continue with deletion even if stock restoration fails
+    }
+
+    // Clear transaction_id on quick sale items linked to this transaction
+    try {
+      await prisma.quickSaleItem.updateMany({
+        where: { transactionId: id },
+        data: { transactionId: null },
+      });
+    } catch (linkError) {
+      console.error('Error clearing quick sale item transaction link:', linkError);
     }
 
     // Log activity before deletion

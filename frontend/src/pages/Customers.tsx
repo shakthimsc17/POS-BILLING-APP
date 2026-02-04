@@ -202,7 +202,16 @@ export default function Customers() {
 
       {modalVisible && (
         <div className="modal-overlay" onClick={() => setModalVisible(false)}>
-          <div className="modal-content customers-modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal-content customers-modal"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !(e.target instanceof HTMLTextAreaElement)) {
+                e.preventDefault();
+                handleSave();
+              }
+            }}
+          >
             <div className="modal-header">
               <h2>{editingCustomer ? 'Edit Customer' : 'Add Customer'}</h2>
               <button className="modal-close" onClick={() => setModalVisible(false)}>×</button>

@@ -3,10 +3,11 @@ import apiClient from '../lib/apiClient';
 
 export const storageService = {
   // Categories
-  getCategories: async (): Promise<Category[]> => {
+  getCategories: async (options?: { all?: boolean }): Promise<Category[]> => {
     // Add timestamp to bypass cache
     const timestamp = Date.now();
-    const response = await apiClient.get<{ categories: Category[]; pagination?: any } | Category[]>(`/categories?_t=${timestamp}`);
+    const allParam = options?.all ? '&all=true' : '';
+    const response = await apiClient.get<{ categories: Category[]; pagination?: any } | Category[]>(`/categories?_t=${timestamp}${allParam}`);
     // Handle both response formats: { categories: [...], pagination: {...} } or array
     return Array.isArray(response) ? response : (response?.categories || []);
   },
@@ -28,8 +29,9 @@ export const storageService = {
   },
 
   // Items
-  getItems: async (): Promise<Item[]> => {
-    const response = await apiClient.get<{ items: Item[]; pagination?: any } | Item[]>('/items');
+  getItems: async (options?: { all?: boolean }): Promise<Item[]> => {
+    const query = options?.all ? '?all=true' : '';
+    const response = await apiClient.get<{ items: Item[]; pagination?: any } | Item[]>(`/items${query}`);
     // Handle both response formats: { items: [...], pagination: {...} } or array
     return Array.isArray(response) ? response : (response?.items || []);
   },
@@ -228,7 +230,7 @@ export const storageService = {
     return apiClient.get<QuickSaleItem[]>(`/quick-sale-items${query}`);
   },
 
-  addQuickSaleItem: async (item: { name: string; quantity: number; price: number }): Promise<QuickSaleItem> => {
+  addQuickSaleItem: async (item: { name: string; quantity: number; price: number; cost?: number }): Promise<QuickSaleItem> => {
     return apiClient.post<QuickSaleItem>('/quick-sale-items', item);
   },
 

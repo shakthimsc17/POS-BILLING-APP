@@ -1,0 +1,655 @@
+.barcode-gen-page {
+  animation: fadeIn 0.3s ease-in;
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.barcode-gen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e0e6ed;
+}
+
+.barcode-gen-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.barcode-gen-title-row h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.barcode-gen-title-row .info-icon {
+  color: #3498db;
+  cursor: help;
+  font-size: 1.25rem;
+}
+
+.barcode-gen-settings {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.barcode-gen-setting-label {
+  font-size: 0.9rem;
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+.barcode-gen-select {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #e0e6ed;
+  border-radius: 6px;
+  background: white;
+  font-size: 0.9rem;
+  min-width: 140px;
+}
+
+.barcode-gen-search-section {
+  margin-bottom: 1.25rem;
+}
+
+.barcode-gen-search-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+}
+
+.barcode-gen-search-wrap {
+  position: relative;
+  max-width: 420px;
+}
+
+.barcode-gen-search-input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #e0e6ed;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.barcode-gen-search-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.barcode-gen-search-input.searching {
+  border-color: #3498db;
+  padding-right: 5.5rem;
+}
+
+.barcode-gen-search-loading {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  color: #3498db;
+  pointer-events: none;
+}
+
+.barcode-gen-search-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: white;
+  border: 1px solid #e0e6ed;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 280px;
+  overflow-y: auto;
+  z-index: 10;
+  margin-top: 2px;
+}
+
+.barcode-gen-search-item {
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.15s;
+}
+
+.barcode-gen-search-item:last-child {
+  border-bottom: none;
+}
+
+.barcode-gen-search-item:hover {
+  background: #e8f4fc;
+}
+
+.barcode-gen-search-item-name {
+  display: block;
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 0.9rem;
+}
+
+.barcode-gen-search-item-meta {
+  display: block;
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}
+
+.barcode-gen-main {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .barcode-gen-main {
+    grid-template-columns: 1fr;
+  }
+}
+
+.barcode-gen-form-card {
+  background: white;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.barcode-gen-form-card label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 0.35rem;
+}
+
+.barcode-gen-form-card label .required {
+  color: #e74c3c;
+}
+
+.barcode-gen-form-card input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e0e6ed;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  box-sizing: border-box;
+}
+
+.barcode-gen-form-card input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.barcode-gen-preview-card {
+  background: white;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  height: fit-content;
+}
+
+/* Barcode label: same font style everywhere (Questrial, Arial, normal weight) */
+.barcode-gen-preview-card--sample,
+.barcode-preview-label,
+.barcode-gen-preview-card--sample .preview-label-name,
+.barcode-gen-preview-card--sample .preview-code-text,
+.barcode-gen-preview-card--sample .preview-prices,
+.barcode-preview-label-name,
+.barcode-preview-label-code,
+.barcode-preview-label-prices {
+  font-family: 'Questrial', Arial, sans-serif;
+  font-weight: 400;
+  font-size: 0.75rem;
+}
+
+/* Screenshot design: white/light bg, thin light blue border, centered content */
+.barcode-gen-preview-card--sample {
+  padding: 0.5rem;
+  overflow: hidden;
+  border: 1px solid #b4d4f0;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.barcode-gen-preview-card--sample .preview-label-name {
+  text-align: center;
+  color: #1a1a1a;
+  margin-bottom: 0.35rem;
+  padding: 0 0.25rem;
+}
+
+.barcode-gen-preview-card--sample .preview-barcode-wrap {
+  margin: 0.25rem 0;
+  min-height: 50px;
+  padding: 0.25rem;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.barcode-gen-preview-card--sample .preview-barcode-wrap--no-border {
+  border: none;
+}
+
+.barcode-gen-preview-card--sample .preview-code-text {
+  text-align: center;
+  color: #1a1a1a;
+  margin-bottom: 0.35rem;
+}
+
+.barcode-gen-preview-card--sample .preview-prices {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  color: #1a1a1a;
+  padding: 0.35rem 0.75rem 0.25rem;
+  box-sizing: border-box;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.barcode-gen-preview-card--sample .preview-sale {
+  color: #1a1a1a;
+  flex-shrink: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barcode-gen-preview-card--sample .preview-mrp {
+  color: #1a1a1a;
+  flex-shrink: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+}
+
+.barcode-gen-preview-card--sample .preview-shop-name {
+  width: 100%;
+  text-align: center;
+  padding: 0.5rem 0.5rem;
+  margin-top: 0.25rem;
+  background: #6482c8;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+  border-radius: 0 0 4px 4px;
+  font-family: 'Questrial', Arial, sans-serif;
+}
+
+.barcode-gen-preview-card .preview-barcode-wrap img {
+  max-width: 100%;
+  height: auto;
+}
+
+.barcode-gen-preview-card .preview-placeholder {
+  font-size: 0.8rem;
+  color: #adb5bd;
+}
+
+.barcode-gen-add-btn {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.65rem 1rem;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.barcode-gen-add-btn:hover {
+  background: #2980b9;
+}
+
+.barcode-gen-add-btn:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.barcode-gen-table-wrap {
+  background: white;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.barcode-gen-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.barcode-gen-table-wrap thead {
+  background: #e8f4fc;
+  color: #1a1a1a;
+}
+
+.barcode-gen-table-wrap th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.barcode-gen-table-wrap td {
+  padding: 0.65rem 1rem;
+  border-top: 1px solid #e0e6ed;
+  font-size: 0.9rem;
+}
+
+.barcode-gen-table-wrap tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.barcode-gen-delete-btn {
+  background: none;
+  border: none;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.barcode-gen-delete-btn:hover {
+  color: #e74c3c;
+  background: #fdeaea;
+}
+
+.barcode-gen-empty {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: #6c757d;
+  background: #f8f9fa;
+  border: 1px dashed #dee2e6;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.barcode-gen-empty p {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.barcode-gen-empty .empty-hint {
+  font-size: 0.875rem;
+  color: #adb5bd;
+}
+
+.barcode-gen-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.barcode-gen-footer .page-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: #1a1a1a;
+}
+
+.barcode-gen-footer .footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.barcode-gen-preview-btn {
+  padding: 0.5rem 1rem;
+  background: #f0f0f0;
+  color: #1a1a1a;
+  border: 1px solid #e0e6ed;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.barcode-gen-preview-btn:hover {
+  background: #e0e0e0;
+}
+
+.barcode-gen-generate-btn {
+  padding: 0.5rem 1.25rem;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.barcode-gen-generate-btn:hover {
+  background: #c0392b;
+}
+
+.barcode-gen-generate-btn:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+
+/* Preview modal – A4 size */
+.barcode-gen-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  overflow: auto;
+}
+
+.barcode-gen-modal--a4 {
+  background: #e5e7eb;
+  border-radius: 8px;
+  max-width: 100%;
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+}
+
+.barcode-gen-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e0e6ed;
+  background: white;
+  border-radius: 8px 8px 0 0;
+}
+
+.barcode-gen-modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.barcode-gen-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+
+.barcode-gen-modal-close:hover {
+  color: #1a1a1a;
+}
+
+.barcode-gen-modal-body--a4 {
+  padding: 1rem;
+  overflow: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* A4 page (210mm × 297mm) – real size so preview matches print */
+.barcode-preview-a4-page {
+  position: relative;
+  background: white;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.barcode-preview-cell {
+  position: absolute;
+  box-sizing: border-box;
+}
+
+/* Label content: screenshot design – light blue border, centered, same font */
+.barcode-preview-label {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #b4d4f0;
+  border-radius: 2px;
+  overflow: hidden;
+  background: #fff;
+  padding: 0.5mm;
+}
+
+.barcode-preview-label-name {
+  text-align: center;
+  padding: 0.3mm 0.5mm;
+  flex-shrink: 0;
+  font-size: 2mm;
+  color: #1a1a1a;
+}
+
+.barcode-preview-label-barcode {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 8mm;
+  padding: 0.5mm;
+}
+
+.barcode-preview-label-barcode--no-border {
+  border: none;
+}
+
+.barcode-preview-label-barcode img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.barcode-preview-label-code {
+  text-align: center;
+  padding: 0.3mm;
+  flex-shrink: 0;
+  font-size: 1.8mm;
+  color: #1a1a1a;
+}
+
+.barcode-preview-label-prices {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4mm 0.75mm 0.3mm;
+  flex-shrink: 0;
+  font-size: 1.8mm;
+  color: #1a1a1a;
+  box-sizing: border-box;
+  gap: 0.5mm;
+  min-width: 0;
+}
+
+.barcode-preview-label-sale,
+.barcode-preview-label-mrp {
+  color: #1a1a1a;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barcode-preview-label-mrp {
+  text-align: right;
+}
+
+.barcode-preview-label-shop {
+  margin-top: auto;
+  padding: 0.4mm 0.5mm;
+  text-align: center;
+  background: #6482c8;
+  color: #fff;
+  font-size: 2mm;
+  font-weight: 600;
+  flex-shrink: 0;
+  font-family: 'Questrial', Arial, sans-serif;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
