@@ -34,8 +34,9 @@ const ACLPermissions = lazy(() => import('./pages/ACLPermissions'));
 const OrderDetails = lazy(() => import('./pages/OrderDetails'));
 const Tables = lazy(() => import('./pages/Tables'));
 const TableOrders = lazy(() => import('./pages/TableOrders'));
+const BarcodeGenerator = lazy(() => import('./pages/BarcodeGenerator'));
 
-type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'sales' | 'sales-performance' | 'customers' | 'import' | 'reports' | 'export' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items' | 'quick-item-sales' | 'cash-flow' | 'acl-permissions' | 'order-details' | 'tables' | 'table-orders';
+type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'sales' | 'sales-performance' | 'customers' | 'import' | 'reports' | 'export' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items' | 'quick-item-sales' | 'cash-flow' | 'acl-permissions' | 'order-details' | 'tables' | 'table-orders' | 'barcode-generator';
 type AuthPage = 'signin' | 'signup';
 
 function App() {
@@ -305,6 +306,15 @@ function App() {
               <span className="nav-text">Calculators</span>
             </button>
             )}
+            {canView('barcode-generator') && !isHidden('barcode-generator') && (
+            <button
+              className={currentPage === 'barcode-generator' ? 'active' : ''}
+              onClick={() => setCurrentPage('barcode-generator')}
+            >
+              <span className="nav-icon">📊</span>
+              <span className="nav-text">Generate Barcode</span>
+            </button>
+            )}
             {canView('company') && !isHidden('company') && (
             <button
               className={currentPage === 'company' ? 'active' : ''}
@@ -358,13 +368,14 @@ function App() {
             {currentPage === 'cash-flow' && (canView('cash-flow') && !isHidden('cash-flow') ? <CashFlow /> : <AccessDenied />)}
             {currentPage === 'customers' && ((customer?.isAdmin || canView('customers')) && !isHidden('customers') ? <Customers /> : <AccessDenied />)}
             {currentPage === 'import' && (canView('import') && !isHidden('import') ? <Import /> : <AccessDenied />)}
-            {currentPage === 'quick-sale-items' && (canView('quick-sale-items') && !isHidden('quick-sale-items') ? <QuickSaleItems /> : <AccessDenied />)}
+            {currentPage === 'quick-sale-items' && (canView('quick-sale-items') && !isHidden('quick-sale-items') ? <QuickSaleItems onViewOrder={(orderId) => { setSelectedOrderId(orderId); setCurrentPage('order-details'); }} /> : <AccessDenied />)}
             {currentPage === 'quick-item-sales' && (canView('quick-item-sales') && !isHidden('quick-item-sales') ? <QuickItemSales onNavigate={setCurrentPage} /> : <AccessDenied />)}
             {currentPage === 'reports' && ((customer?.isAdmin || canView('reports')) && !isHidden('reports') ? <Reports /> : <AccessDenied />)}
             {currentPage === 'export' && ((customer?.isAdmin || canView('export')) && !isHidden('export') ? <Export /> : <AccessDenied />)}
             {currentPage === 'activity-logs' && ((customer?.isAdmin || canView('activity-logs')) && !isHidden('activity-logs') ? <ActivityLogs /> : <AccessDenied />)}
             {currentPage === 'bulk-operations' && (canView('bulk-operations') && !isHidden('bulk-operations') ? <BulkOperations /> : <AccessDenied />)}
             {currentPage === 'calculators' && (canView('calculators') && !isHidden('calculators') ? <Calculators /> : <AccessDenied />)}
+            {currentPage === 'barcode-generator' && (canView('barcode-generator') && !isHidden('barcode-generator') ? <BarcodeGenerator /> : <AccessDenied />)}
             {currentPage === 'company' && (canView('company') && !isHidden('company') ? <CompanySettings /> : <AccessDenied />)}
             {currentPage === 'settings' && (canView('settings') && !isHidden('settings') ? <Settings /> : <AccessDenied />)}
             {currentPage === 'acl-permissions' && customer?.isAdmin && <ACLPermissions />}

@@ -170,6 +170,18 @@ export default function Cart({ onNavigate }: CartProps) {
           setPaymentMethod('cash');
         }
       },
+      onKeyC: () => {
+        // C - Cash Payment: Same as F12
+        if (!processing && !showQuickAddModal && !showCustomerModal) {
+          setPaymentMethod('cash');
+        }
+      },
+      onEnter: () => {
+        // Enter - Complete Payment: Same as F10
+        if (!processing && paymentMethod && !showQuickAddModal && !showCustomerModal) {
+          handlePayment();
+        }
+      },
       onEscape: () => {
         // Escape - Close modals
         if (showQuickAddModal) {

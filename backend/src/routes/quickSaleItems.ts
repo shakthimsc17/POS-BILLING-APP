@@ -32,10 +32,12 @@ router.get('/', async (req: AuthRequest, res) => {
       name: item.name,
       quantity: item.quantity,
       price: item.price.toString(),
+      cost: item.cost != null ? item.cost.toString() : null,
       total_amount: item.totalAmount.toString(),
       sold_at: item.soldAt.toISOString(),
       added_to_inventory: item.addedToInventory,
       inventory_item_id: item.inventoryItemId,
+      transaction_id: item.transactionId,
       created_at: item.createdAt.toISOString(),
       updated_at: item.updatedAt.toISOString(),
     }));
@@ -54,6 +56,7 @@ router.post(
     body('name').notEmpty().trim(),
     body('quantity').isInt({ min: 1 }),
     body('price').isFloat({ min: 0 }),
+    body('cost').optional().isFloat({ min: 0 }),
   ],
   async (req: AuthRequest, res: Response) => {
     try {
@@ -62,14 +65,16 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { name, quantity, price } = req.body;
+      const { name, quantity, price, cost } = req.body;
       const totalAmount = parseFloat(price) * parseInt(quantity);
+      const costNum = cost !== undefined && cost !== '' ? parseFloat(cost) : null;
 
       const quickSaleItem = await prisma.quickSaleItem.create({
         data: {
           name: name.trim(),
           quantity: parseInt(quantity),
           price: parseFloat(price),
+          cost: costNum,
           totalAmount,
         },
       });
@@ -80,10 +85,12 @@ router.post(
         name: quickSaleItem.name,
         quantity: quickSaleItem.quantity,
         price: quickSaleItem.price.toString(),
+        cost: quickSaleItem.cost != null ? quickSaleItem.cost.toString() : null,
         total_amount: quickSaleItem.totalAmount.toString(),
         sold_at: quickSaleItem.soldAt.toISOString(),
         added_to_inventory: quickSaleItem.addedToInventory,
         inventory_item_id: quickSaleItem.inventoryItemId,
+        transaction_id: quickSaleItem.transactionId,
         created_at: quickSaleItem.createdAt.toISOString(),
         updated_at: quickSaleItem.updatedAt.toISOString(),
       });
@@ -143,10 +150,12 @@ router.put(
         name: quickSaleItem.name,
         quantity: quickSaleItem.quantity,
         price: quickSaleItem.price.toString(),
+        cost: quickSaleItem.cost != null ? quickSaleItem.cost.toString() : null,
         total_amount: quickSaleItem.totalAmount.toString(),
         sold_at: quickSaleItem.soldAt.toISOString(),
         added_to_inventory: quickSaleItem.addedToInventory,
         inventory_item_id: quickSaleItem.inventoryItemId,
+        transaction_id: quickSaleItem.transactionId,
         created_at: quickSaleItem.createdAt.toISOString(),
         updated_at: quickSaleItem.updatedAt.toISOString(),
       });
@@ -257,6 +266,38 @@ router.post(
           inventoryItemId: inventoryItem.id,
         },
       });
+
+      // Backfill transaction itemsJson with cost so profit reports are correct
+      if (quickSaleItem.transactionId) {
+        try {
+          const tx = await prisma.transaction.findUnique({
+            where: { id: quickSaleItem.transactionId },
+          });
+          if (tx) {
+            const costNum = parseFloat(cost);
+            const items = JSON.parse(tx.itemsJson);
+            const quickSaleLineId = `quick-sale-${id}`;
+            let updated = false;
+            for (const entry of items) {
+              const item = entry.item || entry;
+              if (item.id === quickSaleLineId) {
+                item.cost = costNum;
+                updated = true;
+                break;
+              }
+            }
+            if (updated) {
+              await prisma.transaction.update({
+                where: { id: quickSaleItem.transactionId },
+                data: { itemsJson: JSON.stringify(items) },
+              });
+            }
+          }
+        } catch (backfillError) {
+          console.error('Error backfilling transaction cost for quick sale item:', backfillError);
+          // Don't fail add-to-inventory
+        }
+      }
 
       // Transform to snake_case for frontend
       res.json({

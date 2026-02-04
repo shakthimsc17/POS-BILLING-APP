@@ -9,6 +9,7 @@ interface QuickSaleItem {
   name: string;
   quantity: number;
   price: string;
+  cost: string;
   errors: Record<string, string>;
 }
 
@@ -20,7 +21,7 @@ interface QuickSaleModalProps {
 
 export default function QuickSaleModal({ isOpen, onClose, onAddToQuickSale }: QuickSaleModalProps) {
   const [items, setItems] = useState<QuickSaleItem[]>([
-    { id: '1', name: '', quantity: 1, price: '', errors: {} }
+    { id: '1', name: '', quantity: 1, price: '', cost: '', errors: {} }
   ]);
   const [saving, setSaving] = useState(false);
 
@@ -47,7 +48,11 @@ export default function QuickSaleModal({ isOpen, onClose, onAddToQuickSale }: Qu
     if (!item.price || parseFloat(item.price) < 0) {
       errors.price = 'Price must be greater than or equal to 0';
     }
-    
+
+    if (item.cost !== undefined && item.cost !== '' && (parseFloat(item.cost) < 0 || isNaN(parseFloat(item.cost)))) {
+      errors.cost = 'Cost must be 0 or greater';
+    }
+
     return errors;
   };
 
@@ -66,7 +71,7 @@ export default function QuickSaleModal({ isOpen, onClose, onAddToQuickSale }: Qu
 
   const handleAddItem = () => {
     const newId = Date.now().toString();
-    setItems([...items, { id: newId, name: '', quantity: 1, price: '', errors: {} }]);
+    setItems([...items, { id: newId, name: '', quantity: 1, price: '', cost: '', errors: {} }]);
   };
 
   const handleRemoveItem = (id: string) => {
@@ -75,7 +80,7 @@ export default function QuickSaleModal({ isOpen, onClose, onAddToQuickSale }: Qu
     }
   };
 
-  const handleItemChange = (id: string, field: 'name' | 'quantity' | 'price', value: string | number) => {
+  const handleItemChange = (id: string, field: 'name' | 'quantity' | 'price' | 'cost', value: string | number) => {
     setItems(items.map(item => {
       if (item.id === id) {
         const updated = { ...item, [field]: value };
@@ -94,10 +99,12 @@ export default function QuickSaleModal({ isOpen, onClose, onAddToQuickSale }: Qu
     try {
       // Save all items
       for (const item of items) {
+        const costNum = item.cost !== undefined && item.cost !== '' ? parseFloat(item.cost) : undefined;
         await storageService.addQuickSaleItem({
           name: item.name.trim(),
           quantity: item.quantity,
           price: parseFloat(item.price),
+          cost: costNum,
         });
       }
 
@@ -109,7 +116,7 @@ export default function QuickSaleModal({ isOpen, onClose, onAddToQuickSale }: Qu
       setTimeout(() => notification.remove(), 2000);
 
       // Reset form
-      setItems([{ id: '1', name: '', quantity: 1, price: '', errors: {} }]);
+      setItems([{ id: '1', name: '', quantity: 1, price: '', cost: '', errors: {} }]);
 
       if (onAddToQuickSale) {
         onAddToQuickSale();
@@ -131,20 +138,22 @@ export default function QuickSaleModal({ isOpen, onClose, onAddToQuickSale }: Qu
     try {
       // Save all items to quick sale and add to cart
       for (const item of items) {
+        const costNum = item.cost !== undefined && item.cost !== '' ? parseFloat(item.cost) : 0;
         const quickSaleItem = await storageService.addQuickSaleItem({
           name: item.name.trim(),
           quantity: item.quantity,
           price: parseFloat(item.price),
+          cost: costNum > 0 ? costNum : undefined,
         });
 
-        // Create a temporary item for the cart
+        // Create a temporary item for the cart (cost for profit calculation)
         const tempItem = {
           id: `quick-sale-${quickSaleItem.id}`,
           customer_id: '',
           name: item.name.trim(),
           code: `QS-${quickSaleItem.id.substring(0, 8)}`,
           price: parseFloat(item.price),
-          cost: 0,
+          cost: costNum,
           stock: 0,
           created_at: new Date().toISOString(),
         };
@@ -161,7 +170,7 @@ export default function QuickSaleModal({ isOpen, onClose, onAddToQuickSale }: Qu
       setTimeout(() => notification.remove(), 2000);
 
       // Reset form
-      setItems([{ id: '1', name: '', quantity: 1, price: '', errors: {} }]);
+      setItems([{ id: '1', name: '', quantity: 1, price: '', cost: '', errors: {} }]);
 
       onClose();
     } catch (error: any) {
@@ -263,6 +272,20 @@ export default function QuickSaleModal({ isOpen, onClose, onAddToQuickSale }: Qu
                         step="0.01"
                       />
                       {item.errors.price && <span className="error-message">{item.errors.price}</span>}
+                    </div>
+
+                    <div className="form-group">
+                      <label>Cost (₹) <span className="optional">optional</span></label>
+                      <input
+                        type="number"
+                        className={`quick-sale-input ${item.errors.cost ? 'error' : ''}`}
+                        value={item.cost}
+                        onChange={(e) => handleItemChange(item.id, 'cost', e.target.value)}
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                      />
+                      {item.errors.cost && <span className="error-message">{item.errors.cost}</span>}
                     </div>
                   </div>
 

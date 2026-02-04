@@ -46,7 +46,7 @@ export function usePermissions() {
         const pages = [
           'dashboard', 'cart', 'sales', 'sales-performance', 'cash-flow',
           'categories', 'items', 'quick-sale-items', 'customers', 'reports', 'export',
-          'company', 'settings', 'activity-logs', 'bulk-operations'
+          'company', 'settings', 'activity-logs', 'bulk-operations', 'barcode-generator'
         ];
         pages.forEach(page => {
           allPermissions.set(page, {

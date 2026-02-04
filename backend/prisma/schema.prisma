@@ -109,6 +109,7 @@ model Transaction {
   transactionCustomer Customer?      @relation("TransactionCustomers", fields: [transactionCustomerId], references: [id], onDelete: SetNull)
   salesCustomer       SalesCustomer? @relation(fields: [salesCustomerId], references: [id], onDelete: SetNull)
   tableOrder          TableOrder?
+  quickSaleItems       QuickSaleItem[]
 
   @@index([customerId])
   @@index([createdAt])
@@ -205,23 +206,27 @@ model SalesCustomer {
 }
 
 model QuickSaleItem {
-  id               String   @id @default(uuid()) @db.Uuid
-  name             String   @db.VarChar(255)
+  id               String    @id @default(uuid()) @db.Uuid
+  name             String    @db.VarChar(255)
   quantity         Int
-  price            Decimal  @db.Decimal(10, 2)
-  totalAmount      Decimal  @map("total_amount") @db.Decimal(10, 2)
-  soldAt           DateTime @default(now()) @map("sold_at") @db.Timestamptz(6)
-  addedToInventory Boolean  @default(false) @map("added_to_inventory")
-  inventoryItemId  String?  @map("inventory_item_id") @db.Uuid
-  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  price            Decimal   @db.Decimal(10, 2)
+  cost             Decimal?  @db.Decimal(10, 2)
+  totalAmount      Decimal   @map("total_amount") @db.Decimal(10, 2)
+  soldAt           DateTime  @default(now()) @map("sold_at") @db.Timestamptz(6)
+  addedToInventory Boolean   @default(false) @map("added_to_inventory")
+  inventoryItemId  String?   @map("inventory_item_id") @db.Uuid
+  transactionId    String?   @map("transaction_id") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // Relations
-  inventoryItem Item? @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+  inventoryItem Item?        @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
 
   @@index([addedToInventory])
   @@index([inventoryItemId])
   @@index([soldAt])
+  @@index([transactionId])
   @@map("quick_sale_items")
 }
 

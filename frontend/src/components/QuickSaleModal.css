@@ -175,6 +175,13 @@
   margin-left: 2px;
 }
 
+.modal-content.quick-sale-modal .optional {
+  font-size: 0.85em;
+  color: #6c757d;
+  font-weight: normal;
+  margin-left: 4px;
+}
+
 .quick-sale-input {
   width: 100%;
   padding: 0.75rem;
@@ -211,7 +218,7 @@
 
 .modal-content.quick-sale-modal .form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 1rem;
   align-items: start;
 }

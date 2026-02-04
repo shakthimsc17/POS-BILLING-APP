@@ -265,6 +265,9 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 placeholder="🔍 Search items..."
+                onNavigate={(page) => {
+                  if (page === 'cart') onNavigate('cart');
+                }}
               />
             )}
             <button

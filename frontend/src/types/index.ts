@@ -153,10 +153,12 @@ export interface QuickSaleItem {
   name: string;
   quantity: number;
   price: number | string;
+  cost?: number | string | null;
   total_amount: number | string;
   sold_at: string;
   added_to_inventory: boolean;
   inventory_item_id?: string;
+  transaction_id?: string | null;
   created_at: string;
   updated_at: string;
 }

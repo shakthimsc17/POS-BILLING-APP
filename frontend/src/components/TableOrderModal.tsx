@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTableStore } from '../store/tableStore';
 import { useInventoryStore } from '../store/inventoryStore';
 import { useCompanyStore } from '../store/companyStore';
@@ -163,7 +163,7 @@ export default function TableOrderModal({
     return getSubtotal() + getTax() - getDiscountAmount();
   };
 
-  const handleSaveOrder = async () => {
+  const handleSaveOrder = useCallback(async () => {
     if (!table || orderItems.length === 0) {
       alert('Please add items to the order');
       return;
@@ -178,7 +178,6 @@ export default function TableOrderModal({
       })));
 
       if (existingOrder) {
-        // Update existing order
         await updateTableOrder(existingOrder.id, {
           items_json: itemsJson,
           tax_rate: taxRate,
@@ -186,7 +185,6 @@ export default function TableOrderModal({
           total_amount: getTotal(),
         });
       } else {
-        // Create new order
         await createTableOrder({
           table_id: table.id,
           items_json: itemsJson,
@@ -204,9 +202,9 @@ export default function TableOrderModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [table, orderItems, existingOrder, taxRate, discount, getTotal, updateTableOrder, createTableOrder, onOrderCreated, onClose]);
 
-  const handleCompleteOrder = async () => {
+  const handleCompleteOrder = useCallback(async () => {
     if (!table || orderItems.length === 0) {
       alert('Please add items to the order');
       return;
@@ -268,7 +266,29 @@ export default function TableOrderModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [table, orderItems, existingOrder, taxRate, discount, getTotal, createTableOrder, completeTableOrder, onOrderCreated, onClose]);
+
+  // Keyboard: Space = save order, Enter = complete order (when not typing in input)
+  useEffect(() => {
+    if (!isOpen || !table) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable;
+      if (isInput) return;
+
+      if (e.key === ' ') {
+        e.preventDefault();
+        if (!loading && orderItems.length > 0) handleSaveOrder();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (!loading && orderItems.length > 0) handleCompleteOrder();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, table, loading, orderItems.length, handleSaveOrder, handleCompleteOrder]);
 
   if (!isOpen || !table) return null;
 
