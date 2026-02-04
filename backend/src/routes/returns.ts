@@ -377,12 +377,68 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
     // Create return transaction for all return types
     let returnTransaction = null;
     let refundAmount = returnRecord.refundAmount ? parseFloat(returnRecord.refundAmount.toString()) : 0;
-    let returnItems = returnRecord.restockedItems || [];
+    let returnItems = [];
     
-    // For full returns, calculate refund amount from original transaction and use all items
+    // For full returns, get complete item details from original transaction
     if (returnRecord.returnType === 'full' && returnRecord.originalTransaction) {
       refundAmount = parseFloat(returnRecord.originalTransaction.totalAmount.toString());
-      returnItems = itemsToRestock; // Use the items we just calculated for restocking
+      // Parse original items to get complete details including prices
+      const originalItems = JSON.parse(returnRecord.originalTransaction.itemsJson || '[]');
+      returnItems = originalItems.map((item: any) => ({
+        item: {
+          id: item.item?.id || item.id,
+          name: item.item?.name || item.name,
+          price: item.item?.price || item.price || 0,
+          cost: item.item?.cost || item.cost || 0,
+          display_name: item.item?.display_name || item.display_name
+        },
+        quantity: -(item.quantity || 1), // Negative quantity for returns
+        originalPrice: item.originalPrice || (item.item?.price || item.price || 0),
+        customPrice: item.customPrice,
+        subtotal: -Math.abs((item.customPrice !== undefined ? item.customPrice : item.originalPrice || (item.item?.price || item.price || 0)) * (item.quantity || 1))
+      }));
+    } else if (returnRecord.restockedItems && returnRecord.originalTransaction) {
+      // For partial returns, get complete item details for returned items
+      const originalItems = JSON.parse(returnRecord.originalTransaction.itemsJson || '[]');
+      const restockedItems = returnRecord.restockedItems as any[];
+      
+      returnItems = restockedItems.map((restockedItem: any) => {
+        // Find the corresponding original item to get complete details
+        const originalItem = originalItems.find((orig: any) => 
+          (orig.item?.id || orig.id) === restockedItem.itemId
+        );
+        
+        if (originalItem) {
+          return {
+            item: {
+              id: originalItem.item?.id || originalItem.id,
+              name: originalItem.item?.name || originalItem.name,
+              price: originalItem.item?.price || originalItem.price || 0,
+              cost: originalItem.item?.cost || originalItem.cost || 0,
+              display_name: originalItem.item?.display_name || originalItem.display_name
+            },
+            quantity: -(restockedItem.quantity || 1), // Negative quantity for returns
+            originalPrice: originalItem.originalPrice || (originalItem.item?.price || originalItem.price || 0),
+            customPrice: originalItem.customPrice,
+            subtotal: -Math.abs((originalItem.customPrice !== undefined ? originalItem.customPrice : originalItem.originalPrice || (originalItem.item?.price || originalItem.price || 0)) * (restockedItem.quantity || 1))
+          };
+        }
+        
+        // Fallback if original item not found
+        return {
+          item: {
+            id: restockedItem.itemId,
+            name: restockedItem.name || 'Unknown Item',
+            price: 0,
+            cost: 0,
+            display_name: restockedItem.name || 'Unknown Item'
+          },
+          quantity: -(restockedItem.quantity || 1),
+          originalPrice: 0,
+          customPrice: 0,
+          subtotal: 0
+        };
+      });
     }
     
     if (refundAmount > 0 || returnRecord.returnType === 'full' || returnRecord.returnType === 'partial') {

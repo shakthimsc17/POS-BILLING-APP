@@ -952,6 +952,7 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
                   value={editedTransaction?.created_at ? new Date(editedTransaction.created_at).toISOString().slice(0, 16) : ''}
                   onChange={(e) => handleDateChange(e.target.value)}
                   className="form-input"
+                  style={{ width: '200px', height: '32px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
                 />
               ) : (
                 date.toLocaleDateString()
@@ -966,6 +967,7 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
                   value={editedTransaction?.payment_method || transaction.payment_method}
                   onChange={(e) => handlePaymentMethodChange(e.target.value)}
                   className="form-input"
+                  style={{ width: '120px', height: '32px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
                 >
                   <option value="cash">Cash</option>
                   <option value="card">Card</option>
@@ -1046,7 +1048,7 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
                             onChange={(e) => handleQuantityChange(index, parseInt(e.target.value) || 0)}
                             className="quantity-input"
                             min="0"
-                            style={{ width: '60px', textAlign: 'center', margin: '0 5px' }}
+                            style={{ width: '80px', height: '32px', textAlign: 'center', margin: '0 5px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
                           />
                           <button 
                             className="btn btn-xs btn-secondary"
@@ -1068,7 +1070,7 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
                           className="price-input"
                           min="0"
                           step="0.01"
-                          style={{ width: '80px', textAlign: 'right' }}
+                          style={{ width: '100px', height: '32px', textAlign: 'right', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
                         />
                       ) : (
                         formatCurrency(sellingPrice)
