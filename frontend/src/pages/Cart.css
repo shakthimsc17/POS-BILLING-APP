@@ -12,11 +12,7 @@
   flex-wrap: wrap;
 }
 
-.cart-header-search {
-  flex: 1;
-  min-width: 300px;
-  max-width: 500px;
-}
+
 
 .cart-header h1 {
   font-size: 2rem;

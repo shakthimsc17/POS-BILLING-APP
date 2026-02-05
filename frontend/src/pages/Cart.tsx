@@ -7,7 +7,7 @@ import { printReceipt } from '../utils/printer';
 import { SalesCustomer } from '../types';
 import QuickAddItemModal from '../components/QuickAddItemModal';
 import CustomerSelectModal from '../components/CustomerSelectModal';
-import SearchBarcodeInput from '../components/SearchBarcodeInput';
+
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import './Cart.css';
 
@@ -43,7 +43,7 @@ export default function Cart({ onNavigate }: CartProps) {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [editingPrice, setEditingPrice] = useState<Record<string, string>>({});
   const [cartSavedNotification, setCartSavedNotification] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+
 
   // Refs for input fields that need to be focused
   const discountInputRef = useRef<HTMLInputElement>(null);
@@ -170,8 +170,8 @@ export default function Cart({ onNavigate }: CartProps) {
           setPaymentMethod('cash');
         }
       },
-      onKeyC: () => {
-        // C - Cash Payment: Same as F12
+      onKeyTab: () => {
+        // Tab - Cash Payment: Same as F12
         if (!processing && !showQuickAddModal && !showCustomerModal) {
           setPaymentMethod('cash');
         }
@@ -332,13 +332,7 @@ export default function Cart({ onNavigate }: CartProps) {
       )}
       <div className="cart-header">
         <h1>Sales Invoice</h1>
-        <div className="cart-header-search">
-          <SearchBarcodeInput
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            placeholder="🔍 Search or scan barcode..."
-          />
-        </div>
+
         <button className="btn btn-secondary" onClick={() => onNavigate('dashboard')}>
           ← Back to Dashboard
         </button>

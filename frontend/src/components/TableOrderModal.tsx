@@ -25,7 +25,7 @@ export default function TableOrderModal({
   const { createTableOrder, getActiveTableOrder, updateTableOrder, completeTableOrder } = useTableStore();
   const { items, loadItems } = useInventoryStore();
   const { company, loadCompany } = useCompanyStore();
-  
+
   const [orderItems, setOrderItems] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [displayItems, setDisplayItems] = useState<Item[]>([]);
@@ -33,6 +33,7 @@ export default function TableOrderModal({
   const [existingOrder, setExistingOrder] = useState<any>(null);
   const [taxRate, setTaxRate] = useState(0);
   const [discount, setDiscount] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'upi'>('cash');
   const [useQuickSearch, setUseQuickSearch] = useState(false);
 
   useEffect(() => {
@@ -210,12 +211,6 @@ export default function TableOrderModal({
       return;
     }
 
-    const paymentMethod = prompt('Payment method (cash/card/upi):', 'cash');
-    if (!paymentMethod || !['cash', 'card', 'upi'].includes(paymentMethod)) {
-      alert('Invalid payment method');
-      return;
-    }
-
     setLoading(true);
     try {
       let orderId = existingOrder?.id;
@@ -266,7 +261,7 @@ export default function TableOrderModal({
     } finally {
       setLoading(false);
     }
-  }, [table, orderItems, existingOrder, taxRate, discount, getTotal, createTableOrder, completeTableOrder, onOrderCreated, onClose]);
+  }, [table, orderItems, existingOrder, taxRate, discount, getTotal, createTableOrder, completeTableOrder, onOrderCreated, onClose, paymentMethod]);
 
   // Keyboard: Space = save order, Enter = complete order (when not typing in input)
   useEffect(() => {
@@ -425,6 +420,30 @@ export default function TableOrderModal({
               <div className="summary-total">
                 <span>Total:</span>
                 <span className="total-amount">{formatCurrency(getTotal())}</span>
+              </div>
+            </div>
+
+            <div className="card">
+              <h3>Payment Method</h3>
+              <div className="payment-options">
+                <button
+                  className={`payment-option ${paymentMethod === 'cash' ? 'active' : ''}`}
+                  onClick={() => setPaymentMethod('cash')}
+                >
+                  💵 Cash
+                </button>
+                <button
+                  className={`payment-option ${paymentMethod === 'card' ? 'active' : ''}`}
+                  onClick={() => setPaymentMethod('card')}
+                >
+                  💳 Card
+                </button>
+                <button
+                  className={`payment-option ${paymentMethod === 'upi' ? 'active' : ''}`}
+                  onClick={() => setPaymentMethod('upi')}
+                >
+                  📱 UPI
+                </button>
               </div>
             </div>
 

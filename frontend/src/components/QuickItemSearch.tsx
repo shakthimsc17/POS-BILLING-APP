@@ -23,7 +23,7 @@ export default function QuickItemSearch({
   const [isSearching, setIsSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { addItem: cartAddItem } = useCartStore();
-  
+
   // Use custom add function if provided, otherwise use cart
   const addItem = customAddItem || cartAddItem;
 
@@ -57,7 +57,7 @@ export default function QuickItemSearch({
       if (item) {
         addItem(item, 1);
         setMappingCode('');
-        
+
         // Show notification
         const notification = document.createElement('div');
         notification.className = 'notification';
