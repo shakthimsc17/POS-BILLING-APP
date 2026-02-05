@@ -6,12 +6,12 @@ import './Settings.css';
 
 export default function Settings() {
   const { company, loadCompany } = useCompanyStore();
-  
+
   // Settings state
   const [settings, setSettings] = useState<SettingsType | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
+
   // Prefix management
   const [prefixes, setPrefixes] = useState<ItemCodePrefix[]>([]);
   const [showPrefixForm, setShowPrefixForm] = useState(false);
@@ -20,10 +20,21 @@ export default function Settings() {
   const [editingPrefix, setEditingPrefix] = useState<ItemCodePrefix | null>(null);
   const [loadingPrefixes, setLoadingPrefixes] = useState(false);
 
+  // Cloud Backup state
+  const [backupConfigured, setBackupConfigured] = useState(false);
+  const [backupMaskedUrl, setBackupMaskedUrl] = useState<string | null>(null);
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
+  const [lastSyncStatus, setLastSyncStatus] = useState<string | null>(null);
+  const [supabaseUrl, setSupabaseUrl] = useState('');
+  const [showBackupForm, setShowBackupForm] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [savingConnection, setSavingConnection] = useState(false);
+
   useEffect(() => {
     loadCompany();
     loadSettings();
     loadPrefixes();
+    loadBackupStatus();
   }, [loadCompany]);
 
   const loadSettings = async () => {
@@ -135,6 +146,78 @@ export default function Settings() {
     }
   };
 
+  // Cloud Backup functions
+  const loadBackupStatus = async () => {
+    try {
+      const status = await storageService.getBackupStatus();
+      setBackupConfigured(status.configured);
+      setBackupMaskedUrl(status.maskedUrl);
+      setLastSyncAt(status.lastSyncAt);
+      setLastSyncStatus(status.lastSyncStatus);
+    } catch (error) {
+      console.error('Error loading backup status:', error);
+    }
+  };
+
+  const handleSaveConnection = async () => {
+    if (!supabaseUrl.trim()) {
+      alert('Please enter a Supabase connection URL');
+      return;
+    }
+
+    if (!supabaseUrl.startsWith('postgresql://') && !supabaseUrl.startsWith('postgres://')) {
+      alert('Invalid connection URL. Must start with postgresql://');
+      return;
+    }
+
+    try {
+      setSavingConnection(true);
+      const result = await storageService.saveBackupConnection(supabaseUrl);
+      setBackupConfigured(true);
+      setBackupMaskedUrl(result.maskedUrl);
+      setSupabaseUrl('');
+      setShowBackupForm(false);
+      alert('Connection saved successfully!');
+    } catch (error: any) {
+      alert(`Failed to save connection: ${error.message || 'Unknown error'}`);
+    } finally {
+      setSavingConnection(false);
+    }
+  };
+
+  const handleSyncNow = async () => {
+    if (!confirm('This will sync your entire database to Supabase. Continue?')) return;
+
+    try {
+      setSyncing(true);
+      const result = await storageService.syncToSupabase();
+      setLastSyncAt(result.syncedAt);
+      setLastSyncStatus('success');
+      alert('Database synced successfully!');
+    } catch (error: any) {
+      setLastSyncStatus('failed');
+      alert(`Sync failed: ${error.message || 'Unknown error'}`);
+    } finally {
+      setSyncing(false);
+      loadBackupStatus();
+    }
+  };
+
+  const handleRemoveConnection = async () => {
+    if (!confirm('Remove cloud backup connection?')) return;
+
+    try {
+      await storageService.removeBackupConnection();
+      setBackupConfigured(false);
+      setBackupMaskedUrl(null);
+      setLastSyncAt(null);
+      setLastSyncStatus(null);
+      alert('Connection removed');
+    } catch (error: any) {
+      alert(`Failed to remove connection: ${error.message || 'Unknown error'}`);
+    }
+  };
+
   if (loading) {
     return (
       <div className="settings-page">
@@ -160,9 +243,9 @@ export default function Settings() {
       <div className="settings-header">
         {company.logo && (
           <div className="page-logo-container">
-            <img 
-              src={company.logo} 
-              alt={company.name || 'Company Logo'} 
+            <img
+              src={company.logo}
+              alt={company.name || 'Company Logo'}
               className="page-logo"
             />
           </div>
@@ -218,7 +301,7 @@ export default function Settings() {
                     </select>
                   </td>
                   <td className="setting-description">
-                    {settings.item_log_actions === 'update_delete' 
+                    {settings.item_log_actions === 'update_delete'
                       ? 'Only log when items are updated or deleted (recommended)'
                       : 'Log all item actions including creation'}
                   </td>
@@ -403,6 +486,117 @@ export default function Settings() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+
+        {/* Cloud Backup Settings */}
+        <div className="card settings-card">
+          <h2>☁️ Cloud Backup (Supabase)</h2>
+          <p className="section-description">
+            Sync your local database to a remote Supabase PostgreSQL for backup and recovery.
+          </p>
+
+          {backupConfigured ? (
+            <div className="backup-status">
+              <div className="settings-table">
+                <table>
+                  <tbody>
+                    <tr>
+                      <td className="setting-label">Connection</td>
+                      <td>
+                        <span className="backup-connected">✅ Connected</span>
+                        <span className="backup-url">{backupMaskedUrl}</span>
+                      </td>
+                      <td>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={handleRemoveConnection}
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="setting-label">Last Sync</td>
+                      <td colSpan={2}>
+                        {lastSyncAt ? (
+                          <>
+                            <span className={`sync-status ${lastSyncStatus}`}>
+                              {lastSyncStatus === 'success' ? '✅' : lastSyncStatus === 'failed' ? '❌' : '⏳'}
+                              {lastSyncStatus}
+                            </span>
+                            <span className="sync-time">
+                              {new Date(lastSyncAt).toLocaleString()}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="sync-never">Never synced</span>
+                        )}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div className="backup-actions">
+                <button
+                  className="btn btn-primary"
+                  onClick={handleSyncNow}
+                  disabled={syncing}
+                >
+                  {syncing ? '🔄 Syncing...' : '🔄 Sync Now'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="backup-setup">
+              {showBackupForm ? (
+                <div className="backup-form">
+                  <p className="form-help">
+                    Enter your Supabase PostgreSQL connection string.<br />
+                    Find it in Supabase Dashboard → Settings → Database → Connection String (URI).
+                  </p>
+                  <label>
+                    Connection URL:
+                    <input
+                      type="password"
+                      className="input"
+                      value={supabaseUrl}
+                      onChange={(e) => setSupabaseUrl(e.target.value)}
+                      placeholder="postgresql://postgres:password@host:5432/postgres"
+                    />
+                  </label>
+                  <div className="form-actions">
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleSaveConnection}
+                      disabled={savingConnection}
+                    >
+                      {savingConnection ? 'Saving...' : 'Save Connection'}
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        setShowBackupForm(false);
+                        setSupabaseUrl('');
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <p>📭 No cloud backup configured</p>
+                  <p className="empty-subtext">Connect to Supabase to enable daily backups</p>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => setShowBackupForm(true)}
+                  >
+                    + Configure Backup
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

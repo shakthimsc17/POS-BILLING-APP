@@ -23,6 +23,7 @@ import cartsRoutes from './routes/carts.js';
 import tablesRoutes from './routes/tables.js';
 import tableOrdersRoutes from './routes/tableOrders.js';
 import exportDbRoutes from './routes/exportDb.js';
+import backupRoutes from './routes/backup.js';
 
 dotenv.config();
 
@@ -103,6 +104,7 @@ app.use('/api/carts', cartsRoutes);
 app.use('/api/tables', tablesRoutes);
 app.use('/api/table-orders', tableOrdersRoutes);
 app.use('/api/export-db', exportDbRoutes);
+app.use('/api/backup', backupRoutes);
 
 // Error handling
 app.use(errorHandler);
