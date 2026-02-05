@@ -36,15 +36,15 @@ export default function QuickSaleModal({ isOpen, onClose, onAddToQuickSale }: Qu
 
   const validateItem = (item: QuickSaleItem): Record<string, string> => {
     const errors: Record<string, string> = {};
-    
+
     if (!item.name.trim()) {
       errors.name = 'Item name is required';
     }
-    
+
     if (item.quantity < 1) {
       errors.quantity = 'Quantity must be at least 1';
     }
-    
+
     if (!item.price || parseFloat(item.price) < 0) {
       errors.price = 'Price must be greater than or equal to 0';
     }
@@ -148,7 +148,7 @@ export default function QuickSaleModal({ isOpen, onClose, onAddToQuickSale }: Qu
 
         // Create a temporary item for the cart (cost for profit calculation)
         const tempItem = {
-          id: `quick-sale-${quickSaleItem.id}`,
+          id: quickSaleItem.id,
           customer_id: '',
           name: item.name.trim(),
           code: `QS-${quickSaleItem.id.substring(0, 8)}`,

@@ -135,54 +135,55 @@ router.post(
       // Parse items for stock update and activity logging
       const items = typeof itemsJson === 'string' ? JSON.parse(itemsJson) : itemsJson;
 
-      // Update item stock (items are shared, so no ownership check needed)
+      // Update item stock and link quick sale items
       try {
+        const quickSalePrefix = 'quick-sale-';
+        
         for (const cartItem of items) {
           const item = cartItem.item || cartItem;
           const quantity = cartItem.quantity || 1;
-          const itemId = item.id;
+          let itemId = item.id;
+
+          // Handle legacy prefix if still present
+          if (typeof itemId === 'string' && itemId.startsWith(quickSalePrefix)) {
+            itemId = itemId.slice(quickSalePrefix.length);
+          }
 
           if (itemId) {
-            // Find item (shared inventory - no customerId check)
+            // 1. Try to find in Inventory first
             const existingItem = await prisma.item.findUnique({
               where: { id: itemId },
             });
 
-            if (existingItem && existingItem.stock >= quantity) {
-              await prisma.item.update({
-                where: { id: itemId },
-                data: { 
-                  stock: existingItem.stock - quantity,
-                  purchaseQty: { increment: quantity },
-                },
+            if (existingItem) {
+              if (existingItem.stock >= quantity) {
+                await prisma.item.update({
+                  where: { id: itemId },
+                  data: { 
+                    stock: existingItem.stock - quantity,
+                    purchaseQty: { increment: quantity },
+                  },
+                });
+              }
+            } else {
+              // 2. If not in inventory, check if it's a Quick Sale Item
+              // This handles both legacy prefixed IDs (stripped above) and new direct UUIDs
+              const quickSaleItem = await prisma.quickSaleItem.findUnique({
+                where: { id: itemId }
               });
-            }
-          }
-        }
-      } catch (stockError) {
-        console.error('Error updating stock:', stockError);
-        // Don't fail transaction if stock update fails
-      }
 
-      // Link quick sale items to this transaction (for later cost backfill)
-      try {
-        const quickSalePrefix = 'quick-sale-';
-        for (const cartItem of items) {
-          const item = cartItem.item || cartItem;
-          const itemId = item?.id;
-          if (typeof itemId === 'string' && itemId.startsWith(quickSalePrefix)) {
-            const quickSaleItemId = itemId.slice(quickSalePrefix.length);
-            if (quickSaleItemId) {
-              await prisma.quickSaleItem.updateMany({
-                where: { id: quickSaleItemId },
-                data: { transactionId: transaction.id },
-              });
+              if (quickSaleItem) {
+                await prisma.quickSaleItem.update({
+                  where: { id: itemId },
+                  data: { transactionId: transaction.id },
+                });
+              }
             }
           }
         }
-      } catch (linkError) {
-        console.error('Error linking quick sale items to transaction:', linkError);
-        // Don't fail transaction creation
+      } catch (error) {
+        console.error('Error processing transaction items (stock/linking):', error);
+        // Don't fail transaction if stock/link update fails
       }
 
       // Transform response to snake_case for frontend compatibility

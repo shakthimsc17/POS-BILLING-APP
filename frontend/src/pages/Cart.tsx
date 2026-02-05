@@ -62,7 +62,7 @@ export default function Cart({ onNavigate }: CartProps) {
   useEffect(() => {
     // Ensure items are loaded for quick add functionality
     loadItems();
-    
+
     // Load saved cart
     loadCart().then((result) => {
       if (result?.salesCustomerId) {
@@ -220,7 +220,7 @@ export default function Cart({ onNavigate }: CartProps) {
     try {
       const total = getTotal();
       // If cash payment and no amount entered, treat as exact payment (received = total)
-      const received = paymentMethod === 'cash' 
+      const received = paymentMethod === 'cash'
         ? (receivedAmount ? Number(receivedAmount) : total)
         : total;
       // Calculate change (positive) or discount (negative)
@@ -277,12 +277,12 @@ export default function Cart({ onNavigate }: CartProps) {
 
       // Show success message and navigate
       const discountAmount = changeAmount < 0 ? Math.abs(changeAmount) : 0;
-      const changeMessage = discountAmount > 0 
-        ? `Discount: ${formatCurrency(discountAmount)}` 
-        : actualChange > 0 
-        ? `Change: ${formatCurrency(actualChange)}` 
-        : 'Exact amount';
-      
+      const changeMessage = discountAmount > 0
+        ? `Discount: ${formatCurrency(discountAmount)}`
+        : actualChange > 0
+          ? `Change: ${formatCurrency(actualChange)}`
+          : 'Exact amount';
+
       // Show brief success notification
       const notification = document.createElement('div');
       notification.className = 'notification';
@@ -290,7 +290,7 @@ export default function Cart({ onNavigate }: CartProps) {
       notification.textContent = `Payment successful! ${changeMessage}`;
       document.body.appendChild(notification);
       setTimeout(() => notification.remove(), 3000);
-      
+
       onNavigate('dashboard');
     } catch (error) {
       alert('Payment failed. Please try again.');
@@ -302,7 +302,7 @@ export default function Cart({ onNavigate }: CartProps) {
 
   const total = getTotal();
   // If cash payment and no amount entered, treat as exact payment (received = total)
-  const received = paymentMethod === 'cash' 
+  const received = paymentMethod === 'cash'
     ? (receivedAmount ? Number(receivedAmount) : total)
     : total;
   const change = paymentMethod === 'cash' ? received - total : 0;
@@ -374,71 +374,71 @@ export default function Cart({ onNavigate }: CartProps) {
             </div>
             <div className="cart-items-list">
               {items.map((cartItem) => {
-              const itemPrice = getItemPrice(cartItem.item.id);
-              const isCustomPrice = hasCustomPrice(cartItem.item.id);
-              const originalPrice = cartItem.originalPrice ?? (typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price);
-              const editingPriceValue = editingPrice[cartItem.item.id];
-              
-              const isQuickSaleItem = cartItem.item.id.startsWith('quick-sale-');
-              
-              return (
-                <div key={cartItem.item.id} className="cart-item">
-                  <div className="cart-item-name-section">
-                    <div className="item-name-row">
-                      <h3>{cartItem.item.name}</h3>
-                      {isQuickSaleItem && (
-                        <span className="quick-sale-badge" title="Quick Sale Item">⚡ Quick Sale</span>
-                      )}
+                const itemPrice = getItemPrice(cartItem.item.id);
+                const isCustomPrice = hasCustomPrice(cartItem.item.id);
+                const originalPrice = cartItem.originalPrice ?? (typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price);
+                const editingPriceValue = editingPrice[cartItem.item.id];
+
+                const isQuickSaleItem = cartItem.item.code?.startsWith('QS-');
+
+                return (
+                  <div key={cartItem.item.id} className="cart-item">
+                    <div className="cart-item-name-section">
+                      <div className="item-name-row">
+                        <h3>{cartItem.item.name}</h3>
+                        {isQuickSaleItem && (
+                          <span className="quick-sale-badge" title="Quick Sale Item">⚡ Quick Sale</span>
+                        )}
+                      </div>
+                      <p className="item-code">Code: {cartItem.item.code}</p>
                     </div>
-                    <p className="item-code">Code: {cartItem.item.code}</p>
-                  </div>
-                  <div className="cart-item-price-section">
-                    <div className="price-input-wrapper-inline">
-                      <input
-                        type="number"
-                        className={`price-input-inline ${isCustomPrice ? 'custom-price' : ''}`}
-                        value={editingPriceValue !== undefined ? editingPriceValue : itemPrice.toFixed(2)}
-                        onChange={(e) => handlePriceChange(cartItem.item.id, e.target.value)}
-                        onBlur={() => handlePriceBlur(cartItem.item.id)}
-                        min="0"
-                        step="0.01"
-                        placeholder="Price"
-                      />
+                    <div className="cart-item-price-section">
+                      <div className="price-input-wrapper-inline">
+                        <input
+                          type="number"
+                          className={`price-input-inline ${isCustomPrice ? 'custom-price' : ''}`}
+                          value={editingPriceValue !== undefined ? editingPriceValue : itemPrice.toFixed(2)}
+                          onChange={(e) => handlePriceChange(cartItem.item.id, e.target.value)}
+                          onBlur={() => handlePriceBlur(cartItem.item.id)}
+                          min="0"
+                          step="0.01"
+                          placeholder="Price"
+                        />
+                        {isCustomPrice && (
+                          <span className="custom-price-badge" title="Custom price">*</span>
+                        )}
+                      </div>
                       {isCustomPrice && (
-                        <span className="custom-price-badge" title="Custom price">*</span>
+                        <p className="original-price-hint-inline">Orig: {formatCurrency(originalPrice)}</p>
                       )}
                     </div>
-                    {isCustomPrice && (
-                      <p className="original-price-hint-inline">Orig: {formatCurrency(originalPrice)}</p>
-                    )}
-                  </div>
-                  <div className="cart-item-controls">
+                    <div className="cart-item-controls">
+                      <button
+                        className="qty-btn"
+                        onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity - 1)}
+                      >
+                        −
+                      </button>
+                      <span className="qty-value">{cartItem.quantity}</span>
+                      <button
+                        className="qty-btn"
+                        onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity + 1)}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div className="cart-item-total">
+                      {formatCurrency(cartItem.quantity * itemPrice)}
+                    </div>
                     <button
-                      className="qty-btn"
-                      onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity - 1)}
+                      className="btn btn-danger"
+                      onClick={() => removeItem(cartItem.item.id)}
                     >
-                      −
-                    </button>
-                    <span className="qty-value">{cartItem.quantity}</span>
-                    <button
-                      className="qty-btn"
-                      onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity + 1)}
-                    >
-                      +
+                      🗑️
                     </button>
                   </div>
-                  <div className="cart-item-total">
-                    {formatCurrency(cartItem.quantity * itemPrice)}
-                  </div>
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => removeItem(cartItem.item.id)}
-                  >
-                    🗑️
-                  </button>
-                </div>
-              );
-            })}
+                );
+              })}
             </div>
           </div>
         </div>

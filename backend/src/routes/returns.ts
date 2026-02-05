@@ -327,6 +327,9 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
       return res.status(400).json({ error: 'Return can only be processed when in approved status' });
     }
 
+    // Helper to validate UUID
+    const isUuid = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
     // Process inventory restocking
     let itemsToRestock: any[] = [];
     
@@ -343,15 +346,26 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
     } else if (returnRecord.restockedItems && (returnRecord.returnType === 'partial' || returnRecord.returnType === 'exchange')) {
       // For partial or exchange returns, use specified restocked items (items being returned)
       itemsToRestock = returnRecord.restockedItems as any[];
+      // Ensure quantity is present in restocked items if missing (default to 1)
+      itemsToRestock = itemsToRestock.map(item => ({
+        ...item,
+        quantity: item.quantity !== undefined ? item.quantity : 1
+      }));
     }
 
     if (itemsToRestock.length > 0) {
       try {
         for (const item of itemsToRestock) {
           const itemId = item.itemId;
-          const quantity = item.quantity || 0;
+          const quantity = Number(item.quantity) || 0;
 
           if (itemId && quantity > 0) {
+            // Validate UUID before querying
+            if (!isUuid(itemId)) {
+              console.warn(`Skipping restocking for invalid UUID item: ${itemId} (${item.name})`);
+              continue;
+            }
+
             // Find item and update stock
             const existingItem = await prisma.item.findUnique({
               where: { id: itemId },
@@ -370,7 +384,8 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
         }
       } catch (stockError) {
         console.error('Error restocking inventory:', stockError);
-        return res.status(500).json({ error: 'Failed to restock inventory' });
+        console.error('Items attempted to restock:', JSON.stringify(itemsToRestock));
+        return res.status(500).json({ error: 'Failed to restock inventory: ' + (stockError instanceof Error ? stockError.message : 'Unknown error') });
       }
     }
 
@@ -380,7 +395,14 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
     let returnItems = [];
     
     // For full returns, or exchange without restockedItems (full exchange), get complete item details from original transaction
-    const isFullReturnOrFullExchange = (returnRecord.returnType === 'full' || (returnRecord.returnType === 'exchange' && !returnRecord.restockedItems)) && returnRecord.originalTransaction;
+    // For full returns, or exchange without restockedItems (full exchange), get complete item details from original transaction
+    // Also handle 'refund' type: if no amount specified, assume full refund.
+    const isFullReturnOrFullExchange = 
+      (returnRecord.returnType === 'full' || 
+       (returnRecord.returnType === 'refund' && !returnRecord.refundAmount && !returnRecord.restockedItems) ||
+       (returnRecord.returnType === 'exchange' && !returnRecord.restockedItems)) && 
+      returnRecord.originalTransaction;
+
     if (isFullReturnOrFullExchange) {
       refundAmount = parseFloat(returnRecord.originalTransaction!.totalAmount.toString());
       const originalItems = JSON.parse(returnRecord.originalTransaction!.itemsJson || '[]');
@@ -397,7 +419,7 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
         customPrice: item.customPrice,
         subtotal: -Math.abs((item.customPrice !== undefined ? item.customPrice : item.originalPrice || (item.item?.price || item.price || 0)) * (item.quantity || 1))
       }));
-    } else if ((returnRecord.returnType === 'partial' || returnRecord.returnType === 'exchange') && returnRecord.restockedItems && returnRecord.originalTransaction) {
+    } else if ((returnRecord.returnType === 'partial' || returnRecord.returnType === 'exchange' || returnRecord.returnType === 'refund') && returnRecord.restockedItems && returnRecord.originalTransaction) {
       // For partial or exchange returns, get complete item details for returned items
       const originalItems = JSON.parse(returnRecord.originalTransaction.itemsJson || '[]');
       const restockedItems = returnRecord.restockedItems as any[];
@@ -417,10 +439,10 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
               cost: originalItem.item?.cost || originalItem.cost || 0,
               display_name: originalItem.item?.display_name || originalItem.display_name
             },
-            quantity: -(restockedItem.quantity || 1), // Negative quantity for returns
+            quantity: -(Number(restockedItem.quantity) || 1), // Negative quantity for returns
             originalPrice: originalItem.originalPrice || (originalItem.item?.price || originalItem.price || 0),
             customPrice: originalItem.customPrice,
-            subtotal: -Math.abs((originalItem.customPrice !== undefined ? originalItem.customPrice : originalItem.originalPrice || (originalItem.item?.price || originalItem.price || 0)) * (restockedItem.quantity || 1))
+            subtotal: -Math.abs((originalItem.customPrice !== undefined ? originalItem.customPrice : originalItem.originalPrice || (originalItem.item?.price || originalItem.price || 0)) * (Number(restockedItem.quantity) || 1))
           };
         }
         
@@ -433,7 +455,7 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
             cost: 0,
             display_name: restockedItem.name || 'Unknown Item'
           },
-          quantity: -(restockedItem.quantity || 1),
+          quantity: -(Number(restockedItem.quantity) || 1),
           originalPrice: 0,
           customPrice: 0,
           subtotal: 0
@@ -447,7 +469,7 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
     
     const paymentMethod = returnRecord.originalTransaction?.paymentMethod || 'cash';
     
-    if (refundAmount > 0 || returnRecord.returnType === 'full' || returnRecord.returnType === 'partial') {
+    if (refundAmount > 0 || returnRecord.returnType === 'full' || returnRecord.returnType === 'partial' || returnRecord.returnType === 'refund') {
       returnTransaction = await prisma.transaction.create({
         data: {
           customerId: returnRecord.customerId,
@@ -470,9 +492,23 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
         const itemId = ex.itemId || ex.item_id;
         const qty = ex.quantity || 1;
         if (!itemId || qty < 1) continue;
+
+        // Verify UUID before checking stock
+        if (!isUuid(itemId)) {
+           // Skip stock check for non-UUID items (assumed pseudo-item or quick-sale not in DB)
+           // But what about pricing? If it's not in DB, we rely on passed data?
+           // The current logic queries DB for price/cost. If skipped, we can't process it correctly unless we trust client data entirely?
+           // Current logic throws error if item not found.
+           // If it's a quick sale item, it might fail here.
+           // For now, let's THROW readable error if invalid UUID for EXCHANGE, because we need price info.
+           // Or maybe we should skip? If we skip, we can't create transaction.
+           // Let's assume for exchange items, they MUST be valid inventory items.
+           throw new Error(`Invalid item ID for exchange item: ${itemId}`);
+        }
+
         const item = await prisma.item.findUnique({ where: { id: itemId } });
         if (!item || item.stock < qty) {
-          throw new Error(`Exchange item ${item.name || itemId} has insufficient stock (need ${qty}, have ${item?.stock ?? 0})`);
+          throw new Error(`Exchange item ${item?.name || itemId} has insufficient stock (need ${qty}, have ${item?.stock ?? 0})`);
         }
         const price = Number(item.price);
         const cost = Number(item.cost);
@@ -505,13 +541,16 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
           const itemId = ex.itemId || ex.item_id;
           const qty = ex.quantity || 1;
           if (!itemId || qty < 1) continue;
-          await prisma.item.update({
-            where: { id: itemId },
-            data: {
-              stock: { decrement: qty },
-              purchaseQty: { increment: qty },
-            },
-          });
+          
+          if (isUuid(itemId)) {
+             await prisma.item.update({
+              where: { id: itemId },
+              data: {
+                stock: { decrement: qty },
+                purchaseQty: { increment: qty },
+              },
+            });
+          }
         }
       }
     }
