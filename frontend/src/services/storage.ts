@@ -93,10 +93,13 @@ export const storageService = {
     return apiClient.get<Item[]>(`/items/by-categories?categoryIds=${encodeURIComponent(categoryIds)}`);
   },
 
-  // Transactions (optional limit to fetch more for date-filtered views; default 50)
-  getTransactions: async (opts?: { limit?: number }): Promise<Transaction[]> => {
-    const params = opts?.limit != null ? `?limit=${Math.min(1000, Math.max(1, opts.limit))}` : '';
-    const response = await apiClient.get<{ transactions: Transaction[]; pagination?: any } | Transaction[]>(`/transactions${params}`);
+  getTransactions: async (opts?: { limit?: number; all?: boolean }): Promise<Transaction[]> => {
+    const params = new URLSearchParams();
+    if (opts?.all) params.append('all', 'true');
+    if (opts?.limit != null) params.append('limit', Math.min(1000, Math.max(1, opts.limit)).toString());
+    
+    const queryString = params.toString();
+    const response = await apiClient.get<{ transactions: Transaction[]; pagination?: any } | Transaction[]>(`/transactions${queryString ? `?${queryString}` : ''}`);
     return Array.isArray(response) ? response : (response?.transactions || []);
   },
 
@@ -117,8 +120,9 @@ export const storageService = {
   },
 
   // Customers
-  getCustomers: async (): Promise<Customer[]> => {
-    const response = await apiClient.get<{ customers: Customer[]; pagination?: any } | Customer[]>('/customers');
+  getCustomers: async (opts?: { all?: boolean }): Promise<Customer[]> => {
+    const query = opts?.all ? '?all=true' : '';
+    const response = await apiClient.get<{ customers: Customer[]; pagination?: any } | Customer[]>(`/customers${query}`);
     // Handle both response formats: { customers: [...], pagination: {...} } or array
     return Array.isArray(response) ? response : (response?.customers || []);
   },
@@ -208,8 +212,9 @@ export const storageService = {
   },
 
   // Sales Customers
-  getSalesCustomers: async (): Promise<SalesCustomer[]> => {
-    return apiClient.get<SalesCustomer[]>('/sales-customers');
+  getSalesCustomers: async (opts?: { all?: boolean }): Promise<SalesCustomer[]> => {
+    const query = opts?.all ? '?all=true' : '';
+    return apiClient.get<SalesCustomer[]>(`/sales-customers${query}`);
   },
 
   searchSalesCustomers: async (query: string): Promise<SalesCustomer[]> => {

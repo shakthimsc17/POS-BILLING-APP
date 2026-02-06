@@ -43,7 +43,7 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
 
   const loadCustomers = async () => {
     try {
-      const data = await storageService.getCustomers();
+      const data = await storageService.getCustomers({ all: true });
       setCustomers(data);
     } catch (error) {
       console.error('Error loading customers:', error);
@@ -52,7 +52,7 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
 
   const loadSalesCustomers = async () => {
     try {
-      const data = await storageService.getSalesCustomers();
+      const data = await storageService.getSalesCustomers({ all: true });
       setSalesCustomers(data);
     } catch (error) {
       // Keep orders page functional even if sales customers fail to load
@@ -75,7 +75,7 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
   const loadTransactions = async () => {
     try {
       setLoading(true);
-      const data = await storageService.getTransactions({ limit: 500 });
+      const data = await storageService.getTransactions({ all: true });
       console.log('Loaded transactions:', data);
       // Ensure data is an array
       const transactionsArray = Array.isArray(data) ? data : [];
