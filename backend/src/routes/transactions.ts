@@ -13,6 +13,7 @@ router.use(authenticate);
 router.get('/', [
   query('page').optional().isInt({ min: 1 }),
   query('limit').optional().isInt({ min: 1, max: 1000 }),
+  query('all').optional().isIn(['true', 'false']),
 ], async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
@@ -20,9 +21,10 @@ router.get('/', [
       return res.status(400).json({ errors: errors.array() });
     }
 
+    const fetchAll = req.query.all === 'true';
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 50;
-    const skip = (page - 1) * limit;
+    const limit = fetchAll ? undefined : (parseInt(req.query.limit as string) || 50);
+    const skip = fetchAll ? 0 : (page - 1) * (limit as number);
 
     const isAdmin = req.customer?.isAdmin || false;
     
@@ -31,10 +33,9 @@ router.get('/', [
     
     const [transactions, totalCount] = await Promise.all([
       prisma.transaction.findMany({
-      where: whereClause,
-        skip,
-        take: limit,
-      orderBy: { createdAt: 'desc' },
+        where: whereClause,
+        ...(fetchAll ? {} : { skip, take: limit }),
+        orderBy: { createdAt: 'desc' },
       }),
       prisma.transaction.count({ where: whereClause }),
     ]);
@@ -57,11 +58,11 @@ router.get('/', [
     res.json({
       transactions: transformedTransactions,
       pagination: {
-        page,
-        limit,
+        page: fetchAll ? 1 : page,
+        limit: fetchAll ? totalCount : limit,
         total: totalCount,
-        totalPages: Math.ceil(totalCount / limit),
-        hasMore: skip + limit < totalCount,
+        totalPages: fetchAll ? 1 : Math.ceil(totalCount / (limit as number)),
+        hasMore: fetchAll ? false : skip + (limit as number) < totalCount,
       },
     });
   } catch (error: any) {

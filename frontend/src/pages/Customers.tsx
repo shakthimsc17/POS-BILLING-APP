@@ -24,7 +24,7 @@ export default function Customers() {
   const loadCustomers = async () => {
     try {
       setLoading(true);
-      const data = await storageService.getCustomers();
+      const data = await storageService.getCustomers({ all: true });
       // Ensure data is an array
       const customersArray = Array.isArray(data) ? data : [];
       setCustomers(customersArray);
@@ -217,93 +217,93 @@ export default function Customers() {
               <button className="modal-close" onClick={() => setModalVisible(false)}>×</button>
             </div>
             <div className="modal-body">
-            <label>
-              Name *:
-              <input
-                type="text"
-                className="input"
-                placeholder="Customer Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </label>
-            <div className="form-row">
               <label>
-                Phone:
-                <input
-                  type="tel"
-                  className="input"
-                  placeholder="Phone Number"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
-              </label>
-              <label>
-                Email:
-                <input
-                  type="email"
-                  className="input"
-                  placeholder="email@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </label>
-              <label>
-                Customer Type:
-                <select
-                  className="input"
-                  value={customerType}
-                  onChange={(e) => setCustomerType(e.target.value)}
-                >
-                  <option value="sales person">Sales Person</option>
-                  <option value="manager">Manager</option>
-                  <option value="Admin">Admin</option>
-                </select>
-              </label>
-            </div>
-            <label>
-              Address:
-              <textarea
-                className="input"
-                placeholder="Street Address"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                rows={2}
-              />
-            </label>
-            <div className="form-row">
-              <label>
-                City:
+                Name *:
                 <input
                   type="text"
                   className="input"
-                  placeholder="City"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="Customer Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
                 />
               </label>
+              <div className="form-row">
+                <label>
+                  Phone:
+                  <input
+                    type="tel"
+                    className="input"
+                    placeholder="Phone Number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                </label>
+                <label>
+                  Email:
+                  <input
+                    type="email"
+                    className="input"
+                    placeholder="email@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </label>
+                <label>
+                  Customer Type:
+                  <select
+                    className="input"
+                    value={customerType}
+                    onChange={(e) => setCustomerType(e.target.value)}
+                  >
+                    <option value="sales person">Sales Person</option>
+                    <option value="manager">Manager</option>
+                    <option value="Admin">Admin</option>
+                  </select>
+                </label>
+              </div>
               <label>
-                State:
-                <input
-                  type="text"
+                Address:
+                <textarea
                   className="input"
-                  placeholder="State"
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
+                  placeholder="Street Address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  rows={2}
                 />
               </label>
-              <label>
-                Pincode:
-                <input
-                  type="text"
-                  className="input"
-                  placeholder="Pincode"
-                  value={pincode}
-                  onChange={(e) => setPincode(e.target.value)}
-                />
-              </label>
-            </div>
+              <div className="form-row">
+                <label>
+                  City:
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="City"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                  />
+                </label>
+                <label>
+                  State:
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="State"
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                  />
+                </label>
+                <label>
+                  Pincode:
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Pincode"
+                    value={pincode}
+                    onChange={(e) => setPincode(e.target.value)}
+                  />
+                </label>
+              </div>
             </div>
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setModalVisible(false)}>

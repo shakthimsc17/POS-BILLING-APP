@@ -93,7 +93,7 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
 
   const loadCategories = async () => {
     try {
-      const data = await storageService.getCategories();
+      const data = await storageService.getCategories({ all: true });
       // getCategories now always returns an array
       const categoriesArray: Category[] = Array.isArray(data) ? data : [];
       setAllCategories(categoriesArray);

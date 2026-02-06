@@ -57,9 +57,9 @@ export default function Reports() {
     try {
       setLoading(true);
       const [txData, itemsData, categoriesData] = await Promise.all([
-        storageService.getTransactions(),
-        storageService.getItems(),
-        storageService.getCategories(),
+        storageService.getTransactions({ all: true }),
+        storageService.getItems({ all: true }),
+        storageService.getCategories({ all: true }),
       ]);
       console.log('Loaded data:', { transactions: txData, items: itemsData, categories: categoriesData });
       setTransactions(txData || []);
@@ -209,7 +209,7 @@ export default function Reports() {
           const cost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
           const validPrice = isNaN(price) ? 0 : price;
           const validCost = isNaN(cost) ? 0 : cost;
-          
+
           if (itemMap.has(itemId)) {
             const existing = itemMap.get(itemId)!;
             existing.quantity += quantity;
@@ -291,7 +291,7 @@ export default function Reports() {
       const method = tx.payment_method;
       const amount = typeof tx.total_amount === 'string' ? parseFloat(tx.total_amount) : tx.total_amount;
       const validAmount = isNaN(amount) ? 0 : amount;
-      
+
       if (methodMap.has(method)) {
         const existing = methodMap.get(method)!;
         existing.count++;
@@ -357,12 +357,12 @@ export default function Reports() {
         cartItems.forEach((cartItem: any) => {
           const item = cartItem.item || cartItem;
           const quantity = cartItem.quantity || 1;
-          
+
           // Get selling price - use customPrice if available, otherwise use item price
           const sellingPrice = cartItem.customPrice !== undefined
             ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
             : (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
-          
+
           salesOrderedSellingAmount += (isNaN(sellingPrice) ? 0 : sellingPrice) * quantity;
         });
       } catch (e) {
@@ -402,7 +402,7 @@ export default function Reports() {
     const company = companyStore.getCompany();
     const investment = calculateInvestment();
     const sales = calculateSales();
-    
+
     const printHTML = `
       <!DOCTYPE html>
       <html>
@@ -520,9 +520,9 @@ export default function Reports() {
       <div className="reports-header">
         {company.logo && (
           <div className="page-logo-container">
-            <img 
-              src={company.logo} 
-              alt={company.name || 'Company Logo'} 
+            <img
+              src={company.logo}
+              alt={company.name || 'Company Logo'}
               className="page-logo"
             />
           </div>
@@ -542,30 +542,30 @@ export default function Reports() {
             📄 Export PDF
           </button>
           <div className="period-selector">
-          <button
-            className={`period-btn ${period === 'week' ? 'active' : ''}`}
-            onClick={() => setPeriod('week')}
-          >
-            Weekly
-          </button>
-          <button
-            className={`period-btn ${period === 'month' ? 'active' : ''}`}
-            onClick={() => setPeriod('month')}
-          >
-            Monthly
-          </button>
-          <button
-            className={`period-btn ${period === 'year' ? 'active' : ''}`}
-            onClick={() => setPeriod('year')}
-          >
-            Yearly
-          </button>
-          <button
-            className={`period-btn ${period === 'overall' ? 'active' : ''}`}
-            onClick={() => setPeriod('overall')}
-          >
-            Overall
-          </button>
+            <button
+              className={`period-btn ${period === 'week' ? 'active' : ''}`}
+              onClick={() => setPeriod('week')}
+            >
+              Weekly
+            </button>
+            <button
+              className={`period-btn ${period === 'month' ? 'active' : ''}`}
+              onClick={() => setPeriod('month')}
+            >
+              Monthly
+            </button>
+            <button
+              className={`period-btn ${period === 'year' ? 'active' : ''}`}
+              onClick={() => setPeriod('year')}
+            >
+              Yearly
+            </button>
+            <button
+              className={`period-btn ${period === 'overall' ? 'active' : ''}`}
+              onClick={() => setPeriod('overall')}
+            >
+              Overall
+            </button>
           </div>
         </div>
       </div>
