@@ -35,8 +35,9 @@ const OrderDetails = lazy(() => import('./pages/OrderDetails'));
 const Tables = lazy(() => import('./pages/Tables'));
 const TableOrders = lazy(() => import('./pages/TableOrders'));
 const BarcodeGenerator = lazy(() => import('./pages/BarcodeGenerator'));
+const Returns = lazy(() => import('./pages/Returns'));
 
-type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'sales' | 'sales-performance' | 'customers' | 'import' | 'reports' | 'export' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items' | 'quick-item-sales' | 'cash-flow' | 'acl-permissions' | 'order-details' | 'tables' | 'table-orders' | 'barcode-generator';
+type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'sales' | 'sales-performance' | 'customers' | 'import' | 'reports' | 'export' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items' | 'quick-item-sales' | 'cash-flow' | 'acl-permissions' | 'order-details' | 'tables' | 'table-orders' | 'barcode-generator' | 'returns';
 type AuthPage = 'signin' | 'signup';
 
 function App() {
@@ -283,6 +284,15 @@ function App() {
                 <span className="nav-text">Activity Logs</span>
               </button>
               )}
+              {customer?.isAdmin && (
+                <button
+                  className={currentPage === 'returns' ? 'active' : ''}
+                  onClick={() => setCurrentPage('returns')}
+                >
+                  <span className="nav-icon">🔄</span>
+                  <span className="nav-text">Returns</span>
+                </button>
+              )}
             </div>
           )}
 
@@ -373,6 +383,7 @@ function App() {
             {currentPage === 'reports' && ((customer?.isAdmin || canView('reports')) && !isHidden('reports') ? <Reports /> : <AccessDenied />)}
             {currentPage === 'export' && ((customer?.isAdmin || canView('export')) && !isHidden('export') ? <Export /> : <AccessDenied />)}
             {currentPage === 'activity-logs' && ((customer?.isAdmin || canView('activity-logs')) && !isHidden('activity-logs') ? <ActivityLogs /> : <AccessDenied />)}
+            {currentPage === 'returns' && customer?.isAdmin && <Returns onNavigate={(page, orderId) => { if (page === 'order-details' && orderId) setSelectedOrderId(orderId); setCurrentPage(page); }} />}
             {currentPage === 'bulk-operations' && (canView('bulk-operations') && !isHidden('bulk-operations') ? <BulkOperations /> : <AccessDenied />)}
             {currentPage === 'calculators' && (canView('calculators') && !isHidden('calculators') ? <Calculators /> : <AccessDenied />)}
             {currentPage === 'barcode-generator' && (canView('barcode-generator') && !isHidden('barcode-generator') ? <BarcodeGenerator /> : <AccessDenied />)}

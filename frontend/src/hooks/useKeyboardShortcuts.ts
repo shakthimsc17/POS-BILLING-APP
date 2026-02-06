@@ -14,8 +14,8 @@ export interface KeyboardShortcutHandlers {
   onF11?: () => void;
   onF12?: () => void;
   onEscape?: () => void;
-  /** C key – e.g. select Cash payment */
-  onKeyC?: () => void;
+  /** Tab key – e.g. select Cash payment */
+  onKeyTab?: () => void;
   /** Enter key – e.g. complete payment */
   onEnter?: () => void;
 }
@@ -108,10 +108,10 @@ export function useKeyboardShortcuts({
           handlersRef.current.onEscape();
         }
         return;
-      } else if (key === 'c' || key === 'C') {
-        if (handlersRef.current.onKeyC) {
+      } else if (key === 'Tab') {
+        if (handlersRef.current.onKeyTab) {
           event.preventDefault();
-          handlersRef.current.onKeyC();
+          handlersRef.current.onKeyTab();
         }
         return;
       } else if (key === 'Enter') {

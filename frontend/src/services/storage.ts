@@ -1,4 +1,4 @@
-import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer, QuickSaleItem, CashFlowEntry, CashFlowSummary, Permission, PagePermission, Cart, Table, TableOrder } from '../types';
+import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer, QuickSaleItem, CashFlowEntry, CashFlowSummary, Permission, PagePermission, Cart, Table, TableOrder, ReturnRecord } from '../types';
 import apiClient from '../lib/apiClient';
 
 export const storageService = {
@@ -93,10 +93,13 @@ export const storageService = {
     return apiClient.get<Item[]>(`/items/by-categories?categoryIds=${encodeURIComponent(categoryIds)}`);
   },
 
-  // Transactions
-  getTransactions: async (): Promise<Transaction[]> => {
-    const response = await apiClient.get<{ transactions: Transaction[]; pagination?: any } | Transaction[]>('/transactions');
-    // Handle both response formats: { transactions: [...], pagination: {...} } or array
+  getTransactions: async (opts?: { limit?: number; all?: boolean }): Promise<Transaction[]> => {
+    const params = new URLSearchParams();
+    if (opts?.all) params.append('all', 'true');
+    if (opts?.limit != null) params.append('limit', Math.min(1000, Math.max(1, opts.limit)).toString());
+    
+    const queryString = params.toString();
+    const response = await apiClient.get<{ transactions: Transaction[]; pagination?: any } | Transaction[]>(`/transactions${queryString ? `?${queryString}` : ''}`);
     return Array.isArray(response) ? response : (response?.transactions || []);
   },
 
@@ -108,13 +111,18 @@ export const storageService = {
     return apiClient.post<Transaction>('/transactions', transaction);
   },
 
+  updateTransaction: async (id: string, updates: Partial<Transaction>): Promise<Transaction> => {
+    return apiClient.put<Transaction>(`/transactions/${id}`, updates);
+  },
+
   deleteTransaction: async (id: string): Promise<void> => {
     await apiClient.delete(`/transactions/${id}`);
   },
 
   // Customers
-  getCustomers: async (): Promise<Customer[]> => {
-    const response = await apiClient.get<{ customers: Customer[]; pagination?: any } | Customer[]>('/customers');
+  getCustomers: async (opts?: { all?: boolean }): Promise<Customer[]> => {
+    const query = opts?.all ? '?all=true' : '';
+    const response = await apiClient.get<{ customers: Customer[]; pagination?: any } | Customer[]>(`/customers${query}`);
     // Handle both response formats: { customers: [...], pagination: {...} } or array
     return Array.isArray(response) ? response : (response?.customers || []);
   },
@@ -204,8 +212,9 @@ export const storageService = {
   },
 
   // Sales Customers
-  getSalesCustomers: async (): Promise<SalesCustomer[]> => {
-    return apiClient.get<SalesCustomer[]>('/sales-customers');
+  getSalesCustomers: async (opts?: { all?: boolean }): Promise<SalesCustomer[]> => {
+    const query = opts?.all ? '?all=true' : '';
+    return apiClient.get<SalesCustomer[]>(`/sales-customers${query}`);
   },
 
   searchSalesCustomers: async (query: string): Promise<SalesCustomer[]> => {
@@ -480,5 +489,64 @@ export const storageService = {
 
   cancelTableOrder: async (id: string): Promise<void> => {
     await apiClient.post(`/table-orders/${id}/cancel`);
+  },
+
+  // Returns
+  getReturns: async (): Promise<ReturnRecord[]> => {
+    return apiClient.get<ReturnRecord[]>('/returns');
+  },
+
+  getReturn: async (id: string): Promise<ReturnRecord> => {
+    return apiClient.get<ReturnRecord>(`/returns/${id}`);
+  },
+
+  createReturn: async (returnData: {
+    originalTransactionId: string;
+    returnType: 'full' | 'partial' | 'exchange' | 'refund';
+    reason?: string;
+    refundAmount?: number;
+    restockedItems?: any;
+    exchangeItems?: any;
+    notes?: string;
+  }): Promise<ReturnRecord> => {
+    return apiClient.post<ReturnRecord>('/returns', returnData);
+  },
+
+  approveReturn: async (id: string): Promise<{ message: string; return: ReturnRecord }> => {
+    return apiClient.post<{ message: string; return: ReturnRecord }>(`/returns/${id}/approve`);
+  },
+
+  processReturn: async (id: string): Promise<{ message: string; return: ReturnRecord; returnTransaction?: any }> => {
+    return apiClient.post<{ message: string; return: ReturnRecord; returnTransaction?: any }>(`/returns/${id}/process`);
+  },
+
+  rejectReturn: async (id: string, rejectionReason?: string): Promise<{ message: string; return: ReturnRecord }> => {
+    return apiClient.post<{ message: string; return: ReturnRecord }>(`/returns/${id}/reject`, { rejectionReason });
+  },
+
+  deleteReturn: async (id: string): Promise<{ message: string }> => {
+    return apiClient.delete<{ message: string }>(`/returns/${id}`);
+  },
+
+  // Cloud Backup (Supabase Sync)
+  getBackupStatus: async (): Promise<{
+    configured: boolean;
+    maskedUrl: string | null;
+    lastSyncAt: string | null;
+    lastSyncStatus: string | null;
+  }> => {
+    return apiClient.get('/backup/status');
+  },
+
+  saveBackupConnection: async (supabaseUrl: string): Promise<{ message: string; maskedUrl: string }> => {
+    return apiClient.post('/backup/save-connection', { supabaseUrl });
+  },
+
+  syncToSupabase: async (): Promise<{ message: string; syncedAt: string }> => {
+    return apiClient.post('/backup/sync');
+  },
+
+  removeBackupConnection: async (): Promise<{ message: string }> => {
+    return apiClient.delete('/backup/connection');
   },
 };

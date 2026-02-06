@@ -242,8 +242,11 @@ router.post(
       const finalPrice = price !== undefined ? parseFloat(price) : parseFloat(quickSaleItem.price.toString());
 
       // Create item in inventory
+      // Reuse the Quick Sale Item UUID for the new Inventory Item
+      // This ensures consistency and traceability
       const inventoryItem = await prisma.item.create({
         data: {
+          id: id, // Reuse the same UUID
           customerId: req.customerId!,
           name: quickSaleItem.name,
           displayName: display_name || null,
@@ -276,11 +279,12 @@ router.post(
           if (tx) {
             const costNum = parseFloat(cost);
             const items = JSON.parse(tx.itemsJson);
-            const quickSaleLineId = `quick-sale-${id}`;
+            const quickSaleLineId = `quick-sale-${id}`; 
             let updated = false;
             for (const entry of items) {
               const item = entry.item || entry;
-              if (item.id === quickSaleLineId) {
+              // Check both with prefix (legacy) and without prefix (new)
+              if (item.id === quickSaleLineId || item.id === id) {
                 item.cost = costNum;
                 updated = true;
                 break;

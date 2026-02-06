@@ -18,10 +18,12 @@ import settingsRoutes from './routes/settings.js';
 import itemCodePrefixesRoutes from './routes/itemCodePrefixes.js';
 import activityLogsRoutes from './routes/activityLogs.js';
 import permissionsRoutes from './routes/permissions.js';
+import returnsRoutes from './routes/returns.js';
 import cartsRoutes from './routes/carts.js';
 import tablesRoutes from './routes/tables.js';
 import tableOrdersRoutes from './routes/tableOrders.js';
 import exportDbRoutes from './routes/exportDb.js';
+import backupRoutes from './routes/backup.js';
 
 dotenv.config();
 
@@ -97,10 +99,12 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/item-code-prefixes', itemCodePrefixesRoutes);
 app.use('/api/activity-logs', activityLogsRoutes);
 app.use('/api/permissions', permissionsRoutes);
+app.use('/api/returns', returnsRoutes);
 app.use('/api/carts', cartsRoutes);
 app.use('/api/tables', tablesRoutes);
 app.use('/api/table-orders', tableOrdersRoutes);
 app.use('/api/export-db', exportDbRoutes);
+app.use('/api/backup', backupRoutes);
 
 // Error handling
 app.use(errorHandler);

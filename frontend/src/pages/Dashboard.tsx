@@ -74,8 +74,8 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
         return;
       }
 
-      // 's' key to navigate to cart (only when not in input field)
-      if ((e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      // 's' key or 'Tab' to navigate to cart (only when not in input field)
+      if (((e.key === 's' || e.key === 'S') || e.key === 'Tab') && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
         onNavigate('cart');
       }
@@ -93,7 +93,7 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
 
   const loadCategories = async () => {
     try {
-      const data = await storageService.getCategories();
+      const data = await storageService.getCategories({ all: true });
       // getCategories now always returns an array
       const categoriesArray: Category[] = Array.isArray(data) ? data : [];
       setAllCategories(categoriesArray);
@@ -136,11 +136,11 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
           const categoryItems =
             await storageService.getItemsByCategories(categoryIds);
 
-          filtered = Array.isArray(categoryItems) 
+          filtered = Array.isArray(categoryItems)
             ? categoryItems.filter(
-                (item, index, self) =>
-                  index === self.findIndex((i) => i.id === item.id)
-              )
+              (item, index, self) =>
+                index === self.findIndex((i) => i.id === item.id)
+            )
             : [];
         } catch (error) {
           console.error('Error fetching items by categories:', error);

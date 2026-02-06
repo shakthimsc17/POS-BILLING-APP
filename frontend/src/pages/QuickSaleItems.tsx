@@ -49,7 +49,7 @@ export default function QuickSaleItems({ onViewOrder }: QuickSaleItemsProps) {
     try {
       await storageService.deleteQuickSaleItem(id);
       await loadQuickSaleItems();
-      
+
       // Show notification
       const notification = document.createElement('div');
       notification.className = 'notification';
@@ -68,7 +68,7 @@ export default function QuickSaleItems({ onViewOrder }: QuickSaleItemsProps) {
       : 0;
     // Create a temporary item for the cart (cost for profit calculation)
     const tempItem = {
-      id: `quick-sale-${item.id}`,
+      id: item.id,
       customer_id: '',
       name: item.name,
       code: `QS-${item.id.substring(0, 8)}`,
@@ -107,9 +107,9 @@ export default function QuickSaleItems({ onViewOrder }: QuickSaleItemsProps) {
       <div className="quick-sale-items-header">
         {company.logo && (
           <div className="page-logo-container">
-            <img 
-              src={company.logo} 
-              alt={company.name || 'Company Logo'} 
+            <img
+              src={company.logo}
+              alt={company.name || 'Company Logo'}
               className="page-logo"
             />
           </div>
@@ -154,11 +154,11 @@ export default function QuickSaleItems({ onViewOrder }: QuickSaleItemsProps) {
           <div className="empty-state">
             <p>📭 No quick sale items found</p>
             <p className="empty-subtext">
-              {filter === 'pending' 
-                ? 'All items have been added to inventory' 
+              {filter === 'pending'
+                ? 'All items have been added to inventory'
                 : filter === 'added'
-                ? 'No items have been added to inventory yet'
-                : 'Create quick sale items from the dashboard'}
+                  ? 'No items have been added to inventory yet'
+                  : 'Create quick sale items from the dashboard'}
             </p>
           </div>
         </div>

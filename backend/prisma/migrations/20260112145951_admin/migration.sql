@@ -1,4 +1,4 @@
-+
+
 -- CreateTable
 CREATE TABLE "customers" (
     "id" UUID NOT NULL,

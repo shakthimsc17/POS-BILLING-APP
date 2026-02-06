@@ -1,0 +1,230 @@
+/* Return Modal - matches app modal pattern */
+.return-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.return-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.return-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e0e6ed;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.return-modal .modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #fff;
+  font-weight: 600;
+}
+
+.return-modal .modal-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  font-size: 1.5rem;
+  color: #fff;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.return-modal .modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.return-modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.return-modal .modal-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.return-modal-order-ref {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.return-modal .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.return-modal .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.return-modal .form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.return-modal .required {
+  color: #c00;
+}
+
+.return-type-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.return-type-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.return-type-option input {
+  margin: 0;
+}
+
+.return-type-option:has(input:checked) {
+  border-color: #667eea;
+  background: #f0f4ff;
+}
+
+.return-modal textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.return-modal textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.partial-items-list {
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.partial-item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.5rem;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.partial-item-row:hover {
+  background: #f5f7fa;
+}
+
+.partial-item-row input {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.partial-item-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.partial-item-qty {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.partial-hint {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.return-modal .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #e0e6ed;
+  flex-shrink: 0;
+}
+
+.return-modal .modal-actions .btn {
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  font-size: 0.95rem;
+}
+
+.return-modal .btn-secondary {
+  background: #e0e6ed;
+  color: #333;
+}
+
+.return-modal .btn-secondary:hover {
+  background: #d0d6e0;
+}
+
+.return-modal .btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+.return-modal .btn-primary:hover:not(:disabled) {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.return-modal .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}

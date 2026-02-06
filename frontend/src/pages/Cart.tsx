@@ -7,7 +7,7 @@ import { printReceipt } from '../utils/printer';
 import { SalesCustomer } from '../types';
 import QuickAddItemModal from '../components/QuickAddItemModal';
 import CustomerSelectModal from '../components/CustomerSelectModal';
-import SearchBarcodeInput from '../components/SearchBarcodeInput';
+
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import './Cart.css';
 
@@ -20,9 +20,10 @@ export default function Cart({ onNavigate }: CartProps) {
     items,
     removeItem,
     updateQuantity,
-    getSubtotal,
     getTax,
     getDiscount,
+    getItemDiscounts,
+    getActualSubtotal,
     getTotal,
     setTaxRate,
     setDiscount,
@@ -43,7 +44,7 @@ export default function Cart({ onNavigate }: CartProps) {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [editingPrice, setEditingPrice] = useState<Record<string, string>>({});
   const [cartSavedNotification, setCartSavedNotification] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+
 
   // Refs for input fields that need to be focused
   const discountInputRef = useRef<HTMLInputElement>(null);
@@ -62,7 +63,7 @@ export default function Cart({ onNavigate }: CartProps) {
   useEffect(() => {
     // Ensure items are loaded for quick add functionality
     loadItems();
-    
+
     // Load saved cart
     loadCart().then((result) => {
       if (result?.salesCustomerId) {
@@ -170,8 +171,8 @@ export default function Cart({ onNavigate }: CartProps) {
           setPaymentMethod('cash');
         }
       },
-      onKeyC: () => {
-        // C - Cash Payment: Same as F12
+      onKeyTab: () => {
+        // Tab - Cash Payment: Same as F12
         if (!processing && !showQuickAddModal && !showCustomerModal) {
           setPaymentMethod('cash');
         }
@@ -220,7 +221,7 @@ export default function Cart({ onNavigate }: CartProps) {
     try {
       const total = getTotal();
       // If cash payment and no amount entered, treat as exact payment (received = total)
-      const received = paymentMethod === 'cash' 
+      const received = paymentMethod === 'cash'
         ? (receivedAmount ? Number(receivedAmount) : total)
         : total;
       // Calculate change (positive) or discount (negative)
@@ -264,6 +265,9 @@ export default function Cart({ onNavigate }: CartProps) {
         await printReceipt({
           items,
           transaction: savedTransaction,
+          customer: selectedSalesCustomer,
+          taxAmount: getTax(),
+          discountAmount: getDiscount(),
           autoPrint,
         });
       } catch (printError) {
@@ -277,12 +281,12 @@ export default function Cart({ onNavigate }: CartProps) {
 
       // Show success message and navigate
       const discountAmount = changeAmount < 0 ? Math.abs(changeAmount) : 0;
-      const changeMessage = discountAmount > 0 
-        ? `Discount: ${formatCurrency(discountAmount)}` 
-        : actualChange > 0 
-        ? `Change: ${formatCurrency(actualChange)}` 
-        : 'Exact amount';
-      
+      const changeMessage = discountAmount > 0
+        ? `Discount: ${formatCurrency(discountAmount)}`
+        : actualChange > 0
+          ? `Change: ${formatCurrency(actualChange)}`
+          : 'Exact amount';
+
       // Show brief success notification
       const notification = document.createElement('div');
       notification.className = 'notification';
@@ -290,7 +294,7 @@ export default function Cart({ onNavigate }: CartProps) {
       notification.textContent = `Payment successful! ${changeMessage}`;
       document.body.appendChild(notification);
       setTimeout(() => notification.remove(), 3000);
-      
+
       onNavigate('dashboard');
     } catch (error) {
       alert('Payment failed. Please try again.');
@@ -302,7 +306,7 @@ export default function Cart({ onNavigate }: CartProps) {
 
   const total = getTotal();
   // If cash payment and no amount entered, treat as exact payment (received = total)
-  const received = paymentMethod === 'cash' 
+  const received = paymentMethod === 'cash'
     ? (receivedAmount ? Number(receivedAmount) : total)
     : total;
   const change = paymentMethod === 'cash' ? received - total : 0;
@@ -332,13 +336,7 @@ export default function Cart({ onNavigate }: CartProps) {
       )}
       <div className="cart-header">
         <h1>Sales Invoice</h1>
-        <div className="cart-header-search">
-          <SearchBarcodeInput
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            placeholder="🔍 Search or scan barcode..."
-          />
-        </div>
+
         <button className="btn btn-secondary" onClick={() => onNavigate('dashboard')}>
           ← Back to Dashboard
         </button>
@@ -374,140 +372,156 @@ export default function Cart({ onNavigate }: CartProps) {
             </div>
             <div className="cart-items-list">
               {items.map((cartItem) => {
-              const itemPrice = getItemPrice(cartItem.item.id);
-              const isCustomPrice = hasCustomPrice(cartItem.item.id);
-              const originalPrice = cartItem.originalPrice ?? (typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price);
-              const editingPriceValue = editingPrice[cartItem.item.id];
-              
-              const isQuickSaleItem = cartItem.item.id.startsWith('quick-sale-');
-              
-              return (
-                <div key={cartItem.item.id} className="cart-item">
-                  <div className="cart-item-name-section">
-                    <div className="item-name-row">
-                      <h3>{cartItem.item.name}</h3>
-                      {isQuickSaleItem && (
-                        <span className="quick-sale-badge" title="Quick Sale Item">⚡ Quick Sale</span>
-                      )}
+                const itemPrice = getItemPrice(cartItem.item.id);
+                const isCustomPrice = hasCustomPrice(cartItem.item.id);
+                const originalPrice = cartItem.originalPrice ?? (typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price);
+                const editingPriceValue = editingPrice[cartItem.item.id];
+
+                const isQuickSaleItem = cartItem.item.code?.startsWith('QS-');
+
+                return (
+                  <div key={cartItem.item.id} className="cart-item">
+                    <div className="cart-item-name-section">
+                      <div className="item-name-row">
+                        <h3>{cartItem.item.name}</h3>
+                        {isQuickSaleItem && (
+                          <span className="quick-sale-badge" title="Quick Sale Item">⚡ Quick Sale</span>
+                        )}
+                      </div>
+                      <p className="item-code">Code: {cartItem.item.code}</p>
                     </div>
-                    <p className="item-code">Code: {cartItem.item.code}</p>
-                  </div>
-                  <div className="cart-item-price-section">
-                    <div className="price-input-wrapper-inline">
-                      <input
-                        type="number"
-                        className={`price-input-inline ${isCustomPrice ? 'custom-price' : ''}`}
-                        value={editingPriceValue !== undefined ? editingPriceValue : itemPrice.toFixed(2)}
-                        onChange={(e) => handlePriceChange(cartItem.item.id, e.target.value)}
-                        onBlur={() => handlePriceBlur(cartItem.item.id)}
-                        min="0"
-                        step="0.01"
-                        placeholder="Price"
-                      />
+                    <div className="cart-item-price-section">
+                      <div className="price-input-wrapper-inline">
+                        <input
+                          type="number"
+                          className={`price-input-inline ${isCustomPrice ? 'custom-price' : ''}`}
+                          value={editingPriceValue !== undefined ? editingPriceValue : itemPrice.toFixed(2)}
+                          onChange={(e) => handlePriceChange(cartItem.item.id, e.target.value)}
+                          onBlur={() => handlePriceBlur(cartItem.item.id)}
+                          min="0"
+                          step="0.01"
+                          placeholder="Price"
+                        />
+                        {isCustomPrice && (
+                          <span className="custom-price-badge" title="Custom price">*</span>
+                        )}
+                      </div>
                       {isCustomPrice && (
-                        <span className="custom-price-badge" title="Custom price">*</span>
+                        <p className="original-price-hint-inline">Orig: {formatCurrency(originalPrice)}</p>
                       )}
                     </div>
-                    {isCustomPrice && (
-                      <p className="original-price-hint-inline">Orig: {formatCurrency(originalPrice)}</p>
-                    )}
-                  </div>
-                  <div className="cart-item-controls">
+                    <div className="cart-item-controls">
+                      <button
+                        className="qty-btn"
+                        onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity - 1)}
+                      >
+                        −
+                      </button>
+                      <span className="qty-value">{cartItem.quantity}</span>
+                      <button
+                        className="qty-btn"
+                        onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity + 1)}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div className="cart-item-total">
+                      {formatCurrency(cartItem.quantity * itemPrice)}
+                    </div>
                     <button
-                      className="qty-btn"
-                      onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity - 1)}
+                      className="btn btn-danger"
+                      onClick={() => removeItem(cartItem.item.id)}
                     >
-                      −
-                    </button>
-                    <span className="qty-value">{cartItem.quantity}</span>
-                    <button
-                      className="qty-btn"
-                      onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity + 1)}
-                    >
-                      +
+                      🗑️
                     </button>
                   </div>
-                  <div className="cart-item-total">
-                    {formatCurrency(cartItem.quantity * itemPrice)}
-                  </div>
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => removeItem(cartItem.item.id)}
-                  >
-                    🗑️
-                  </button>
-                </div>
-              );
-            })}
+                );
+              })}
             </div>
           </div>
         </div>
 
-        <div className="cart-summary">
+        <div className="cart-checkout-summary">
           <div className="cart-summary-content">
             {/* Customer Selection - Moved to top */}
-            <div className="card customer-selection compact">
-              <h3>Customer <span className="function-key-hint">F4</span></h3>
-              <div className="customer-display">
-                {selectedSalesCustomer ? (
-                  <div className="selected-customer compact">
-                    <div className="customer-details compact">
-                      <strong>{selectedSalesCustomer.name}</strong>
-                      {selectedSalesCustomer.mobile && <span>{selectedSalesCustomer.mobile}</span>}
-                    </div>
-                    <button
-                      className="btn btn-small btn-secondary"
-                      onClick={() => setSelectedSalesCustomer(null)}
-                    >
-                      Change
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    className="btn btn-secondary btn-sm btn-full"
-                    onClick={() => setShowCustomerModal(true)}
-                  >
-                    Select Customer
-                  </button>
-                )}
-              </div>
-            </div>
+
 
             <div className="card">
               <h3>Sales Summary</h3>
               <div className="summary-row">
-                <span>Subtotal:</span>
-                <span>{formatCurrency(getSubtotal())}</span>
+                <label>Customer: <span className="function-key-hint">F4</span></label>
+                <div className="summary-value">
+                  {selectedSalesCustomer ? (
+                    <div className="selected-customer-inline" onClick={() => setShowCustomerModal(true)}>
+                      <div className="customer-info-mini">
+                        <span className="name">{selectedSalesCustomer.name}</span>
+                        {selectedSalesCustomer.mobile && <span className="mobile">{selectedSalesCustomer.mobile}</span>}
+                      </div>
+                      <button
+                        className="btn-clear-customer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedSalesCustomer(null);
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setShowCustomerModal(true)}
+                    >
+                      Select
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="summary-row compact">
-                <label>Tax (%): <span className="function-key-hint">F6</span></label>
-                <div className="summary-input-group">
+              <div className="summary-row">
+                <span>Subtotal:</span>
+                <span>{formatCurrency(getActualSubtotal())}</span>
+              </div>
+              <div className="summary-row">
+                <div className="summary-label-with-input">
+                  <label>Tax (%): <span className="function-key-hint">F6</span></label>
                   <input
                     ref={taxInputRef}
-                    type="number"
+                    type="text"
                     className="input input-sm"
                     value={taxRate}
-                    onChange={(e) => setTaxRate(Number(e.target.value))}
-                    min="0"
-                    max="100"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                        setTaxRate(val === '' ? 0 : Number(val));
+                      }
+                    }}
                   />
-                  <span className="summary-value">{formatCurrency(getTax())}</span>
                 </div>
+                <span className="summary-value">{formatCurrency(getTax())}</span>
               </div>
-              <div className="summary-row compact">
-                <label>Discount (₹): <span className="function-key-hint">F2</span></label>
-                <div className="summary-input-group">
+              <div className="summary-row">
+                <div className="summary-label-with-input">
+                  <label>Discount (₹): <span className="function-key-hint">F2</span></label>
                   <input
                     ref={discountInputRef}
-                    type="number"
+                    type="text"
                     className="input input-sm"
                     value={discount}
-                    onChange={(e) => setDiscount(Number(e.target.value))}
-                    min="0"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                        setDiscount(val === '' ? 0 : Number(val));
+                      }
+                    }}
                   />
-                  <span className="summary-value">-{formatCurrency(getDiscount())}</span>
                 </div>
+                <span className="summary-value">-{formatCurrency(getDiscount())}</span>
               </div>
+              {getItemDiscounts() > 0 && (
+                <div className="summary-row item-discounts">
+                  <span className="discount-hint">(Incl. {formatCurrency(getItemDiscounts())} item-wise)</span>
+                </div>
+              )}
               <div className="summary-total compact">
                 <span>Total:</span>
                 <span className="total-amount">{formatCurrency(getTotal())}</span>
@@ -539,34 +553,47 @@ export default function Cart({ onNavigate }: CartProps) {
 
               {paymentMethod === 'cash' && (
                 <div className="cash-payment-details">
-                  <label>
-                    Received Amount (₹):
-                    <input
-                      ref={receivedAmountInputRef}
-                      type="number"
-                      className="input"
-                      value={receivedAmount}
-                      onChange={(e) => setReceivedAmount(e.target.value)}
-                      min="0"
-                      step="0.01"
-                      placeholder="Leave empty for exact payment"
-                    />
-                  </label>
-                  {receivedAmount && Number(receivedAmount) > 0 && (
-                    <div className="amount-info">
-                      {discountAmount > 0 ? (
-                        <div className="discount-amount">
-                          <span>Discount Applied:</span>
-                          <span className="discount-value">-{formatCurrency(discountAmount)}</span>
-                        </div>
-                      ) : actualChange > 0 ? (
-                        <div className="change-amount">
-                          <span>Change:</span>
-                          <span className="change-value">{formatCurrency(actualChange)}</span>
-                        </div>
-                      ) : null}
+                  <label>Received Amount (₹):</label>
+                  <div className="cash-payment-row">
+                    <div className="cash-input-container">
+                      <input
+                        ref={receivedAmountInputRef}
+                        type="text"
+                        className="input"
+                        value={receivedAmount}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                            setReceivedAmount(val);
+                          }
+                        }}
+                        onFocus={() => {
+                          setReceivedAmount('');
+                        }}
+                        placeholder="0.00"
+                      />
                     </div>
-                  )}
+                    {receivedAmount && Number(receivedAmount) > 0 && (
+                      <>
+                        {discountAmount > 0 ? (
+                          <div className="change-display-boxed discount">
+                            <span className="change-label">Discount</span>
+                            <span className="change-value-large">-{formatCurrency(discountAmount)}</span>
+                          </div>
+                        ) : actualChange > 0 ? (
+                          <div className="change-display-boxed">
+                            <span className="change-label">Change</span>
+                            <span className="change-value-large">{formatCurrency(actualChange)}</span>
+                          </div>
+                        ) : (
+                          <div className="change-display-boxed">
+                            <span className="change-label">Balance</span>
+                            <span className="change-value-large">Exact</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

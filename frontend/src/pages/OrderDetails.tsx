@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { storageService } from '../services/storage';
 import { useCompanyStore } from '../store/companyStore';
+import { useAuthStore } from '../store/authStore';
 import { Transaction, Customer, SalesCustomer, Item } from '../types';
 import { formatCurrency, formatOrderId, numberToWords } from '../utils/formatters';
+import { printReceipt } from '../utils/printer';
+import ReturnModal, { ReturnFormData } from '../components/ReturnModal';
 import './OrderDetails.css';
 
 interface OrderDetailsProps {
@@ -24,7 +27,14 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
   const [salesCustomer, setSalesCustomer] = useState<SalesCustomer | null>(null);
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedItems, setEditedItems] = useState<CartItem[]>([]);
+  const [editedTransaction, setEditedTransaction] = useState<Transaction | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnSubmitting, setReturnSubmitting] = useState(false);
   const { company, loadCompany } = useCompanyStore();
+  const { customer: currentUser } = useAuthStore();
 
   useEffect(() => {
     loadData();
@@ -34,7 +44,7 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
     try {
       setLoading(true);
       await loadCompany();
-      
+
       const tx = await storageService.getTransaction(orderId);
       setTransaction(tx);
 
@@ -87,14 +97,70 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
     return Math.max(0, (originalPrice - sellingPrice) * quantity);
   };
 
-  const calculateTotals = () => {
+  const handleEditToggle = () => {
+    if (isEditMode) {
+      // Cancel edit mode - reset to original values
+      setIsEditMode(false);
+      setEditedItems([]);
+      setEditedTransaction(null);
+    } else {
+      // Enter edit mode - create copies for editing
+      setIsEditMode(true);
+      setEditedItems([...items]);
+      setEditedTransaction(transaction ? { ...transaction } : null);
+    }
+  };
+
+  const handleQuantityChange = (index: number, newQuantity: number) => {
+    if (newQuantity < 0) return;
+
+    const updatedItems = [...editedItems];
+    const item = updatedItems[index];
+
+    // Update quantity
+    item.quantity = newQuantity;
+    item.subtotal = (item.customPrice !== undefined ? item.customPrice : item.originalPrice || 0) * newQuantity;
+
+    setEditedItems(updatedItems);
+  };
+
+  const handlePriceChange = (index: number, newPrice: number) => {
+    if (newPrice < 0) return;
+
+    const updatedItems = [...editedItems];
+    const item = updatedItems[index];
+
+    // Update custom price
+    item.customPrice = newPrice;
+    item.subtotal = newPrice * item.quantity;
+
+    setEditedItems(updatedItems);
+  };
+
+  const handleDateChange = (newDate: string) => {
+    if (!editedTransaction) return;
+    setEditedTransaction({
+      ...editedTransaction,
+      created_at: newDate
+    });
+  };
+
+  const handlePaymentMethodChange = (newMethod: string) => {
+    if (!editedTransaction) return;
+    setEditedTransaction({
+      ...editedTransaction,
+      payment_method: newMethod as 'cash' | 'card' | 'upi'
+    });
+  };
+
+  const calculateEditedTotals = () => {
     let totalQuantity = 0;
     let subtotal = 0;
     let totalItemDiscount = 0;
     let grossProfit = 0;
     let grossLoss = 0;
 
-    items.forEach((cartItem) => {
+    editedItems.forEach((cartItem) => {
       const item = cartItem.item || cartItem;
       const quantity = cartItem.quantity || 1;
       totalQuantity += quantity;
@@ -103,10 +169,10 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
       const sellingPrice = cartItem.customPrice !== undefined
         ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
         : originalPrice;
-      
+
       const itemSubtotal = sellingPrice * quantity;
       subtotal += itemSubtotal;
-      
+
       const itemDiscount = calculateItemDiscount(cartItem);
       totalItemDiscount += itemDiscount;
 
@@ -120,10 +186,141 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
       }
     });
 
-    const totalAmount = typeof transaction?.total_amount === 'string' 
-      ? parseFloat(transaction.total_amount) 
+    const totalAmount = typeof editedTransaction?.total_amount === 'string'
+      ? parseFloat(editedTransaction.total_amount)
+      : (editedTransaction?.total_amount || 0);
+
+    // Overall discount = subtotal - totalAmount
+    const overallDiscount = Math.max(0, subtotal - totalAmount);
+    const totalDiscount = totalItemDiscount + overallDiscount;
+
+    // Tax calculation: if totalAmount < subtotal, there's a discount; if > subtotal, there's tax
+    const tax = totalAmount > subtotal ? totalAmount - subtotal : 0;
+    const grandTotal = totalAmount;
+
+    // Net Profit = grossProfit - grossLoss - overallDiscount
+    const netProfit = grossProfit - grossLoss - overallDiscount;
+
+    return {
+      totalQuantity,
+      subtotal,
+      discount: overallDiscount,
+      tax,
+      grandTotal,
+      grossProfit,
+      grossLoss,
+      netProfit,
+      totalDiscount,
+    };
+  };
+
+  const handleSave = async () => {
+    if (!editedTransaction) return;
+
+    try {
+      setSaving(true);
+
+      // Calculate new totals based on edited items
+      const totals = calculateEditedTotals();
+
+      // Prepare update data
+      const updateData: Partial<Transaction> = {
+        items_json: JSON.stringify(editedItems),
+        total_amount: totals.grandTotal,
+        created_at: editedTransaction.created_at,
+        payment_method: editedTransaction.payment_method,
+      };
+
+      // Update transaction
+      const updatedTransaction = await storageService.updateTransaction(transaction!.id, updateData);
+
+      // Update local state
+      setTransaction(updatedTransaction);
+      setItems(editedItems);
+
+      // Exit edit mode
+      setIsEditMode(false);
+      setEditedItems([]);
+      setEditedTransaction(null);
+
+      alert('Order updated successfully!');
+    } catch (error: any) {
+      console.error('Error updating order:', error);
+      alert(`Failed to update order: ${error.message || 'Unknown error'}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReturnRequest = () => {
+    if (!transaction) return;
+    setShowReturnModal(true);
+  };
+
+  const handleReturnModalSubmit = async (formData: ReturnFormData) => {
+    if (!transaction) return;
+    setReturnSubmitting(true);
+    try {
+      const returnRecord = await storageService.createReturn({
+        originalTransactionId: transaction.id,
+        returnType: formData.returnType,
+        reason: formData.reason,
+        restockedItems: formData.restockedItems,
+      });
+      setShowReturnModal(false);
+      alert(`Return request created successfully!\nReturn ID: ${returnRecord.id.slice(0, 8).toUpperCase()}…\nStatus: ${returnRecord.status}\n\nYour request will be reviewed by an admin.`);
+    } catch (error: any) {
+      console.error('Error creating return:', error);
+      alert(`Failed to create return: ${error.message || 'Unknown error'}`);
+    } finally {
+      setReturnSubmitting(false);
+    }
+  };
+
+  const canEdit = () => {
+    const isAdmin = currentUser?.isAdmin || false;
+    return isAdmin || transaction?.customer_id === currentUser?.id;
+  };
+
+  const calculateTotals = () => {
+    let totalQuantity = 0;
+    let subtotal = 0;
+    let actualSubtotal = 0;
+    let totalItemDiscount = 0;
+    let grossProfit = 0;
+    let grossLoss = 0;
+
+    items.forEach((cartItem) => {
+      const item = cartItem.item || cartItem;
+      const quantity = cartItem.quantity || 1;
+      totalQuantity += quantity;
+
+      const originalPrice = cartItem.originalPrice || (typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0);
+      const sellingPrice = cartItem.customPrice !== undefined
+        ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
+        : originalPrice;
+
+      actualSubtotal += originalPrice * quantity;
+      const itemSubtotal = sellingPrice * quantity;
+      subtotal += itemSubtotal;
+
+      const itemDiscount = calculateItemDiscount(cartItem);
+      totalItemDiscount += itemDiscount;
+
+      // Calculate profit/loss: (sellingPrice - cost) * quantity
+      const cost = typeof item.cost === 'string' ? parseFloat(item.cost) : (item.cost || 0);
+      const diff = (sellingPrice - cost) * quantity;
+      if (diff >= 0) {
+        grossProfit += diff;
+      } else {
+        grossLoss += Math.abs(diff);
+      }
+    });
+
+    const totalAmount = typeof transaction?.total_amount === 'string'
+      ? parseFloat(transaction.total_amount)
       : (transaction?.total_amount || 0);
-    
+
     // Overall discount = subtotal - totalAmount (if tax is included, we need to account for it)
     // For simplicity, assume discount = subtotal - totalAmount
     const overallDiscount = Math.max(0, subtotal - totalAmount);
@@ -140,6 +337,7 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
     return {
       totalQuantity,
       subtotal,
+      actualSubtotal,
       discount: overallDiscount,
       tax,
       grandTotal,
@@ -164,7 +362,7 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
       (customer?.address || [customer?.city, customer?.state, customer?.pincode].filter(Boolean).join(', ')) ||
       salesCustomer?.place ||
       '';
-    
+
     const printHTML = `
       <!DOCTYPE html>
       <html>
@@ -412,9 +610,9 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
           <div class="invoice-wrapper">
             <div class="header-section">
               <div class="logo-section">
-                ${company.logo 
-                  ? `<img src="${company.logo}" alt="${company.name}" style="max-width: 100px; max-height: 100px; object-fit: contain;" />`
-                  : '<div class="logo-placeholder">Add Logo</div>'}
+                ${company.logo
+        ? `<img src="${company.logo}" alt="${company.name}" style="max-width: 100px; max-height: 100px; object-fit: contain;" />`
+        : '<div class="logo-placeholder">Add Logo</div>'}
                 <div style="font-size: 9px; margin-top: 5px;">Page No. 1 of 1</div>
               </div>
               <div class="company-section">
@@ -422,12 +620,12 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
                 <div class="company-name">${company.name || 'Add Company Name'}</div>
                 <div class="company-details">
                   ${company.address ? `<div>${company.address}</div>` : '<div>Add Address</div>'}
-                  ${company.phone || company.email 
-                    ? `<div>Mobile: ${company.phone || '+91 9999999999'} | Email: ${company.email || 'company@gmail.com'}</div>`
-                    : '<div>Mobile: +91 9999999999 | Email: company@gmail.com</div>'}
-                  ${company.gstin 
-                    ? `<div>GSTIN - ${company.gstin}</div>`
-                    : '<div>GSTIN - 09AAAAA1234A1Z2</div>'}
+                  ${company.phone || company.email
+        ? `<div>Mobile: ${company.phone || '+91 9999999999'} | Email: ${company.email || 'company@gmail.com'}</div>`
+        : '<div>Mobile: +91 9999999999 | Email: company@gmail.com</div>'}
+                  ${company.gstin
+        ? `<div>GSTIN - ${company.gstin}</div>`
+        : '<div>GSTIN - 09AAAAA1234A1Z2</div>'}
                 </div>
               </div>
               <div class="copy-label">Original Copy</div>
@@ -492,18 +690,18 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
               </thead>
               <tbody>
                 ${items.map((cartItem, index) => {
-                  const item = cartItem.item || cartItem;
-                  const quantity = cartItem.quantity || 1;
-                  const originalPrice = cartItem.originalPrice || (typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0);
-                  const sellingPrice = cartItem.customPrice !== undefined
-                    ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
-                    : originalPrice;
-                  const itemDiscount = calculateItemDiscount(cartItem);
-                  const itemDiscountPercent = originalPrice > 0 ? ((itemDiscount / (originalPrice * quantity)) * 100).toFixed(2) : '0.00';
-                  const amount = sellingPrice * quantity;
-                  const taxPercent = totals.tax > 0 ? ((totals.tax / totals.subtotal) * 100).toFixed(2) : '0.00';
-                  
-                  return `
+          const item = cartItem.item || cartItem;
+          const quantity = cartItem.quantity || 1;
+          const originalPrice = cartItem.originalPrice || (typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0);
+          const sellingPrice = cartItem.customPrice !== undefined
+            ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
+            : originalPrice;
+          const itemDiscount = calculateItemDiscount(cartItem);
+          const itemDiscountPercent = originalPrice > 0 ? ((itemDiscount / (originalPrice * quantity)) * 100).toFixed(2) : '0.00';
+          const amount = sellingPrice * quantity;
+          const taxPercent = totals.tax > 0 ? ((totals.tax / totals.subtotal) * 100).toFixed(2) : '0.00';
+
+          return `
                     <tr>
                       <td class="text-center">${index + 1}</td>
                       <td>${item.name || item.display_name || 'N/A'}</td>
@@ -515,20 +713,30 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
                       <td class="text-right">${formatCurrency(amount)}</td>
                     </tr>
                   `;
-                }).join('')}
+        }).join('')}
               </tbody>
             </table>
 
             <div class="summary-section">
               <div class="summary-box">
-                ${totals.discount > 0 ? `
                 <div class="summary-row">
-                  <span>Discount:</span>
-                  <span class="text-right">-${formatCurrency(totals.discount)}</span>
+                  <span>Subtotal:</span>
+                  <span class="text-right">${formatCurrency(totals.actualSubtotal)}</span>
+                </div>
+                ${totals.totalDiscount > 0 ? `
+                <div class="summary-row">
+                  <span>Total Discount:</span>
+                  <span class="text-right">-${formatCurrency(totals.totalDiscount)}</span>
+                </div>
+                ` : ''}
+                ${totals.tax > 0 ? `
+                <div class="summary-row">
+                  <span>GST/Tax:</span>
+                  <span class="text-right">${formatCurrency(totals.tax)}</span>
                 </div>
                 ` : ''}
                 <div class="summary-row total">
-                  <span>Total:</span>
+                  <span>GRAND TOTAL:</span>
                   <span class="text-right">${formatCurrency(totals.grandTotal)}</span>
                 </div>
               </div>
@@ -551,37 +759,37 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
                 <ul>
                   <li>E & O.E</li>
                   ${(() => {
-                    const businessType = company.business_type || '';
-                    if (businessType === 'clothing') {
-                      return `
+        const businessType = company.business_type || '';
+        if (businessType === 'clothing') {
+          return `
                         <li>1. All items are sold on a final sale basis. No returns or exchanges unless defective.</li>
                         <li>2. Defective items must be returned within 7 days of purchase with original receipt.</li>
                         <li>3. Prices are subject to change without prior notice.</li>
                         <li>4. Subject to '${company.city || company.state || 'Local'}' Jurisdiction only.</li>
                       `;
-                    } else if (businessType === 'cafe') {
-                      return `
+        } else if (businessType === 'cafe') {
+          return `
                         <li>1. All food and beverages are prepared fresh. No returns or refunds once served.</li>
                         <li>2. Prices are inclusive of applicable taxes.</li>
                         <li>3. We reserve the right to refuse service to anyone.</li>
                         <li>4. Subject to '${company.city || company.state || 'Local'}' Jurisdiction only.</li>
                       `;
-                    } else if (businessType === 'electrical') {
-                      return `
+        } else if (businessType === 'electrical') {
+          return `
                         <li>1. All electrical items are sold with manufacturer warranty only.</li>
                         <li>2. Defective items must be reported within 7 days with original receipt.</li>
                         <li>3. Installation charges are separate unless mentioned.</li>
                         <li>4. Subject to '${company.city || company.state || 'Local'}' Jurisdiction only.</li>
                       `;
-                    } else {
-                      return `
+        } else {
+          return `
                         <li>1. Goods once sold will not be taken back unless defective.</li>
                         <li>2. Defective items must be returned within 7 days with original receipt.</li>
                         <li>3. Prices are subject to change without prior notice.</li>
                         <li>4. Subject to '${company.city || company.state || 'Local'}' Jurisdiction only.</li>
                       `;
-                    }
-                  })()}
+        }
+      })()}
                 </ul>
               </div>
               <div class="signature-section">
@@ -608,8 +816,31 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
       printWindow.focus();
       setTimeout(() => {
         printWindow.print();
+        setTimeout(() => {
+          printWindow.close();
+        }, 250);
       }, 250);
     }
+  };
+
+  const handlePrintReceipt = async () => {
+    if (!transaction) return;
+    const totals = calculateTotals();
+    const itemsForPrinter = items.map(ci => {
+      const item = ci.item || ci;
+      return {
+        ...ci,
+        originalPrice: ci.originalPrice || (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0))
+      };
+    });
+
+    await printReceipt({
+      items: itemsForPrinter as any,
+      transaction,
+      customer: salesCustomer || (customer ? { ...customer, mobile: customer.phone || '' } : null) as any,
+      taxAmount: totals.tax,
+      discountAmount: totals.totalDiscount,
+    });
   };
 
   const handleExportPDF = () => {
@@ -647,11 +878,41 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
           ← Back to Orders
         </button>
         <div className="header-actions">
-          <button className="btn btn-primary" onClick={handlePrint}>
-            🖨️ Print
+          {canEdit() && (
+            <button
+              className={`btn ${isEditMode ? 'btn-danger' : 'btn-primary'}`}
+              onClick={handleEditToggle}
+              disabled={saving}
+            >
+              {isEditMode ? '❌ Cancel' : '✏️ Edit'}
+            </button>
+          )}
+          {isEditMode && (
+            <button
+              className="btn btn-success"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? '💾 Saving...' : '💾 Save'}
+            </button>
+          )}
+          {!isEditMode && (
+            <button
+              className="btn btn-warning"
+              onClick={handleReturnRequest}
+              title="Request Return"
+            >
+              🔄 Return
+            </button>
+          )}
+          <button className="btn btn-secondary" onClick={handlePrintReceipt} title="Print Thermal Receipt">
+            🖨️ Receipt
           </button>
-          <button className="btn btn-primary" onClick={handleExportPDF}>
-            📄 PDF
+          <button className="btn btn-primary" onClick={handlePrint} title="Print A4 Invoice">
+            📄 Invoice
+          </button>
+          <button className="btn btn-primary" onClick={handleExportPDF} title="Export as PDF">
+            📥 PDF
           </button>
         </div>
       </div>
@@ -680,29 +941,58 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
             <div className="info-label">Order ID:</div>
             <div className="info-value">{transaction.id}</div>
             <div className="info-label" style={{ marginTop: '15px' }}>Date:</div>
-            <div className="info-value">{date.toLocaleDateString()}</div>
+            <div className="info-value">
+              {isEditMode ? (
+                <input
+                  type="datetime-local"
+                  value={editedTransaction?.created_at ? new Date(editedTransaction.created_at).toISOString().slice(0, 16) : ''}
+                  onChange={(e) => handleDateChange(e.target.value)}
+                  className="form-input"
+                  style={{ width: '200px', height: '32px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
+                />
+              ) : (
+                date.toLocaleDateString()
+              )}
+            </div>
           </div>
           <div className="invoice-info-right">
-            <div className="info-label">Time:</div>
+            <div className="info-label">Payment:</div>
+            <div className="info-value">
+              {isEditMode ? (
+                <select
+                  value={editedTransaction?.payment_method || transaction.payment_method}
+                  onChange={(e) => handlePaymentMethodChange(e.target.value)}
+                  className="form-input"
+                  style={{ width: '120px', height: '32px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
+                >
+                  <option value="cash">Cash</option>
+                  <option value="card">Card</option>
+                  <option value="upi">UPI</option>
+                </select>
+              ) : (
+                transaction.payment_method.toUpperCase()
+              )}
+            </div>
+            <div className="info-label" style={{ marginTop: '15px' }}>Time:</div>
             <div className="info-value">{date.toLocaleTimeString()}</div>
           </div>
         </div>
 
         <div className="customer-section">
           <h3>Customer Details</h3>
-        {salesCustomer ? (
-          <div className="customer-info">
-            <div><strong>Name:</strong> {salesCustomer.name}</div>
-            {salesCustomer.mobile && <div><strong>Mobile:</strong> {salesCustomer.mobile}</div>}
-            {salesCustomer.email && <div><strong>Email:</strong> {salesCustomer.email}</div>}
-            {salesCustomer.place && <div><strong>Place:</strong> {salesCustomer.place}</div>}
-          </div>
-        ) : customer ? (
+          {salesCustomer ? (
+            <div className="customer-info">
+              <div><strong>Name:</strong> {salesCustomer.name}</div>
+              {salesCustomer.mobile && <div><strong>Mobile:</strong> {salesCustomer.mobile}</div>}
+              {salesCustomer.email && <div><strong>Email:</strong> {salesCustomer.email}</div>}
+              {salesCustomer.place && <div><strong>Place:</strong> {salesCustomer.place}</div>}
+            </div>
+          ) : customer ? (
             <div className="customer-info">
               <div><strong>Name:</strong> {customer.name}</div>
               {customer.phone && <div><strong>Mobile:</strong> {customer.phone}</div>}
-            {customer.email && <div><strong>Email:</strong> {customer.email}</div>}
-            {customer.address && <div><strong>Address:</strong> {customer.address}</div>}
+              {customer.email && <div><strong>Email:</strong> {customer.email}</div>}
+              {customer.address && <div><strong>Address:</strong> {customer.address}</div>}
             </div>
           ) : (
             <div className="customer-info">
@@ -724,7 +1014,7 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
               </tr>
             </thead>
             <tbody>
-              {items.map((cartItem, index) => {
+              {(isEditMode ? editedItems : items).map((cartItem, index) => {
                 const item = cartItem.item || cartItem;
                 const quantity = cartItem.quantity || 1;
                 const originalPrice = cartItem.originalPrice || (typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0);
@@ -733,13 +1023,55 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
                   : originalPrice;
                 const itemDiscount = calculateItemDiscount(cartItem);
                 const amount = sellingPrice * quantity;
-                
+
                 return (
                   <tr key={index}>
                     <td className="text-center">{index + 1}</td>
                     <td>{item.name || item.display_name || 'N/A'}</td>
-                    <td className="text-center">{quantity}</td>
-                    <td className="text-right">{formatCurrency(sellingPrice)}</td>
+                    <td className="text-center">
+                      {isEditMode ? (
+                        <div className="quantity-editor">
+                          <button
+                            className="btn btn-xs btn-secondary"
+                            onClick={() => handleQuantityChange(index, quantity - 1)}
+                            disabled={quantity <= 0}
+                          >
+                            -
+                          </button>
+                          <input
+                            type="number"
+                            value={quantity}
+                            onChange={(e) => handleQuantityChange(index, parseInt(e.target.value) || 0)}
+                            className="quantity-input"
+                            min="0"
+                            style={{ width: '80px', height: '32px', textAlign: 'center', margin: '0 5px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
+                          />
+                          <button
+                            className="btn btn-xs btn-secondary"
+                            onClick={() => handleQuantityChange(index, quantity + 1)}
+                          >
+                            +
+                          </button>
+                        </div>
+                      ) : (
+                        quantity
+                      )}
+                    </td>
+                    <td className="text-right">
+                      {isEditMode ? (
+                        <input
+                          type="number"
+                          value={sellingPrice}
+                          onChange={(e) => handlePriceChange(index, parseFloat(e.target.value) || 0)}
+                          className="price-input"
+                          min="0"
+                          step="0.01"
+                          style={{ width: '100px', height: '32px', textAlign: 'right', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
+                        />
+                      ) : (
+                        formatCurrency(sellingPrice)
+                      )}
+                    </td>
                     <td className="text-right">{itemDiscount > 0 ? formatCurrency(itemDiscount) : '-'}</td>
                     <td className="text-right">{formatCurrency(amount)}</td>
                   </tr>
@@ -752,27 +1084,27 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
         <div className="totals-section">
           <div className="total-row">
             <span>Total Quantity:</span>
-            <span>{totals.totalQuantity}</span>
+            <span>{isEditMode ? calculateEditedTotals().totalQuantity : totals.totalQuantity}</span>
           </div>
           <div className="total-row">
             <span>Subtotal:</span>
-            <span>{formatCurrency(totals.subtotal)}</span>
+            <span>{formatCurrency(isEditMode ? calculateEditedTotals().subtotal : totals.subtotal)}</span>
           </div>
-          {totals.discount > 0 && (
+          {(isEditMode ? calculateEditedTotals().discount : totals.discount) > 0 && (
             <div className="total-row">
               <span>Discount:</span>
-              <span>{formatCurrency(totals.discount)}</span>
+              <span>{formatCurrency(isEditMode ? calculateEditedTotals().discount : totals.discount)}</span>
             </div>
           )}
-          {totals.tax > 0 && (
+          {(isEditMode ? calculateEditedTotals().tax : totals.tax) > 0 && (
             <div className="total-row">
               <span>Tax:</span>
-              <span>{formatCurrency(totals.tax)}</span>
+              <span>{formatCurrency(isEditMode ? calculateEditedTotals().tax : totals.tax)}</span>
             </div>
           )}
           <div className="total-row grand-total">
             <span>Grand Total:</span>
-            <span>{formatCurrency(totals.grandTotal)}</span>
+            <span>{formatCurrency(isEditMode ? calculateEditedTotals().grandTotal : totals.grandTotal)}</span>
           </div>
         </div>
 
@@ -799,6 +1131,15 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
           </div>
         </div>
       </div>
+
+      <ReturnModal
+        isOpen={showReturnModal}
+        orderId={transaction?.id ?? ''}
+        items={items}
+        onClose={() => setShowReturnModal(false)}
+        onSubmit={handleReturnModalSubmit}
+        submitting={returnSubmitting}
+      />
     </div>
   );
 }

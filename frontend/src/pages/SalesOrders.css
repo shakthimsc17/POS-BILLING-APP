@@ -170,6 +170,13 @@
   color: #1a1a1a;
 }
 
+.summary-subtext {
+  margin: 0.35rem 0 0 0;
+  font-size: 0.75rem;
+  color: #6c757d;
+  font-weight: 400;
+}
+
 .profit-card .summary-icon {
   background: #27ae60;
 }
@@ -192,6 +199,14 @@
 
 .net-value {
   color: #3498db !important;
+}
+
+.returns-card .summary-icon {
+  background: #f39c12;
+}
+
+.returns-value {
+  color: #d35400 !important;
 }
 
 .transactions-table {
@@ -340,6 +355,46 @@
   font-weight: 700;
   font-size: 1.1rem;
   color: #1a1a1a;
+}
+
+.amount.amount-return {
+  color: #e74c3c;
+}
+
+.tx-type-badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.tx-type-sale {
+  background: #e8f5e9;
+  color: #27ae60;
+}
+
+.tx-type-return {
+  background: #ffebee;
+  color: #c0392b;
+}
+
+.transactions-table tr.return-row {
+  background: #fff8f8;
+}
+
+.transactions-table tr.return-row:hover {
+  background: #ffefef;
+}
+
+.profit-cell {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.profit-cell.negative {
+  color: #e74c3c;
 }
 
 .profit-loss-cell {

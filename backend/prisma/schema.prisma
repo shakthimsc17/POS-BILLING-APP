@@ -30,6 +30,10 @@ model Customer {
   items                Item[]
   transactions         Transaction[]   @relation("CustomerTransactions")
   transactionCustomers Transaction[]   @relation("TransactionCustomers")
+  editedTransactions   Transaction[]   @relation("TransactionEditor")
+  returnRecords        ReturnRecord[]
+  approvedReturns      ReturnRecord[]        @relation("ReturnApprover")
+  processedReturns     ReturnRecord[]        @relation("ReturnProcessor")
   company              Company?
   settings             Settings?
   activityLogs         ActivityLog[]
@@ -102,6 +106,10 @@ model Transaction {
   receivedAmount        Decimal? @map("received_amount") @db.Decimal(10, 2)
   changeAmount          Decimal? @map("change_amount") @db.Decimal(10, 2)
   itemsJson             String   @map("items_json") @db.Text
+  transactionType       String   @default("sale") @map("transaction_type") @db.VarChar(20) // 'sale', 'return', 'exchange'
+  originalTransactionId String?  @map("original_transaction_id") @db.Uuid
+  editedAt              DateTime? @map("edited_at") @db.Timestamptz(6)
+  editedBy              String?  @map("edited_by") @db.Uuid
   createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   // Relations
@@ -110,10 +118,16 @@ model Transaction {
   salesCustomer       SalesCustomer? @relation(fields: [salesCustomerId], references: [id], onDelete: SetNull)
   tableOrder          TableOrder?
   quickSaleItems       QuickSaleItem[]
+  originalTransaction Transaction? @relation("TransactionReturns", fields: [originalTransactionId], references: [id])
+  returnTransactions   Transaction[] @relation("TransactionReturns")
+  returns              ReturnRecord[]
+  editedByUser         Customer?      @relation("TransactionEditor", fields: [editedBy], references: [id])
 
   @@index([customerId])
   @@index([createdAt])
   @@index([salesCustomerId])
+  @@index([transactionType])
+  @@index([originalTransactionId])
   @@map("transactions")
 }
 
@@ -142,14 +156,17 @@ model Company {
 }
 
 model Settings {
-  id                  String   @id @default(uuid()) @db.Uuid
-  customerId          String   @unique @map("customer_id") @db.Uuid
-  activityLogEnabled  Boolean  @default(true) @map("activity_log_enabled")
-  itemLogActions      String   @default("update_delete") @map("item_log_actions") @db.VarChar(20)
-  receiptHeaderOption String   @default("both") @map("receipt_header_option") @db.VarChar(20)
-  receiptAutoPrint    Boolean  @default(true) @map("receipt_auto_print")
-  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                  String    @id @default(uuid()) @db.Uuid
+  customerId          String    @unique @map("customer_id") @db.Uuid
+  activityLogEnabled  Boolean   @default(true) @map("activity_log_enabled")
+  itemLogActions      String    @default("update_delete") @map("item_log_actions") @db.VarChar(20)
+  receiptHeaderOption String    @default("both") @map("receipt_header_option") @db.VarChar(20)
+  receiptAutoPrint    Boolean   @default(true) @map("receipt_auto_print")
+  supabaseUrl         String?   @map("supabase_url") @db.Text // Encrypted connection string
+  lastSyncAt          DateTime? @map("last_sync_at") @db.Timestamptz(6)
+  lastSyncStatus      String?   @map("last_sync_status") @db.VarChar(50) // 'success', 'failed', 'in_progress'
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // Relations
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
@@ -333,4 +350,36 @@ model TableOrder {
   @@index([status])
   @@index([createdAt])
   @@map("table_orders")
+}
+
+model ReturnRecord {
+  id                      String   @id @default(uuid()) @db.Uuid
+  originalTransactionId   String   @map("original_transaction_id") @db.Uuid
+  customerId              String   @map("customer_id") @db.Uuid
+  returnType              String   @map("return_type") @db.VarChar(20) // 'full', 'partial', 'exchange', 'refund'
+  reason                  String?  @db.Text
+  status                  String   @default("pending") @db.VarChar(20) // 'pending', 'approved', 'processed', 'rejected'
+  refundAmount            Decimal? @map("refund_amount") @db.Decimal(10, 2)
+  restockedItems          Json?    @map("restocked_items") @db.JsonB
+  exchangeItems           Json?    @map("exchange_items") @db.JsonB
+  notes                   String?  @db.Text
+  approvedBy              String?  @map("approved_by") @db.Uuid
+  processedBy             String?  @map("processed_by") @db.Uuid
+  approvedAt              DateTime? @map("approved_at") @db.Timestamptz(6)
+  processedAt             DateTime? @map("processed_at") @db.Timestamptz(6)
+  createdAt               DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  customer            Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  originalTransaction Transaction  @relation(fields: [originalTransactionId], references: [id])
+  approvedByUser      Customer?    @relation("ReturnApprover", fields: [approvedBy], references: [id])
+  processedByUser     Customer?    @relation("ReturnProcessor", fields: [processedBy], references: [id])
+
+  @@index([customerId])
+  @@index([originalTransactionId])
+  @@index([status])
+  @@index([returnType])
+  @@index([createdAt])
+  @@map("returns")
 }

@@ -90,6 +90,7 @@ export interface Transaction {
   sales_customer_id?: string; // The sales customer who made the purchase (buyer) - sales customer
   table_order_id?: string; // The table order this transaction is linked to
   total_amount: number | string; // Prisma Decimal returns as string
+  transaction_type?: 'sale' | 'return' | 'exchange'; // default 'sale'
   payment_method: 'cash' | 'card' | 'upi';
   received_amount?: number | string; // Prisma Decimal returns as string
   change_amount?: number | string; // Prisma Decimal returns as string
@@ -269,6 +270,36 @@ export const EXPENSE_CATEGORIES: CashFlowCategory[] = [
   { name: 'Stock Investment', icon: '📊', type: 'expense' },
   { name: 'Employee Salary', icon: '👥', type: 'expense' },
   { name: 'Daily Expenses', icon: '☕', type: 'expense' },
+  { name: 'Refund', icon: '↩️', type: 'expense' },
   { name: 'Custom', icon: '➕', type: 'expense' }
 ];
+
+export interface ReturnRecord {
+  id: string;
+  original_transaction_id: string;
+  customer_id: string;
+  return_type: 'full' | 'partial' | 'exchange' | 'refund';
+  reason?: string;
+  status: 'pending' | 'approved' | 'processed' | 'rejected';
+  refund_amount?: number | string;
+  restocked_items?: any;
+  exchange_items?: any;
+  notes?: string;
+  approved_by?: string;
+  processed_by?: string;
+  approved_at?: string;
+  processed_at?: string;
+  created_at: string;
+  updated_at: string;
+  customer?: Customer;
+  originalTransaction?: Transaction;
+  approvedByUser?: {
+    id: string;
+    name: string;
+  };
+  processedByUser?: {
+    id: string;
+    name: string;
+  };
+}
 
