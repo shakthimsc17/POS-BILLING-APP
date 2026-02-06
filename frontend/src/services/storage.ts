@@ -522,4 +522,26 @@ export const storageService = {
   deleteReturn: async (id: string): Promise<{ message: string }> => {
     return apiClient.delete<{ message: string }>(`/returns/${id}`);
   },
+
+  // Cloud Backup (Supabase Sync)
+  getBackupStatus: async (): Promise<{
+    configured: boolean;
+    maskedUrl: string | null;
+    lastSyncAt: string | null;
+    lastSyncStatus: string | null;
+  }> => {
+    return apiClient.get('/backup/status');
+  },
+
+  saveBackupConnection: async (supabaseUrl: string): Promise<{ message: string; maskedUrl: string }> => {
+    return apiClient.post('/backup/save-connection', { supabaseUrl });
+  },
+
+  syncToSupabase: async (): Promise<{ message: string; syncedAt: string }> => {
+    return apiClient.post('/backup/sync');
+  },
+
+  removeBackupConnection: async (): Promise<{ message: string }> => {
+    return apiClient.delete('/backup/connection');
+  },
 };

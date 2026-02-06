@@ -156,14 +156,17 @@ model Company {
 }
 
 model Settings {
-  id                  String   @id @default(uuid()) @db.Uuid
-  customerId          String   @unique @map("customer_id") @db.Uuid
-  activityLogEnabled  Boolean  @default(true) @map("activity_log_enabled")
-  itemLogActions      String   @default("update_delete") @map("item_log_actions") @db.VarChar(20)
-  receiptHeaderOption String   @default("both") @map("receipt_header_option") @db.VarChar(20)
-  receiptAutoPrint    Boolean  @default(true) @map("receipt_auto_print")
-  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                  String    @id @default(uuid()) @db.Uuid
+  customerId          String    @unique @map("customer_id") @db.Uuid
+  activityLogEnabled  Boolean   @default(true) @map("activity_log_enabled")
+  itemLogActions      String    @default("update_delete") @map("item_log_actions") @db.VarChar(20)
+  receiptHeaderOption String    @default("both") @map("receipt_header_option") @db.VarChar(20)
+  receiptAutoPrint    Boolean   @default(true) @map("receipt_auto_print")
+  supabaseUrl         String?   @map("supabase_url") @db.Text // Encrypted connection string
+  lastSyncAt          DateTime? @map("last_sync_at") @db.Timestamptz(6)
+  lastSyncStatus      String?   @map("last_sync_status") @db.VarChar(50) // 'success', 'failed', 'in_progress'
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // Relations
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
