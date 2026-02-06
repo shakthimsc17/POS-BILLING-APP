@@ -108,7 +108,7 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
   const applyFilter = () => {
     // Ensure transactions is an array before filtering
     const transactionsArray = Array.isArray(transactions) ? transactions : [];
-    
+
     const now = new Date();
     let startDate: Date | null = null;
     let endDate: Date | null = null;
@@ -258,9 +258,44 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
   const handlePrintReceipt = async (transaction: Transaction) => {
     try {
       const items = JSON.parse(transaction.items_json);
+
+      // Find customer
+      const customer = transaction.sales_customer_id
+        ? salesCustomers.find((c) => c.id === transaction.sales_customer_id)
+        : transaction.transaction_customer_id
+          ? customers.find((c) => c.id === transaction.transaction_customer_id)
+          : null;
+
+      // Calculate totals for tax/discount inference
+      let actualSubtotal = 0;
+      let currentSubtotal = 0;
+
+      items.forEach((ci: any) => {
+        const item = ci.item || ci;
+        const op = ci.originalPrice ?? (typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0));
+        const cp = ci.customPrice ?? op;
+        const qty = ci.quantity || 1;
+        actualSubtotal += op * qty;
+        currentSubtotal += cp * qty;
+      });
+
+      const totalAmount = typeof transaction.total_amount === 'string' ? parseFloat(transaction.total_amount) : transaction.total_amount;
+
+      // Inference logic (same as OrderDetails)
+      const taxAmount = totalAmount > currentSubtotal ? totalAmount - currentSubtotal : 0;
+      // Total discount = (Actual Subtotal - Current Subtotal) + Global Discount
+      // If tax is present, Global Discount = Current Subtotal + Tax - Total Amount
+      // But if Total Amount < Current Subtotal, then Global Discount = Current Subtotal - Total Amount
+      const globalDiscount = currentSubtotal > totalAmount ? currentSubtotal - totalAmount : 0;
+      const itemDiscounts = actualSubtotal - currentSubtotal;
+      const totalDiscount = itemDiscounts + globalDiscount;
+
       await printReceipt({
         items,
         transaction,
+        customer: customer as SalesCustomer, // Cast for compatibility
+        taxAmount,
+        discountAmount: totalDiscount,
       });
     } catch (error) {
       console.error('Error printing receipt:', error);
@@ -275,10 +310,10 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
       await companyStore.loadCompany();
     }
     const company = companyStore.getCompany();
-    const headers = canViewProfitData 
+    const headers = canViewProfitData
       ? ['Date', 'Time', 'Order ID', 'Customer', 'Items Count', 'Payment Method', 'Amount', 'Profit/Loss']
       : ['Date', 'Time', 'Order ID', 'Customer', 'Items Count', 'Payment Method', 'Amount'];
-    
+
     const csvRows = [
       [company.name || 'Sales Report'],
       [company.address || ''],
@@ -290,7 +325,7 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
     filteredTransactions.forEach((tx) => {
       const date = new Date(tx.created_at);
       const items = JSON.parse(tx.items_json);
-      const customer = tx.transaction_customer_id 
+      const customer = tx.transaction_customer_id
         ? customers.find(c => c.id === tx.transaction_customer_id)?.name || 'Walk-in'
         : 'Walk-in';
       const row = [
@@ -302,12 +337,12 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
         tx.payment_method.toUpperCase(),
         formatCurrency(tx.total_amount),
       ];
-      
+
       if (canViewProfitData) {
         const { netProfit } = calculateTransactionProfitLoss(tx);
         row.push(formatCurrency(netProfit));
       }
-      
+
       csvRows.push(row);
     });
 
@@ -372,17 +407,17 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
             </thead>
             <tbody>
               ${filteredTransactions.map(tx => {
-                const date = new Date(tx.created_at);
-                const items = JSON.parse(tx.items_json);
-                const customer = tx.transaction_customer_id 
-                  ? customers.find(c => c.id === tx.transaction_customer_id)?.name || 'Walk-in'
-                  : 'Walk-in';
-                let profitLossCell = '';
-                if (canViewProfitData) {
-                  const { netProfit } = calculateTransactionProfitLoss(tx);
-                  profitLossCell = `<td>${formatCurrency(netProfit)}</td>`;
-                }
-                return `
+      const date = new Date(tx.created_at);
+      const items = JSON.parse(tx.items_json);
+      const customer = tx.transaction_customer_id
+        ? customers.find(c => c.id === tx.transaction_customer_id)?.name || 'Walk-in'
+        : 'Walk-in';
+      let profitLossCell = '';
+      if (canViewProfitData) {
+        const { netProfit } = calculateTransactionProfitLoss(tx);
+        profitLossCell = `<td>${formatCurrency(netProfit)}</td>`;
+      }
+      return `
                   <tr>
                     <td>${date.toLocaleDateString()}</td>
                     <td>${tx.id.slice(0, 8).toUpperCase()}</td>
@@ -393,7 +428,7 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
                     ${profitLossCell}
                   </tr>
                 `;
-              }).join('')}
+    }).join('')}
             </tbody>
           </table>
           <div class="summary">
@@ -449,9 +484,9 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
       <div className="sales-orders-header">
         {company.logo && (
           <div className="page-logo-container">
-            <img 
-              src={company.logo} 
-              alt={company.name || 'Company Logo'} 
+            <img
+              src={company.logo}
+              alt={company.name || 'Company Logo'}
               className="page-logo"
             />
           </div>

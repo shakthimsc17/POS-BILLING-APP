@@ -20,9 +20,10 @@ export default function Cart({ onNavigate }: CartProps) {
     items,
     removeItem,
     updateQuantity,
-    getSubtotal,
     getTax,
     getDiscount,
+    getItemDiscounts,
+    getActualSubtotal,
     getTotal,
     setTaxRate,
     setDiscount,
@@ -264,6 +265,9 @@ export default function Cart({ onNavigate }: CartProps) {
         await printReceipt({
           items,
           transaction: savedTransaction,
+          customer: selectedSalesCustomer,
+          taxAmount: getTax(),
+          discountAmount: getDiscount(),
           autoPrint,
         });
       } catch (printError) {
@@ -437,7 +441,7 @@ export default function Cart({ onNavigate }: CartProps) {
           </div>
         </div>
 
-        <div className="cart-summary">
+        <div className="cart-checkout-summary">
           <div className="cart-summary-content">
             {/* Customer Selection - Moved to top */}
             <div className="card customer-selection compact">
@@ -471,7 +475,7 @@ export default function Cart({ onNavigate }: CartProps) {
               <h3>Sales Summary</h3>
               <div className="summary-row">
                 <span>Subtotal:</span>
-                <span>{formatCurrency(getSubtotal())}</span>
+                <span>{formatCurrency(getActualSubtotal())}</span>
               </div>
               <div className="summary-row compact">
                 <label>Tax (%): <span className="function-key-hint">F6</span></label>
@@ -502,6 +506,11 @@ export default function Cart({ onNavigate }: CartProps) {
                   <span className="summary-value">-{formatCurrency(getDiscount())}</span>
                 </div>
               </div>
+              {getItemDiscounts() > 0 && (
+                <div className="summary-row item-discounts">
+                  <span className="discount-hint">(Incl. {formatCurrency(getItemDiscounts())} item-wise)</span>
+                </div>
+              )}
               <div className="summary-total compact">
                 <span>Total:</span>
                 <span className="total-amount">{formatCurrency(getTotal())}</span>
@@ -533,34 +542,44 @@ export default function Cart({ onNavigate }: CartProps) {
 
               {paymentMethod === 'cash' && (
                 <div className="cash-payment-details">
-                  <label>
-                    Received Amount (₹):
-                    <input
-                      ref={receivedAmountInputRef}
-                      type="number"
-                      className="input"
-                      value={receivedAmount}
-                      onChange={(e) => setReceivedAmount(e.target.value)}
-                      min="0"
-                      step="0.01"
-                      placeholder="Leave empty for exact payment"
-                    />
-                  </label>
-                  {receivedAmount && Number(receivedAmount) > 0 && (
-                    <div className="amount-info">
-                      {discountAmount > 0 ? (
-                        <div className="discount-amount">
-                          <span>Discount Applied:</span>
-                          <span className="discount-value">-{formatCurrency(discountAmount)}</span>
-                        </div>
-                      ) : actualChange > 0 ? (
-                        <div className="change-amount">
-                          <span>Change:</span>
-                          <span className="change-value">{formatCurrency(actualChange)}</span>
-                        </div>
-                      ) : null}
+                  <label>Received Amount (₹):</label>
+                  <div className="cash-payment-row">
+                    <div className="cash-input-container">
+                      <input
+                        ref={receivedAmountInputRef}
+                        type="number"
+                        className="input"
+                        value={receivedAmount}
+                        onChange={(e) => setReceivedAmount(e.target.value)}
+                        onFocus={() => {
+                          setReceivedAmount('');
+                        }}
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                      />
                     </div>
-                  )}
+                    {receivedAmount && Number(receivedAmount) > 0 && (
+                      <>
+                        {discountAmount > 0 ? (
+                          <div className="change-display-boxed discount">
+                            <span className="change-label">Discount</span>
+                            <span className="change-value-large">-{formatCurrency(discountAmount)}</span>
+                          </div>
+                        ) : actualChange > 0 ? (
+                          <div className="change-display-boxed">
+                            <span className="change-label">Change</span>
+                            <span className="change-value-large">{formatCurrency(actualChange)}</span>
+                          </div>
+                        ) : (
+                          <div className="change-display-boxed">
+                            <span className="change-label">Balance</span>
+                            <span className="change-value-large">Exact</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

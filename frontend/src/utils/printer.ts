@@ -4,14 +4,26 @@ import { formatCurrency } from './formatters';
 import { useCompanyStore } from '../store/companyStore';
 import { receiptSettings } from './receiptSettings';
 
+import { SalesCustomer } from '../types';
+
 interface PrintOptions {
   items: CartItem[];
   transaction: Transaction;
+  customer?: SalesCustomer | null;
+  taxAmount?: number;
+  discountAmount?: number;
   autoPrint?: boolean;
 }
 
 export async function printReceipt(options: PrintOptions) {
-  const { items, transaction, autoPrint = false } = options;
+  const { 
+    items, 
+    transaction, 
+    customer, 
+    taxAmount = 0, 
+    discountAmount = 0, 
+    autoPrint = false 
+  } = options;
   
   console.log('Print receipt called with autoPrint:', autoPrint);
   
@@ -64,14 +76,14 @@ export async function printReceipt(options: PrintOptions) {
           }
           body {
             font-family: 'Montserrat', sans-serif;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
-            line-height: 1.5;
+            line-height: 1.4;
             color: #000;
             width: 80mm;
             max-width: 80mm;
             margin: 0 auto;
-            padding: 3mm 2mm;
+            padding: 2mm 1mm;
             background: white;
           }
           .receipt-header {
@@ -94,17 +106,17 @@ export async function printReceipt(options: PrintOptions) {
             object-fit: contain;
           }
           .company-name {
-            font-size: 20px;
-            font-weight: bold;
+            font-size: 16px;
+            font-weight: 800;
             margin-bottom: 2px;
             text-transform: uppercase;
-            line-height: 1.3;
+            line-height: 1.2;
             letter-spacing: 0.5px;
           }
           .company-details {
-            font-size: 12px;
+            font-size: 10px;
             font-weight: bold;
-            line-height: 1.4;
+            line-height: 1.3;
             text-transform: uppercase;
           }
           .company-details p {
@@ -113,11 +125,11 @@ export async function printReceipt(options: PrintOptions) {
             text-transform: uppercase;
           }
           .receipt-info {
-            margin-bottom: 5px;
-            padding: 3px 0;
+            margin-bottom: 4px;
+            padding: 2px 0;
             border-top: 1px dashed #000;
             border-bottom: 1px dashed #000;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
           }
           .receipt-info-row {
@@ -166,9 +178,9 @@ export async function printReceipt(options: PrintOptions) {
           }
           .items-table td {
             padding: 2px 1px;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
-            line-height: 1.3;
+            line-height: 1.2;
             vertical-align: top;
             word-wrap: break-word;
             overflow: hidden;
@@ -250,17 +262,17 @@ export async function printReceipt(options: PrintOptions) {
           .total-row {
             display: flex;
             justify-content: space-between;
-            padding: 2px 0;
-            font-size: 14px;
+            padding: 1px 0;
+            font-size: 12px;
             font-weight: bold;
           }
           .total-row.grand-total {
-            font-weight: bold;
-            font-size: 18px;
-            padding: 4px 0;
-            margin-top: 3px;
-            border-top: 2px solid #000;
-            border-bottom: 2px solid #000;
+            font-weight: 800;
+            font-size: 16px;
+            padding: 3px 0;
+            margin-top: 2px;
+            border-top: 1.5px solid #000;
+            border-bottom: 1.5px solid #000;
           }
           .payment-info {
             margin-top: 5px;
@@ -339,7 +351,8 @@ export async function printReceipt(options: PrintOptions) {
             <p><strong>Receipt #:</strong> ${transaction.id.slice(0, 8).toUpperCase()}</p>
             <p class="receipt-date-time"><strong>Date:</strong> ${date.toLocaleDateString()} &nbsp; <strong>Time:</strong> ${date.toLocaleTimeString()}</p>
           </div>
-          ${transaction.transaction_customer_id ? '<p><strong>Customer:</strong> Yes</p>' : ''}
+          ${customer ? `<p><strong>Customer:</strong> ${customer.name}${customer.mobile ? ` (${customer.mobile})` : ''}</p>` : ''}
+          ${transaction.transaction_customer_id && !customer ? '<p><strong>Customer:</strong> Yes</p>' : ''}
         </div>
 
         <table class="items-table">
@@ -383,28 +396,45 @@ export async function printReceipt(options: PrintOptions) {
         <div class="totals-section">
           <div class="total-row">
             <span>Subtotal:</span>
-            <span>${formatCurrency(total)}</span>
+            <span>${formatCurrency(items.reduce((sum, ci) => {
+              const op = ci.originalPrice ?? (typeof ci.item.price === 'string' ? parseFloat(ci.item.price) : ci.item.price);
+              return sum + (ci.quantity * op);
+            }, 0))}</span>
           </div>
+          
+          ${discountAmount > 0 ? `
+            <div class="total-row">
+              <span>Discount:</span>
+              <span>-${formatCurrency(discountAmount)}</span>
+            </div>
+          ` : ''}
+          
+          ${taxAmount > 0 ? `
+            <div class="total-row">
+              <span>GST/Tax:</span>
+              <span>${formatCurrency(taxAmount)}</span>
+            </div>
+          ` : ''}
+
+          <div class="total-row grand-total">
+            <span>GRAND TOTAL:</span>
+            <span>${formatCurrency(transaction.total_amount ? Number(transaction.total_amount) : total)}</span>
+          </div>
+
           ${transaction.payment_method === 'cash' && transaction.received_amount
             ? `
-            <div class="total-row">
+            <div class="total-row" style="margin-top: 5px; font-size: 13px;">
               <span>Cash Received:</span>
               <span>${formatCurrency(transaction.received_amount)}</span>
             </div>
             ${transaction.change_amount && Number(transaction.change_amount) > 0
               ? `
-              <div class="total-row">
+              <div class="total-row" style="font-size: 13px;">
                 <span>Change:</span>
                 <span>${formatCurrency(transaction.change_amount)}</span>
               </div>
-            `
-              : ''}
-          `
-            : ''}
-          <div class="total-row grand-total">
-            <span>TOTAL:</span>
-            <span>${formatCurrency(total)}</span>
-          </div>
+            ` : ''}
+          ` : ''}
         </div>
 
         <div class="payment-info">

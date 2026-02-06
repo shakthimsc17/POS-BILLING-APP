@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { CartItem, Item } from '../types';
-import { calculateSubtotal, calculateTax, calculateDiscount, calculateTotal } from '../utils/calculations';
+import { calculateTax, calculateDiscount } from '../utils/calculations';
 import { storageService } from '../services/storage';
 
 interface CartStore {
@@ -21,6 +21,8 @@ interface CartStore {
   getSubtotal: () => number;
   getTax: () => number;
   getDiscount: () => number;
+  getItemDiscounts: () => number;
+  getActualSubtotal: () => number;
   getTotal: () => number;
   getItemCount: () => number;
   saveCart: (salesCustomerId?: string) => Promise<void>;
@@ -166,11 +168,35 @@ export const useCartStore = create<CartStore>((set, get) => ({
   },
 
   getDiscount: () => {
-    return calculateDiscount(get().getSubtotal(), get().discount);
+    return calculateDiscount(get().getSubtotal(), get().discount) + get().getItemDiscounts();
+  },
+
+  getItemDiscounts: () => {
+    return get().items.reduce((sum, ci) => {
+      const originalPrice = ci.originalPrice ?? (typeof ci.item.price === 'string' ? parseFloat(ci.item.price) : ci.item.price);
+      const currentPrice = ci.customPrice ?? originalPrice;
+      const unitDiscount = originalPrice - currentPrice;
+      return sum + (ci.quantity * Math.max(0, unitDiscount));
+    }, 0);
+  },
+
+  getActualSubtotal: () => {
+    return get().items.reduce((sum, ci) => {
+      const originalPrice = ci.originalPrice ?? (typeof ci.item.price === 'string' ? parseFloat(ci.item.price) : ci.item.price);
+      return sum + (ci.quantity * originalPrice);
+    }, 0);
   },
 
   getTotal: () => {
-    return calculateTotal(get().getSubtotal(), get().getTax(), get().getDiscount());
+    // Total = Actual Subtotal - (Total Discounts) + Tax
+    // OR Total = Current Subtotal - Global Discount + Tax
+    // Both should be equivalent. Current Subtotal = Actual Subtotal - Item Discounts.
+    // So Total = (Actual Subtotal - Item Discounts) - Global Discount + Tax
+    // Total = Actual Subtotal - (Item Discounts + Global Discount) + Tax
+    const subtotal = get().getSubtotal();
+    const tax = get().getTax();
+    const globalDiscount = calculateDiscount(subtotal, get().discount);
+    return subtotal + tax - globalDiscount;
   },
 
   getItemCount: () => {
