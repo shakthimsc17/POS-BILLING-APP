@@ -444,67 +444,78 @@ export default function Cart({ onNavigate }: CartProps) {
         <div className="cart-checkout-summary">
           <div className="cart-summary-content">
             {/* Customer Selection - Moved to top */}
-            <div className="card customer-selection compact">
-              <h3>Customer <span className="function-key-hint">F4</span></h3>
-              <div className="customer-display">
-                {selectedSalesCustomer ? (
-                  <div className="selected-customer compact">
-                    <div className="customer-details compact">
-                      <strong>{selectedSalesCustomer.name}</strong>
-                      {selectedSalesCustomer.mobile && <span>{selectedSalesCustomer.mobile}</span>}
-                    </div>
-                    <button
-                      className="btn btn-small btn-secondary"
-                      onClick={() => setSelectedSalesCustomer(null)}
-                    >
-                      Change
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    className="btn btn-secondary btn-sm btn-full"
-                    onClick={() => setShowCustomerModal(true)}
-                  >
-                    Select Customer
-                  </button>
-                )}
-              </div>
-            </div>
+
 
             <div className="card">
               <h3>Sales Summary</h3>
               <div className="summary-row">
+                <label>Customer: <span className="function-key-hint">F4</span></label>
+                <div className="summary-value">
+                  {selectedSalesCustomer ? (
+                    <div className="selected-customer-inline" onClick={() => setShowCustomerModal(true)}>
+                      <div className="customer-info-mini">
+                        <span className="name">{selectedSalesCustomer.name}</span>
+                        {selectedSalesCustomer.mobile && <span className="mobile">{selectedSalesCustomer.mobile}</span>}
+                      </div>
+                      <button
+                        className="btn-clear-customer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedSalesCustomer(null);
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setShowCustomerModal(true)}
+                    >
+                      Select
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="summary-row">
                 <span>Subtotal:</span>
                 <span>{formatCurrency(getActualSubtotal())}</span>
               </div>
-              <div className="summary-row compact">
-                <label>Tax (%): <span className="function-key-hint">F6</span></label>
-                <div className="summary-input-group">
+              <div className="summary-row">
+                <div className="summary-label-with-input">
+                  <label>Tax (%): <span className="function-key-hint">F6</span></label>
                   <input
                     ref={taxInputRef}
-                    type="number"
+                    type="text"
                     className="input input-sm"
                     value={taxRate}
-                    onChange={(e) => setTaxRate(Number(e.target.value))}
-                    min="0"
-                    max="100"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                        setTaxRate(val === '' ? 0 : Number(val));
+                      }
+                    }}
                   />
-                  <span className="summary-value">{formatCurrency(getTax())}</span>
                 </div>
+                <span className="summary-value">{formatCurrency(getTax())}</span>
               </div>
-              <div className="summary-row compact">
-                <label>Discount (₹): <span className="function-key-hint">F2</span></label>
-                <div className="summary-input-group">
+              <div className="summary-row">
+                <div className="summary-label-with-input">
+                  <label>Discount (₹): <span className="function-key-hint">F2</span></label>
                   <input
                     ref={discountInputRef}
-                    type="number"
+                    type="text"
                     className="input input-sm"
                     value={discount}
-                    onChange={(e) => setDiscount(Number(e.target.value))}
-                    min="0"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                        setDiscount(val === '' ? 0 : Number(val));
+                      }
+                    }}
                   />
-                  <span className="summary-value">-{formatCurrency(getDiscount())}</span>
                 </div>
+                <span className="summary-value">-{formatCurrency(getDiscount())}</span>
               </div>
               {getItemDiscounts() > 0 && (
                 <div className="summary-row item-discounts">
@@ -547,15 +558,18 @@ export default function Cart({ onNavigate }: CartProps) {
                     <div className="cash-input-container">
                       <input
                         ref={receivedAmountInputRef}
-                        type="number"
+                        type="text"
                         className="input"
                         value={receivedAmount}
-                        onChange={(e) => setReceivedAmount(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                            setReceivedAmount(val);
+                          }
+                        }}
                         onFocus={() => {
                           setReceivedAmount('');
                         }}
-                        min="0"
-                        step="0.01"
                         placeholder="0.00"
                       />
                     </div>
