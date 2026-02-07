@@ -58,6 +58,7 @@ db-exports/
 backend/db-exports/
 
 # Prisma (keep migrations/ committed so production can run migrate deploy)
+# Uncomment the line below if you want to exclude migrations
 # backend/prisma/migrations/
 
 # Testing
