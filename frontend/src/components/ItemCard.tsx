@@ -5,16 +5,17 @@ import './ItemCard.css';
 interface ItemCardProps {
   item: Item;
   onPress: (item: Item) => void;
+  isCompact?: boolean;
 }
 
-export default function ItemCard({ item, onPress }: ItemCardProps) {
+export default function ItemCard({ item, onPress, isCompact }: ItemCardProps) {
   return (
-    <div className="item-card" onClick={() => onPress(item)}>
+    <div className={`item-card ${isCompact ? 'compact' : ''}`} onClick={() => onPress(item)}>
       <div className="item-card-header">
         <div className="item-icon">📦</div>
         <div className="item-info">
           <h3>{item.name}</h3>
-          <p className="item-code">Code: {item.code}</p>
+          {!isCompact && <p className="item-code">Code: {item.code}</p>}
         </div>
       </div>
       <div className="item-card-body">
@@ -23,7 +24,7 @@ export default function ItemCard({ item, onPress }: ItemCardProps) {
             // Convert to numbers (Prisma Decimal returns as string)
             const mrp = item.mrp ? (typeof item.mrp === 'string' ? parseFloat(item.mrp) : item.mrp) : null;
             const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
-            
+
             if (mrp && mrp > price) {
               return (
                 <>
@@ -40,13 +41,15 @@ export default function ItemCard({ item, onPress }: ItemCardProps) {
             return <span className="price-value">{formatCurrency(price)}</span>;
           })()}
         </div>
-        {item.stock > 0 ? (
-          <div className="item-stock">Stock: {item.stock}</div>
-        ) : (
-          <div className="item-stock out-of-stock">Out of Stock</div>
+        {!isCompact && (
+          item.stock > 0 ? (
+            <div className="item-stock">Stock: {item.stock}</div>
+          ) : (
+            <div className="item-stock out-of-stock">Out of Stock</div>
+          )
         )}
       </div>
-      <button className="item-add-btn">+ Add to Cart</button>
+      {!isCompact && <button className="item-add-btn">+ Add to Cart</button>}
     </div>
   );
 }

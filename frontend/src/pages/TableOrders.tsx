@@ -6,7 +6,11 @@ import { printReceipt } from '../utils/printer';
 import { toast } from '../utils/toast';
 import './TableOrders.css';
 
-export default function TableOrders() {
+interface TableOrdersProps {
+  onNavigate?: (page: any, id?: string) => void;
+}
+
+export default function TableOrders({ onNavigate }: TableOrdersProps = {}) {
   const { tableOrders, loadTableOrders, completeTableOrder, cancelTableOrder, loading } = useTableStore();
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'completed' | 'cancelled'>('all');
   const [filterDateType, setFilterDateType] = useState<'all' | 'date' | 'week' | 'month' | 'year'>('date');
@@ -232,6 +236,7 @@ export default function TableOrders() {
           <table className="table-orders-table">
             <thead>
               <tr>
+                <th>Order ID</th>
                 <th>Table</th>
                 <th>Status</th>
                 <th>Items</th>
@@ -245,9 +250,24 @@ export default function TableOrders() {
               {filteredOrders.map((order) => {
                 const items = JSON.parse(order.items_json);
                 const total = typeof order.total_amount === 'string' ? parseFloat(order.total_amount) : (order.total_amount || 0);
-                
+
                 return (
                   <tr key={order.id} className={`table-row ${order.status}`}>
+                    <td className="table-cell">
+                      {order.transaction_id ? (
+                        <span
+                          className="order-id-value clickable"
+                          style={{ color: '#3498db', fontWeight: 'bold', cursor: 'pointer' }}
+                          onClick={() => onNavigate && onNavigate('order-details', order.transaction_id)}
+                        >
+                          {order.transaction_id.slice(0, 8).toUpperCase()}
+                        </span>
+                      ) : (
+                        <span className="order-id-value" style={{ opacity: 0.6 }}>
+                          {order.id.slice(0, 8).toUpperCase()} (Pending)
+                        </span>
+                      )}
+                    </td>
                     <td className="table-cell">
                       <div className="table-number">
                         <span className="table-icon">🍽️</span>

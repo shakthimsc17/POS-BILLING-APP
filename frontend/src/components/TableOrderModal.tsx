@@ -36,6 +36,7 @@ export default function TableOrderModal({
   const [discount, setDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'upi'>('cash');
   const [useQuickSearch, setUseQuickSearch] = useState(false);
+  const [cashReceived, setCashReceived] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -165,6 +166,12 @@ export default function TableOrderModal({
     return getSubtotal() + getTax() - getDiscountAmount();
   };
 
+  const getBalance = () => {
+    const total = getTotal();
+    const cash = parseFloat(cashReceived) || 0;
+    return cash - total;
+  };
+
   const handleSaveOrder = useCallback(async () => {
     if (!table || orderItems.length === 0) {
       toast.error('Please add items to the order');
@@ -234,9 +241,19 @@ export default function TableOrderModal({
         orderId = newOrder.id;
       }
 
+      // Calculate received amount and change for cash payments
+      const total = getTotal();
+      const received = paymentMethod === 'cash'
+        ? (cashReceived ? parseFloat(cashReceived) : total)
+        : total;
+      const changeAmount = paymentMethod === 'cash' ? received - total : 0;
+      const actualChange = changeAmount > 0 ? changeAmount : 0;
+
       // Complete the order
       const result = await completeTableOrder(orderId, {
         payment_method: paymentMethod as 'cash' | 'card' | 'upi',
+        received_amount: received,
+        change_amount: actualChange,
       });
 
       // Print receipt (use setting for auto-print)
@@ -247,6 +264,8 @@ export default function TableOrderModal({
         await printReceipt({
           items: orderItems,
           transaction: result.transaction,
+          taxAmount: getTax(),
+          discountAmount: getDiscountAmount(),
           autoPrint,
         });
       } catch (printError) {
@@ -262,7 +281,8 @@ export default function TableOrderModal({
     } finally {
       setLoading(false);
     }
-  }, [table, orderItems, existingOrder, taxRate, discount, getTotal, createTableOrder, completeTableOrder, onOrderCreated, onClose, paymentMethod]);
+  }, [table, orderItems, existingOrder, taxRate, discount, getTotal, createTableOrder, completeTableOrder, onOrderCreated, onClose, paymentMethod, cashReceived]);
+
 
   // Keyboard: Space = save order, Enter = complete order (when not typing in input)
   useEffect(() => {
@@ -300,7 +320,8 @@ export default function TableOrderModal({
         </div>
 
         <div className="table-order-content">
-          <div className="table-order-left">
+          {/* Column 1: Item Add and Display */}
+          <div className="table-order-column table-order-items-section">
             <div className="card">
               <div className="search-container">
                 <div className="search-inputs-row">
@@ -343,13 +364,15 @@ export default function TableOrderModal({
                     key={item.id}
                     item={item}
                     onPress={handleItemPress}
+                    isCompact={true}
                   />
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="table-order-right">
+          {/* Column 2: Cart Items */}
+          <div className="table-order-column table-order-cart-section">
             <div className="card">
               <h3>Order Items ({orderItems.length})</h3>
               <div className="order-items-list">
@@ -392,6 +415,26 @@ export default function TableOrderModal({
               </div>
             </div>
 
+            <div className="modal-actions cart-actions">
+              <button
+                className="btn btn-secondary"
+                onClick={handleSaveOrder}
+                disabled={loading || orderItems.length === 0}
+              >
+                {existingOrder ? 'Update Order' : 'Save Order'}
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleCompleteOrder}
+                disabled={loading || orderItems.length === 0}
+              >
+                Complete Order
+              </button>
+            </div>
+          </div>
+
+          {/* Column 3: Cart Summary and Payment */}
+          <div className="table-order-column table-order-summary-section">
             <div className="card">
               <h3>Order Summary</h3>
               <div className="summary-row">
@@ -401,10 +444,15 @@ export default function TableOrderModal({
               <div className="summary-row">
                 <label>Tax (%):</label>
                 <input
-                  type="number"
-                  className="input input-sm"
-                  value={taxRate}
-                  onChange={(e) => setTaxRate(Number(e.target.value))}
+                  type="text"
+                  className="input input-sm tax-input"
+                  value={taxRate === 0 ? '' : taxRate.toString()}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setTaxRate(value === '' ? 0 : parseFloat(value) || 0);
+                  }}
+                  onFocus={(e) => e.target.select()}
+                  placeholder="0"
                   min="0"
                   max="100"
                 />
@@ -413,10 +461,15 @@ export default function TableOrderModal({
               <div className="summary-row">
                 <label>Discount (₹):</label>
                 <input
-                  type="number"
-                  className="input input-sm"
-                  value={discount}
-                  onChange={(e) => setDiscount(Number(e.target.value))}
+                  type="text"
+                  className="input input-sm discount-input"
+                  value={discount === 0 ? '' : discount.toString()}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setDiscount(value === '' ? 0 : parseFloat(value) || 0);
+                  }}
+                  onFocus={(e) => e.target.select()}
+                  placeholder="0"
                   min="0"
                 />
                 <span>-{formatCurrency(getDiscountAmount())}</span>
@@ -451,22 +504,32 @@ export default function TableOrderModal({
               </div>
             </div>
 
-            <div className="modal-actions">
-              <button
-                className="btn btn-secondary"
-                onClick={handleSaveOrder}
-                disabled={loading || orderItems.length === 0}
-              >
-                {existingOrder ? 'Update Order' : 'Save Order'}
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={handleCompleteOrder}
-                disabled={loading || orderItems.length === 0}
-              >
-                Complete Order
-              </button>
-            </div>
+            {paymentMethod === 'cash' && (
+              <div className="card">
+                <h3>Cash Payment</h3>
+                <div className="cash-input-container">
+                  <label>Cash Received:</label>
+                  <input
+                    type="text"
+                    className="input cash-input"
+                    value={cashReceived}
+                    onChange={(e) => setCashReceived(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    placeholder="Enter cash amount"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                {cashReceived && (
+                  <div className="balance-display">
+                    <span className="balance-label">Change:</span>
+                    <span className={`balance-amount ${getBalance() >= 0 ? 'positive' : 'negative'}`}>
+                      {formatCurrency(Math.abs(getBalance()))}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
