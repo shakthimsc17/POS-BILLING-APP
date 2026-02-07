@@ -136,7 +136,7 @@ class GSTService {
     }
 
     // Parse items from JSON
-    const items = JSON.parse(transaction.items_json);
+    const items = JSON.parse(transaction.itemsJson || '[]');
     const businessState = transaction.customer.company?.state || '';
 
     // Convert to GSTItem format
@@ -146,9 +146,9 @@ class GSTService {
       gstItems.push({
         id: item.id,
         name: item.name,
-        hsnCode: itemDetails.hsnCode,
-        gstRate: itemDetails.gstRate,
-        cessRate: itemDetails.cessRate,
+        hsnCode: itemDetails.hsnCode || '',
+        gstRate: itemDetails.gstRate || 0,
+        cessRate: itemDetails.cessRate || 0,
         price: item.price,
         quantity: item.quantity,
         subtotal: item.subtotal,
@@ -168,8 +168,8 @@ class GSTService {
       data: {
         gstAmount: gstCalculation.totalGST,
         cessAmount: gstCalculation.cessAmount,
-        totalAmount: gstCalculation.totalAmount,
-        updatedAt: new Date(),
+        totalAmount: gstCalculation.totalAmount
+        // updatedAt: new Date() // Removed as it's not in the type
       },
     });
   }

@@ -55,7 +55,7 @@ export async function printReceipt(options: PrintOptions) {
       
       // Footer
       'footer.thankYou': 'உங்கள் வணிகத்திற்கு நன்றி!',
-      'footer.visitAgain': 'மீண்டும் வருகைத்தொடர்க',
+      'footer.visitAgain': 'மீண்டும் வருகைத் தொடர்க',
       
       // Payment
       'payment.cashReceived': 'பெறப்பட்ட பணம்',

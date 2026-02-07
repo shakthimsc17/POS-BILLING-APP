@@ -136,6 +136,7 @@
 
 .preview-table {
   overflow-x: auto;
+  max-width: 100%;
   border: 1px solid #e0e6ed;
   border-radius: 6px;
   margin-bottom: 0.5rem;
@@ -145,6 +146,8 @@
   width: 100%;
   border-collapse: collapse;
   background: white;
+  min-width: 600px;
+  table-layout: fixed;
 }
 
 .preview-table thead {
@@ -470,6 +473,8 @@
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 1rem;
+  min-width: 500px;
+  table-layout: fixed;
 }
 
 .prefix-table thead {

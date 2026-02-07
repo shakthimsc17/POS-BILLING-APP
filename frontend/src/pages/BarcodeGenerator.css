@@ -343,7 +343,8 @@
 }
 
 .barcode-gen-table-wrap {
-  background: white;
+  overflow-x: auto;
+  max-width: 100%;
   border: 1px solid #e0e6ed;
   border-radius: 8px;
   overflow: hidden;
@@ -354,6 +355,8 @@
 .barcode-gen-table-wrap table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 700px;
+  table-layout: fixed;
 }
 
 .barcode-gen-table-wrap thead {

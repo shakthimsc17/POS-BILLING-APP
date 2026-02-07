@@ -50,11 +50,16 @@
 
 .items-table {
   overflow-x: auto;
+  max-width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .items-table table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 800px;
+  table-layout: fixed;
 }
 
 .items-table th {
@@ -65,12 +70,17 @@
   font-weight: 600;
   border-bottom: 2px solid #e0e6ed;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .items-table td {
   padding: 1rem;
   border-bottom: 1px solid #e0e6ed;
   vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 .item-name {
@@ -282,6 +292,10 @@
 
   .modal-content.items-modal {
     max-width: 100%;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+    max-height: 100vh;
   }
 
   .filters-row {
@@ -312,7 +326,7 @@
 .modal-content.items-modal {
   background: white;
   border-radius: 12px;
-  width: 100%;
+  width: 95%;
   max-width: 920px;
   max-height: 90vh;
   display: flex;
@@ -320,6 +334,7 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.3s ease;
   overflow: hidden;
+  margin: 0 auto;
 }
 
 .modal-content.items-modal .modal-header {

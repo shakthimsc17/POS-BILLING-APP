@@ -27,6 +27,9 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
   const [price, setPrice] = useState('');
   const [mrp, setMrp] = useState('');
   const [stock, setStock] = useState('0');
+  const [hsnCode, setHsnCode] = useState('');
+  const [gstRate, setGstRate] = useState('');
+  const [cessRate, setCessRate] = useState('');
   
   // Quick edit mapping code state
   const [editingMappingCode, setEditingMappingCode] = useState<string | null>(null);
@@ -150,6 +153,9 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
     setPrice(item.price.toString());
     setMrp(item.mrp?.toString() || '');
     setStock(item.stock.toString());
+    setHsnCode(item.hsn_code || '');
+    setGstRate(item.gst_rate?.toString() || '');
+    setCessRate(item.cess_rate?.toString() || '');
     
     // Try to extract prefix and product code-size from item code
     const matchingPrefix = prefixes.find(p => item.code.startsWith(p.prefix));
@@ -265,6 +271,9 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
           price: Number(price),
           mrp: mrp ? Number(mrp) : undefined,
           stock: Number(stock),
+          hsn_code: hsnCode.trim() || undefined,
+          gst_rate: gstRate ? Number(gstRate) : undefined,
+          cess_rate: cessRate ? Number(cessRate) : undefined,
         });
         // updateItem already calls loadItems in store, but force refresh after delay
         setTimeout(async () => {
@@ -283,6 +292,9 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
           price: Number(price),
           mrp: mrp ? Number(mrp) : undefined,
           stock: Number(stock),
+          hsn_code: hsnCode.trim() || undefined,
+          gst_rate: gstRate ? Number(gstRate) : undefined,
+          cess_rate: cessRate ? Number(cessRate) : undefined,
         });
         // addItem already calls loadItems in store, but force refresh after delay
         setTimeout(async () => {
@@ -596,6 +608,8 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                   <th>Code</th>
                   {company?.business_type === 'cafe' && <th>Mapping Code</th>}
                   <th>Category</th>
+                  <th>HSN Code</th>
+                  <th>GST Rate</th>
                   {isAdmin && <th>Cost</th>}
                   <th>Sale Price</th>
                   <th>MRP</th>
@@ -697,6 +711,8 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                         </td>
                       )}
                       <td className="item-category">{categoryName}</td>
+                      <td className="item-hsn">{item.hsn_code || '-'}</td>
+                      <td className="item-gst-rate">{item.gst_rate ? `${item.gst_rate}%` : '-'}</td>
                       {isAdmin && (
                         <td className="item-cost">
                           {item.cost ? formatCurrency(item.cost) : '-'}
@@ -715,11 +731,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                           ) : '-'}
                         </td>
                       )}
-                      <td>
-                        <span className={item.stock > 0 ? 'stock-ok' : 'stock-out'}>
-                          {item.stock}
-                        </span>
-                      </td>
+                      <td className="item-stock">{item.stock}</td>
                       <td className="item-actions">
                         <button
                           className="btn btn-secondary"
@@ -1108,6 +1120,55 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                   </label>
                 </div>
 
+                {/* GST Fields */}
+                <div className="form-field">
+                  <label>
+                    HSN Code:
+                    <input
+                      type="text"
+                      className="input"
+                      value={hsnCode}
+                      onChange={(e) => setHsnCode(e.target.value)}
+                      placeholder="e.g., 847120"
+                    />
+                    <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                      Harmonized System of Nomenclature code for GST
+                    </small>
+                  </label>
+                </div>
+
+                <div className="form-field">
+                  <label>
+                    GST Rate (%):
+                    <input
+                      type="text"
+                      className="input"
+                      value={gstRate}
+                      onChange={(e) => setGstRate(e.target.value)}
+                      placeholder="e.g., 5, 12, 18"
+                    />
+                    <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                      GST percentage rate (0, 5, 12, 18, 28)
+                    </small>
+                  </label>
+                </div>
+
+                <div className="form-field">
+                  <label>
+                    CESS Rate (%):
+                    <input
+                      type="text"
+                      className="input"
+                      value={cessRate}
+                      onChange={(e) => setCessRate(e.target.value)}
+                      placeholder="e.g., 0, 1, 2"
+                    />
+                    <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                      Additional cess rate (optional)
+                    </small>
+                  </label>
+                </div>
+
                 {(!company?.business_type || company?.business_type !== 'cafe' || editingItem) && (
                   <>
                     <div className="form-field">
@@ -1171,76 +1232,76 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                         </label>
                       </div>
                     ) : (
-                      <div className="form-field">
-                        <label>
-                          Subcategory:
-                          <input
-                            type="text"
-                            className="input"
-                            placeholder="Select category first"
-                            value={subcategory}
-                            disabled
-                          />
-                        </label>
-                      </div>
+                      <>
+                        <div className="form-field">
+                          <label>
+                            Subcategory:
+                            <input
+                              type="text"
+                              className="input"
+                              placeholder="Select category first"
+                              value={subcategory}
+                              disabled
+                            />
+                          </label>
+                        </div>
+                        <div className="form-field">
+                          <label>
+                            Sale Price (₹) *:
+                            <input
+                              type="number"
+                              className="input"
+                              value={price}
+                              onChange={(e) => setPrice(e.target.value)}
+                              step="0.01"
+                              min="0"
+                              placeholder="Selling price"
+                            />
+                          </label>
+                        </div>
+                      </>
                     )}
                   </>
                 )}
-              </>
-            )}
-
-            {/* Pricing - 3 columns */}
-            <div className="form-field">
-              <label>
-                Cost (₹) *:
-                <input
-                  type="number"
-                  className="input"
-                  value={cost}
-                  onChange={(e) => setCost(e.target.value)}
-                  step="0.01"
-                  min="0"
-                  placeholder="Purchase cost"
-                />
-              </label>
+                <div className="form-field">
+                  <label>
+                    Cost (₹):
+                    <input
+                      type="number"
+                      className="input"
+                      value={cost}
+                      onChange={(e) => setCost(e.target.value)}
+                      step="0.01"
+                      min="0"
+                      placeholder="Purchase cost"
+                    />
+                  </label>
+                </div>
+                <div className="form-field">
+                  <label>
+                    MRP (₹) (Optional - for display):
+                    <input
+                      type="number"
+                      className="input"
+                      value={mrp}
+                      onChange={(e) => setMrp(e.target.value)}
+                      step="0.01"
+                      min="0"
+                      placeholder="Maximum Retail Price"
+                    />
+                  </label>
+                </div>
+                      </>
+                    )}
+              <div className="modal-actions">
+                <button className="btn btn-secondary" onClick={() => setModalVisible(false)}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary" onClick={handleSave}>
+                  Save
+                </button>
+              </div>
             </div>
-            <div className="form-field">
-              <label>
-                Sale Price (₹) *:
-                <input
-                  type="number"
-                  className="input"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  step="0.01"
-                  min="0"
-                  placeholder="Selling price"
-                />
-              </label>
-            </div>
-            <div className="form-field">
-              <label>
-                MRP (₹) (Optional - for display):
-                <input
-                  type="number"
-                  className="input"
-                  value={mrp}
-                  onChange={(e) => setMrp(e.target.value)}
-                  step="0.01"
-                  min="0"
-                  placeholder="Maximum Retail Price"
-                />
-              </label>
-            </div>
-            </div>
-            </div>
-            <div className="modal-actions">
-              <button className="btn btn-secondary" onClick={() => setModalVisible(false)}>
-                Cancel
-              </button>
-              <button className="btn btn-primary" onClick={handleSave}>
-                Save
-              </button>
             </div>
           </div>
         </div>

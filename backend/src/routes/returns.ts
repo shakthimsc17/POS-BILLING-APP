@@ -560,7 +560,7 @@ router.post('/:id/process', async (req: AuthRequest, res) => {
 
     const updateData: { status: string; processedBy: string | null; processedAt: Date; refundAmount?: number } = {
       status: 'processed',
-      processedBy: req.customerId,
+      processedBy: req.customerId || null,
       processedAt: new Date(),
     };
     // Always persist refund amount when we have one (full, partial, or exchange with refund) so Returns page shows it

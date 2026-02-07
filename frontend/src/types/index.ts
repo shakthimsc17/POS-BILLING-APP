@@ -24,6 +24,9 @@ export interface Item {
   stock: number;
   purchase_qty?: number;
   image_url?: string;
+  hsn_code?: string;
+  gst_rate?: number;
+  cess_rate?: number;
   created_at: string;
 }
 
