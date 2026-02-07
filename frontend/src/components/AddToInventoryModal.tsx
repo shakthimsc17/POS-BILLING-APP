@@ -56,6 +56,21 @@ export default function AddToInventoryModal({ isOpen, onClose, quickSaleItem, on
     }
   }, [isOpen, quickSaleItem]);
 
+  // ESC key handler
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (!saving) onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, saving, onClose]);
+
   useEffect(() => {
     // Update subcategories when category changes
     if (formData.category_id) {

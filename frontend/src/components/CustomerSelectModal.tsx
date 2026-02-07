@@ -33,6 +33,21 @@ export default function CustomerSelectModal({ isOpen, onClose, onSelect, selecte
     }
   }, [isOpen]);
 
+  // ESC key handler
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (!loading && !saving) onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, loading, saving, onClose]);
+
   useEffect(() => {
     if (searchQuery.trim() === '') {
       setFilteredCustomers(customers);

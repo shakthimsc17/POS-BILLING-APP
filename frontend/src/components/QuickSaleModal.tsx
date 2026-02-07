@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { storageService } from '../services/storage';
 import { useCartStore } from '../store/cartStore';
 import { formatCurrency } from '../utils/formatters';
@@ -26,6 +26,21 @@ export default function QuickSaleModal({ isOpen, onClose, onAddToQuickSale }: Qu
   const [saving, setSaving] = useState(false);
 
   const { addItem } = useCartStore();
+
+  // ESC key handler
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (!saving) onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, saving, onClose]);
 
   const getTotalAmount = () => {
     return items.reduce((sum, item) => {

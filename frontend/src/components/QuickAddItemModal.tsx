@@ -20,6 +20,21 @@ export default function QuickAddItemModal({ isOpen, onClose }: QuickAddItemModal
   const { searchItems } = useInventoryStore();
   const { addItem } = useCartStore();
 
+  // ESC key handler
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (!searching) onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, searching, onClose]);
+
   useEffect(() => {
     if (searchQuery.trim() === '') {
       setSearchResults([]);

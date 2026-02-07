@@ -279,6 +279,9 @@ export default function TableOrderModal({
       } else if (e.key === 'Enter') {
         e.preventDefault();
         if (!loading && orderItems.length > 0) handleCompleteOrder();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        if (!loading) onClose();
       }
     };
 
