@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Item } from '../types';
 import './ReturnModal.css';
 
@@ -45,6 +45,21 @@ export default function ReturnModal({
   const [returnType, setReturnType] = useState<ReturnType>('full');
   const [reason, setReason] = useState('');
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
+
+  // ESC key handler
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (!submitting) onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, submitting, onClose]);
 
   if (!isOpen) return null;
 

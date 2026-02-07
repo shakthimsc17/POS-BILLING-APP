@@ -203,6 +203,7 @@ export interface Table {
   table_number: string;
   capacity: number;
   status: 'available' | 'occupied' | 'reserved';
+  transaction_id?: string;
   created_at: string;
   updated_at: string;
 }

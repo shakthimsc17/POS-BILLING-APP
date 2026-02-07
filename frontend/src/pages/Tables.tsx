@@ -4,13 +4,10 @@ import { Table } from '../types';
 import TableOrderModal from '../components/TableOrderModal';
 import './Tables.css';
 
-interface TablesProps {
-  onNavigate?: (page: string) => void;
-  onTableClick?: (table: Table) => void;
-}
+interface TablesProps { }
 
-export default function Tables({ onNavigate, onTableClick }: TablesProps = {}) {
-  const { tables, loadTables, createTable, updateTable, deleteTable, loading } = useTableStore();
+export default function Tables({ }: TablesProps = {}) {
+  const { tables, loadTables, createTable, updateTable, deleteTable, loading, loadTableOrders, tableOrders } = useTableStore();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
@@ -18,10 +15,26 @@ export default function Tables({ onNavigate, onTableClick }: TablesProps = {}) {
   const [tableNumber, setTableNumber] = useState('');
   const [capacity, setCapacity] = useState('4');
   const [status, setStatus] = useState<'available' | 'occupied' | 'reserved'>('available');
+  const [tablesWithOrders, setTablesWithOrders] = useState<any[]>([]);
 
   useEffect(() => {
     loadTables();
-  }, [loadTables]);
+    loadTableOrders();
+  }, [loadTables, loadTableOrders]);
+
+  useEffect(() => {
+    // Merge tables with their orders
+    const merged = tables.map(table => {
+      const order = tableOrders.find(o => o.table_id === table.id);
+      return {
+        ...table,
+        transaction_id: order?.id || table.transaction_id,
+        order_number: order?.id || undefined
+      };
+    });
+    console.log('Merged tables with orders:', merged);
+    setTablesWithOrders(merged);
+  }, [tables, tableOrders]);
 
   const handleTableClick = (table: Table) => {
     setSelectedTable(table);
@@ -29,7 +42,10 @@ export default function Tables({ onNavigate, onTableClick }: TablesProps = {}) {
   };
 
   const handleOrderCreated = () => {
-    loadTables(); // Refresh tables to update status
+    console.log('Order created, refreshing tables...');
+    loadTables();
+    // Also reload table orders to get the latest data
+    loadTableOrders();
   };
 
   const handleAdd = () => {
@@ -127,113 +143,122 @@ export default function Tables({ onNavigate, onTableClick }: TablesProps = {}) {
       </div>
 
       <div className="tables-grid">
-        {tables.map((table) => (
-          <div
-            key={table.id}
-            className={`table-card ${table.status}`}
-            onClick={() => handleTableClick(table)}
-            style={{ borderColor: getStatusColor(table.status) }}
-          >
-            <div className="table-card-header">
-              <h2>Table {table.table_number}</h2>
-            </div>
-            <div className="table-card-body">
-              <div className="table-status-container">
-                <span className="table-status" style={{ background: getStatusColor(table.status) }}>
-                  {table.status}
-                </span>
+        {tablesWithOrders.map((table) => {
+          console.log('Rendering merged table:', table);
+          return (
+            <div
+              key={table.id}
+              className={`table-card ${table.status}`}
+              onClick={() => handleTableClick(table)}
+              style={{ borderColor: getStatusColor(table.status) }}
+            >
+              <div className="table-card-header">
+                <h2>Table {table.table_number}</h2>
               </div>
-              <p>Capacity: {table.capacity} seats</p>
+              <div className="table-card-body">
+                <div className="table-status-container">
+                  <span className="table-status" style={{ background: getStatusColor(table.status) }}>
+                    {table.status}
+                  </span>
+                </div>
+                <p>Capacity: {table.capacity} seats</p>
+              </div>
+              <div className="table-card-actions">
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEdit(table);
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(table);
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-            <div className="table-card-actions">
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEdit(table);
-                }}
-              >
-                Edit
-              </button>
-              <button
-                className="btn btn-danger btn-sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(table);
-                }}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
+
+
       </div>
 
-      {tables.length === 0 && (
-        <div className="card">
-          <div className="empty-state">
-            <p>📭 No tables yet</p>
-            <p className="empty-subtext">Add a table to get started</p>
-            <button className="btn btn-primary" onClick={handleAdd}>
-              + Add Table
-            </button>
+      {
+        tables.length === 0 && (
+          <div className="card">
+            <div className="empty-state">
+              <p>📭 No tables yet</p>
+              <p className="empty-subtext">Add a table to get started</p>
+              <button className="btn btn-primary" onClick={handleAdd}>
+                + Add Table
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
-      {showAddModal && (
-        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{editingTable ? 'Edit Table' : 'Add Table'}</h2>
-              <button className="modal-close" onClick={() => setShowAddModal(false)}>×</button>
-            </div>
-            <div className="modal-body">
-              <label>
-                Table Number *
-                <input
-                  type="text"
-                  className="input"
-                  value={tableNumber}
-                  onChange={(e) => setTableNumber(e.target.value)}
-                  placeholder="e.g., 1, 2, A1, etc."
-                />
-              </label>
-              <label>
-                Capacity
-                <input
-                  type="number"
-                  className="input"
-                  value={capacity}
-                  onChange={(e) => setCapacity(e.target.value)}
-                  min="1"
-                  max="50"
-                />
-              </label>
-              <label>
-                Status
-                <select
-                  className="input"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as 'available' | 'occupied' | 'reserved')}
-                >
-                  <option value="available">Available</option>
-                  <option value="occupied">Occupied</option>
-                  <option value="reserved">Reserved</option>
-                </select>
-              </label>
-            </div>
-            <div className="modal-actions">
-              <button className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
-                Cancel
-              </button>
-              <button className="btn btn-primary" onClick={handleSave}>
-                Save
-              </button>
+      {
+        showAddModal && (
+          <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>{editingTable ? 'Edit Table' : 'Add Table'}</h2>
+                <button className="modal-close" onClick={() => setShowAddModal(false)}>×</button>
+              </div>
+              <div className="modal-body">
+                <label>
+                  Table Number *
+                  <input
+                    type="text"
+                    className="input"
+                    value={tableNumber}
+                    onChange={(e) => setTableNumber(e.target.value)}
+                    placeholder="e.g., 1, 2, A1, etc."
+                  />
+                </label>
+                <label>
+                  Capacity
+                  <input
+                    type="number"
+                    className="input"
+                    value={capacity}
+                    onChange={(e) => setCapacity(e.target.value)}
+                    min="1"
+                    max="50"
+                  />
+                </label>
+                <label>
+                  Status
+                  <select
+                    className="input"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as 'available' | 'occupied' | 'reserved')}
+                  >
+                    <option value="available">Available</option>
+                    <option value="occupied">Occupied</option>
+                    <option value="reserved">Reserved</option>
+                  </select>
+                </label>
+              </div>
+              <div className="modal-actions">
+                <button className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary" onClick={handleSave}>
+                  Save
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       <TableOrderModal
         isOpen={showOrderModal}

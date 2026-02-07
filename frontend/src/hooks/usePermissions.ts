@@ -137,6 +137,17 @@ export function usePermissions() {
   const canView = (page: string): boolean => {
     if (!customer) return false;
     
+    // Check if this is a new customer (created recently, no customer_type set)
+    // For new customers, restrict to specific menu items only
+    if (!customer.customer_type || customer.customer_type.trim() === '') {
+      const allowedPagesForNewCustomer = [
+        'dashboard', 'sales', 'cart', 'items', 'categories', 
+        'quick-sale-items', 'quick-item-sales', 'bulk-operations', 
+        'calculators', 'barcode-generator', 'settings'
+      ];
+      return allowedPagesForNewCustomer.includes(page);
+    }
+    
     // Admin has unlimited access to everything - but check if page is hidden
     if (customer.isAdmin) {
       return !isHidden(page);
@@ -159,6 +170,18 @@ export function usePermissions() {
 
   const canEdit = (page: string): boolean => {
     if (!customer) return false;
+    
+    // Check if this is a new customer (no customer_type set)
+    // For new customers, allow edit on allowed pages
+    if (!customer.customer_type || customer.customer_type.trim() === '') {
+      const allowedPagesForNewCustomer = [
+        'dashboard', 'sales', 'cart', 'items', 'categories', 
+        'quick-sale-items', 'quick-item-sales', 'bulk-operations', 
+        'calculators', 'barcode-generator', 'settings'
+      ];
+      return allowedPagesForNewCustomer.includes(page);
+    }
+    
     if (customer.isAdmin) return true; // Admin can edit everything
     if (loading) return true; // Allow during loading
     if (!permissionsConfigured) return true; // Default allow if no permissions configured
@@ -169,6 +192,18 @@ export function usePermissions() {
 
   const canDelete = (page: string): boolean => {
     if (!customer) return false;
+    
+    // Check if this is a new customer (no customer_type set)
+    // For new customers, allow delete on allowed pages
+    if (!customer.customer_type || customer.customer_type.trim() === '') {
+      const allowedPagesForNewCustomer = [
+        'dashboard', 'sales', 'cart', 'items', 'categories', 
+        'quick-sale-items', 'quick-item-sales', 'bulk-operations', 
+        'calculators', 'barcode-generator', 'settings'
+      ];
+      return allowedPagesForNewCustomer.includes(page);
+    }
+    
     if (customer.isAdmin) return true; // Admin can delete everything
     if (loading) return true; // Allow during loading
     if (!permissionsConfigured) return true; // Default allow if no permissions configured
@@ -179,6 +214,13 @@ export function usePermissions() {
 
   const canViewProfit = (page: string): boolean => {
     if (!customer) return false;
+    
+    // Check if this is a new customer (no customer_type set)
+    // For new customers, deny profit viewing by default for security
+    if (!customer.customer_type || customer.customer_type.trim() === '') {
+      return false; // New customers cannot view profit data
+    }
+    
     if (customer.isAdmin) return true; // Admin can view all profit data
     if (loading) return false; // Don't show profit during loading (more secure)
     // For profit, default to false (more restrictive) if no permissions configured

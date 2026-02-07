@@ -3,10 +3,11 @@ import { useTableStore } from '../store/tableStore';
 import { TableOrder } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { printReceipt } from '../utils/printer';
+import { toast } from '../utils/toast';
 import './TableOrders.css';
 
 interface TableOrdersProps {
-  onNavigate?: (page: string) => void;
+  onNavigate?: (page: any, id?: string) => void;
 }
 
 export default function TableOrders({ onNavigate }: TableOrdersProps = {}) {
@@ -15,7 +16,6 @@ export default function TableOrders({ onNavigate }: TableOrdersProps = {}) {
   const [filterDateType, setFilterDateType] = useState<'all' | 'date' | 'week' | 'month' | 'year'>('date');
   const [filterDate, setFilterDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [filteredOrders, setFilteredOrders] = useState<TableOrder[]>([]);
-  const [selectedOrder, setSelectedOrder] = useState<TableOrder | null>(null);
 
   useEffect(() => {
     loadTableOrders(filterStatus === 'all' ? undefined : { status: filterStatus });
@@ -73,13 +73,7 @@ export default function TableOrders({ onNavigate }: TableOrdersProps = {}) {
   }, [tableOrders, filterDateType, filterDate]);
 
   const handleComplete = async (order: TableOrder) => {
-    if (!confirm(`Complete order for Table ${order.table_number}?`)) return;
-
-    const paymentMethod = prompt('Payment method (cash/card/upi):', 'cash');
-    if (!paymentMethod || !['cash', 'card', 'upi'].includes(paymentMethod)) {
-      alert('Invalid payment method');
-      return;
-    }
+    const paymentMethod = 'cash'; // Default to cash, can be enhanced later
 
     try {
       const result = await completeTableOrder(order.id, {
@@ -100,28 +94,26 @@ export default function TableOrders({ onNavigate }: TableOrdersProps = {}) {
         console.error('Print error:', printError);
       }
 
-      alert('Order completed successfully!');
+      toast.success('Order completed successfully!');
       loadTableOrders(filterStatus === 'all' ? undefined : { status: filterStatus });
     } catch (error: any) {
-      alert(error.message || 'Failed to complete order');
+      toast.error(error.message || 'Failed to complete order');
     }
   };
 
   const handleCancel = async (order: TableOrder) => {
-    if (!confirm(`Cancel order for Table ${order.table_number}?`)) return;
-
     try {
       await cancelTableOrder(order.id);
-      alert('Order cancelled successfully!');
+      toast.success('Order cancelled successfully!');
       loadTableOrders(filterStatus === 'all' ? undefined : { status: filterStatus });
     } catch (error: any) {
-      alert(error.message || 'Failed to cancel order');
+      toast.error(error.message || 'Failed to cancel order');
     }
   };
 
   const handlePrint = async (order: TableOrder) => {
     if (!order.transaction_id) {
-      alert('Order not completed yet');
+      toast.error('Order not completed yet');
       return;
     }
 
@@ -139,139 +131,218 @@ export default function TableOrders({ onNavigate }: TableOrdersProps = {}) {
         created_at: order.created_at,
       };
       await printReceipt({ items, transaction });
+      toast.success('Receipt printed successfully!');
     } catch (error: any) {
-      alert('Failed to print receipt');
+      toast.error('Failed to print receipt');
     }
   };
 
   return (
     <div className="table-orders">
       <div className="table-orders-header">
-        <h1>📋 Table Orders</h1>
+        <div className="header-title">
+          <h1>🍽️ Table Orders</h1>
+          <div className="stats-summary">
+            <div className="stat-card pending">
+              <span className="stat-number">{filteredOrders.filter(o => o.status === 'pending').length}</span>
+              <span className="stat-label">Pending</span>
+            </div>
+            <div className="stat-card completed">
+              <span className="stat-number">{filteredOrders.filter(o => o.status === 'completed').length}</span>
+              <span className="stat-label">Completed</span>
+            </div>
+            <div className="stat-card cancelled">
+              <span className="stat-number">{filteredOrders.filter(o => o.status === 'cancelled').length}</span>
+              <span className="stat-label">Cancelled</span>
+            </div>
+          </div>
+        </div>
         <div className="filter-controls">
-          <select
-            className="input"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as any)}
-          >
-            <option value="all">All Orders</option>
-            <option value="pending">Pending</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-
-          <select
-            className="input"
-            value={filterDateType}
-            onChange={(e) => {
-              setFilterDateType(e.target.value as any);
-              if (e.target.value === 'all') {
-                setFilterDate('');
-              } else if (!filterDate) {
-                // Set default date to today if not set
-                const today = new Date().toISOString().split('T')[0];
-                setFilterDate(today);
-              }
-            }}
-          >
-            <option value="all">All Dates</option>
-            <option value="date">Date</option>
-            <option value="week">Week</option>
-            <option value="month">Month</option>
-            <option value="year">Year</option>
-          </select>
-
+          <div className="filter-group">
+            <label className="filter-label">Status</label>
+            <select
+              className="modern-select"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as any)}
+            >
+              <option value="all">📋 All Orders</option>
+              <option value="pending">⏳ Pending</option>
+              <option value="completed">✅ Completed</option>
+              <option value="cancelled">❌ Cancelled</option>
+            </select>
+          </div>
+          <div className="filter-group">
+            <label className="filter-label">Date Range</label>
+            <select
+              className="modern-select"
+              value={filterDateType}
+              onChange={(e) => {
+                setFilterDateType(e.target.value as any);
+                if (e.target.value === 'all') {
+                  setFilterDate('');
+                } else if (!filterDate) {
+                  // Set default date to today if not set
+                  const today = new Date().toISOString().split('T')[0];
+                  setFilterDate(today);
+                }
+              }}
+            >
+              <option value="all">📅 All Dates</option>
+              <option value="date">📆 Date</option>
+              <option value="week">📅 Week</option>
+              <option value="month">📅 Month</option>
+              <option value="year">📅 Year</option>
+            </select>
+          </div>
           {filterDateType !== 'all' && (
-            filterDateType === 'year' ? (
-              <input
-                type="number"
-                className="input"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                placeholder="Year (e.g., 2026)"
-                min="2020"
-                max="2100"
-                style={{ width: '120px' }}
-              />
-            ) : (
-              <input
-                type={filterDateType === 'month' ? 'month' : 'date'}
-                className="input"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-              />
-            )
+            <div className="filter-group">
+              <label className="filter-label">{filterDateType === 'year' ? 'Year' : 'Select Date'}</label>
+              {filterDateType === 'year' ? (
+                <input
+                  type="number"
+                  className="modern-input"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                  placeholder="Year (e.g., 2026)"
+                  min="2020"
+                  max="2100"
+                />
+              ) : (
+                <input
+                  type={filterDateType === 'month' ? 'month' : 'date'}
+                  className="modern-input"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                />
+              )}
+            </div>
           )}
         </div>
       </div>
 
       {loading && tableOrders.length === 0 ? (
-        <div className="card">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
           <p>Loading orders...</p>
         </div>
       ) : filteredOrders.length === 0 ? (
-        <div className="card">
-          <div className="empty-state">
-            <p>📭 No orders found</p>
-          </div>
+        <div className="empty-state-container">
+          <div className="empty-icon">📭</div>
+          <h2>No orders found</h2>
+          <p>Try adjusting your filters or check back later for new orders.</p>
         </div>
       ) : (
-        <div className="card">
-          <div className="table-orders-list">
-            {filteredOrders.map((order) => {
-              const items = JSON.parse(order.items_json);
-              const total = typeof order.total_amount === 'string' ? parseFloat(order.total_amount) : (order.total_amount || 0);
+        <div className="table-orders-table-container">
+          <table className="table-orders-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Table</th>
+                <th>Status</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Payment</th>
+                <th>Date & Time</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredOrders.map((order) => {
+                const items = JSON.parse(order.items_json);
+                const total = typeof order.total_amount === 'string' ? parseFloat(order.total_amount) : (order.total_amount || 0);
 
-              return (
-                <div key={order.id} className={`table-order-card ${order.status}`}>
-                  <div className="table-order-header">
-                    <div>
-                      <h3>Table {order.table_number}</h3>
-                      <p className="order-date">
-                        {new Date(order.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                    <span className={`order-status ${order.status}`}>
-                      {order.status}
-                    </span>
-                  </div>
-                  <div className="table-order-body">
-                    <p><strong>Items:</strong> {items.length}</p>
-                    <p><strong>Total:</strong> {formatCurrency(total)}</p>
-                    {order.payment_method && (
-                      <p><strong>Payment:</strong> {order.payment_method.toUpperCase()}</p>
-                    )}
-                  </div>
-                  <div className="table-order-actions">
-                    {order.status === 'pending' && (
-                      <>
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => handleComplete(order)}
+                return (
+                  <tr key={order.id} className={`table-row ${order.status}`}>
+                    <td className="table-cell">
+                      {order.transaction_id ? (
+                        <span
+                          className="order-id-value clickable"
+                          style={{ color: '#3498db', fontWeight: 'bold', cursor: 'pointer' }}
+                          onClick={() => onNavigate && onNavigate('order-details', order.transaction_id)}
                         >
-                          Complete
-                        </button>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => handleCancel(order)}
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )}
-                    {order.status === 'completed' && order.transaction_id && (
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => handlePrint(order)}
-                      >
-                        Print Receipt
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                          {order.transaction_id.slice(0, 8).toUpperCase()}
+                        </span>
+                      ) : (
+                        <span className="order-id-value" style={{ opacity: 0.6 }}>
+                          {order.id.slice(0, 8).toUpperCase()} (Pending)
+                        </span>
+                      )}
+                    </td>
+                    <td className="table-cell">
+                      <div className="table-number">
+                        <span className="table-icon">🍽️</span>
+                        <span className="table-num">{order.table_number}</span>
+                      </div>
+                    </td>
+                    <td className="table-cell">
+                      <span className={`status-badge ${order.status}`}>
+                        {order.status === 'pending' && '⏳ Pending'}
+                        {order.status === 'completed' && '✅ Completed'}
+                        {order.status === 'cancelled' && '❌ Cancelled'}
+                      </span>
+                    </td>
+                    <td className="table-cell">
+                      <div className="items-count">
+                        <span className="items-number">{items.length}</span>
+                        <span className="items-label">items</span>
+                      </div>
+                    </td>
+                    <td className="table-cell amount-cell">
+                      <span className="amount">{formatCurrency(total)}</span>
+                    </td>
+                    <td className="table-cell">
+                      {order.payment_method ? (
+                        <div className="payment-method">
+                          {order.payment_method === 'cash' && '💵 Cash'}
+                          {order.payment_method === 'card' && '💳 Card'}
+                          {order.payment_method === 'upi' && '📱 UPI'}
+                        </div>
+                      ) : (
+                        <span className="no-payment">-</span>
+                      )}
+                    </td>
+                    <td className="table-cell date-cell">
+                      <div className="date-info">
+                        <span className="date">{new Date(order.created_at).toLocaleDateString()}</span>
+                        <span className="time">{new Date(order.created_at).toLocaleTimeString()}</span>
+                      </div>
+                    </td>
+                    <td className="table-cell actions-cell">
+                      <div className="action-buttons">
+                        {order.status === 'pending' && (
+                          <>
+                            <button
+                              className="action-btn complete-btn"
+                              onClick={() => handleComplete(order)}
+                              title="Complete Order"
+                            >
+                              ✅
+                            </button>
+                            <button
+                              className="action-btn cancel-btn"
+                              onClick={() => handleCancel(order)}
+                              title="Cancel Order"
+                            >
+                              ❌
+                            </button>
+                          </>
+                        )}
+                        {order.status === 'completed' && order.transaction_id && (
+                          <button
+                            className="action-btn print-btn"
+                            onClick={() => handlePrint(order)}
+                            title="Print Receipt"
+                          >
+                            🖨️
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
