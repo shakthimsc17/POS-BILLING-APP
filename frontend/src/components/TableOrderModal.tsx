@@ -350,104 +350,106 @@ export default function TableOrderModal({
           </div>
 
           <div className="table-order-right">
-            <div className="card">
-              <h3>Order Items ({orderItems.length})</h3>
-              <div className="order-items-list">
-                {orderItems.length === 0 ? (
-                  <p className="empty-text">No items in order</p>
-                ) : (
-                  orderItems.map((orderItem) => {
-                    const price = orderItem.customPrice || parseFloat(orderItem.item.price.toString());
-                    return (
-                      <div key={orderItem.item.id} className="order-item">
-                        <div className="order-item-info">
-                          <strong>{orderItem.item.name}</strong>
-                          <span>{formatCurrency(price)} × {orderItem.quantity}</span>
+            <div className="table-order-right-scrollable">
+              <div className="card">
+                <h3>Order Items ({orderItems.length})</h3>
+                <div className="order-items-list">
+                  {orderItems.length === 0 ? (
+                    <p className="empty-text">No items in order</p>
+                  ) : (
+                    orderItems.map((orderItem) => {
+                      const price = orderItem.customPrice || parseFloat(orderItem.item.price.toString());
+                      return (
+                        <div key={orderItem.item.id} className="order-item">
+                          <div className="order-item-info">
+                            <strong>{orderItem.item.name}</strong>
+                            <span>{formatCurrency(price)} × {orderItem.quantity}</span>
+                          </div>
+                          <div className="order-item-controls">
+                            <button
+                              className="btn btn-sm"
+                              onClick={() => handleUpdateQuantity(orderItem.item.id, orderItem.quantity - 1)}
+                            >
+                              −
+                            </button>
+                            <span>{orderItem.quantity}</span>
+                            <button
+                              className="btn btn-sm"
+                              onClick={() => handleUpdateQuantity(orderItem.item.id, orderItem.quantity + 1)}
+                            >
+                              +
+                            </button>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleRemoveItem(orderItem.item.id)}
+                            >
+                              🗑️
+                            </button>
+                          </div>
                         </div>
-                        <div className="order-item-controls">
-                          <button
-                            className="btn btn-sm"
-                            onClick={() => handleUpdateQuantity(orderItem.item.id, orderItem.quantity - 1)}
-                          >
-                            −
-                          </button>
-                          <span>{orderItem.quantity}</span>
-                          <button
-                            className="btn btn-sm"
-                            onClick={() => handleUpdateQuantity(orderItem.item.id, orderItem.quantity + 1)}
-                          >
-                            +
-                          </button>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleRemoveItem(orderItem.item.id)}
-                          >
-                            🗑️
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
+                      );
+                    })
+                  )}
+                </div>
               </div>
-            </div>
 
-            <div className="card">
-              <h3>Order Summary</h3>
-              <div className="summary-row">
-                <span>Subtotal:</span>
-                <span>{formatCurrency(getSubtotal())}</span>
+              <div className="card">
+                <h3>Order Summary</h3>
+                <div className="summary-row">
+                  <span>Subtotal:</span>
+                  <span>{formatCurrency(getSubtotal())}</span>
+                </div>
+                <div className="summary-row">
+                  <label>Tax (%):</label>
+                  <input
+                    type="number"
+                    className="input input-sm"
+                    value={taxRate}
+                    onChange={(e) => setTaxRate(Number(e.target.value))}
+                    min="0"
+                    max="100"
+                  />
+                  <span>{formatCurrency(getTax())}</span>
+                </div>
+                <div className="summary-row">
+                  <label>Discount (₹):</label>
+                  <input
+                    type="number"
+                    className="input input-sm"
+                    value={discount}
+                    onChange={(e) => setDiscount(Number(e.target.value))}
+                    min="0"
+                  />
+                  <span>-{formatCurrency(getDiscountAmount())}</span>
+                </div>
+                <div className="summary-total">
+                  <span>Total:</span>
+                  <span className="total-amount">{formatCurrency(getTotal())}</span>
+                </div>
               </div>
-              <div className="summary-row">
-                <label>Tax (%):</label>
-                <input
-                  type="number"
-                  className="input input-sm"
-                  value={taxRate}
-                  onChange={(e) => setTaxRate(Number(e.target.value))}
-                  min="0"
-                  max="100"
-                />
-                <span>{formatCurrency(getTax())}</span>
-              </div>
-              <div className="summary-row">
-                <label>Discount (₹):</label>
-                <input
-                  type="number"
-                  className="input input-sm"
-                  value={discount}
-                  onChange={(e) => setDiscount(Number(e.target.value))}
-                  min="0"
-                />
-                <span>-{formatCurrency(getDiscountAmount())}</span>
-              </div>
-              <div className="summary-total">
-                <span>Total:</span>
-                <span className="total-amount">{formatCurrency(getTotal())}</span>
-              </div>
-            </div>
 
-            <div className="card">
-              <h3>Payment Method</h3>
-              <div className="payment-options">
-                <button
-                  className={`payment-option ${paymentMethod === 'cash' ? 'active' : ''}`}
-                  onClick={() => setPaymentMethod('cash')}
-                >
-                  💵 Cash
-                </button>
-                <button
-                  className={`payment-option ${paymentMethod === 'card' ? 'active' : ''}`}
-                  onClick={() => setPaymentMethod('card')}
-                >
-                  💳 Card
-                </button>
-                <button
-                  className={`payment-option ${paymentMethod === 'upi' ? 'active' : ''}`}
-                  onClick={() => setPaymentMethod('upi')}
-                >
-                  📱 UPI
-                </button>
+              <div className="card">
+                <h3>Payment Method</h3>
+                <div className="payment-options">
+                  <button
+                    className={`payment-option ${paymentMethod === 'cash' ? 'active' : ''}`}
+                    onClick={() => setPaymentMethod('cash')}
+                  >
+                    💵 Cash
+                  </button>
+                  <button
+                    className={`payment-option ${paymentMethod === 'card' ? 'active' : ''}`}
+                    onClick={() => setPaymentMethod('card')}
+                  >
+                    💳 Card
+                  </button>
+                  <button
+                    className={`payment-option ${paymentMethod === 'upi' ? 'active' : ''}`}
+                    onClick={() => setPaymentMethod('upi')}
+                  >
+                    📱 UPI
+                  </button>
+                </div>
               </div>
             </div>
 
