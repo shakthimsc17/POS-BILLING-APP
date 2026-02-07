@@ -34,7 +34,6 @@ model Customer {
   tableOrders          TableOrder[]
   tables               Table[]
   transactions         Transaction[]   @relation("CustomerTransactions")
-  editedTransactions   Transaction[]   @relation("TransactionEditor")
   transactionCustomers Transaction[]   @relation("TransactionCustomers")
 
   @@index([email])
@@ -88,35 +87,29 @@ model Item {
 }
 
 model Transaction {
-  id                    String          @id @default(uuid()) @db.Uuid
-  customerId            String          @map("customer_id") @db.Uuid
-  transactionCustomerId String?         @map("transaction_customer_id") @db.Uuid
-  totalAmount           Decimal         @map("total_amount") @db.Decimal(10, 2)
-  paymentMethod         String          @map("payment_method") @db.VarChar(20)
-  receivedAmount        Decimal?        @map("received_amount") @db.Decimal(10, 2)
-  changeAmount          Decimal?        @map("change_amount") @db.Decimal(10, 2)
-  itemsJson             String          @map("items_json")
-  createdAt             DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
-  salesCustomerId       String?         @map("sales_customer_id") @db.Uuid
-  editedAt              DateTime?       @map("edited_at") @db.Timestamptz(6)
-  editedBy              String?         @map("edited_by") @db.Uuid
-  originalTransactionId String?         @map("original_transaction_id") @db.Uuid
-  transactionType       String          @default("sale") @map("transaction_type") @db.VarChar(20)
-  quickSaleItems        QuickSaleItem[]
+  id                    String         @id @default(uuid()) @db.Uuid
+  customerId            String         @map("customer_id") @db.Uuid
+  transactionCustomerId String?        @map("transaction_customer_id") @db.Uuid
+  totalAmount           Decimal        @map("total_amount") @db.Decimal(10, 2)
+  paymentMethod         String         @map("payment_method") @db.VarChar(20)
+  transactionType       String         @default("sale") @map("transaction_type") @db.VarChar(20)
+  originalTransactionId String?        @map("original_transaction_id") @db.Uuid
+  receivedAmount        Decimal?       @map("received_amount") @db.Decimal(10, 2)
+  changeAmount          Decimal?       @map("change_amount") @db.Decimal(10, 2)
+  itemsJson             String         @map("items_json")
+  createdAt             DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  salesCustomerId       String?        @map("sales_customer_id") @db.Uuid
   returns               ReturnRecord[]
-  tableOrder            TableOrder?
-  customer              Customer        @relation("CustomerTransactions", fields: [customerId], references: [id], onDelete: Cascade)
-  editedByUser          Customer?       @relation("TransactionEditor", fields: [editedBy], references: [id])
+  tableOrder            TableOrder[]
   originalTransaction   Transaction?    @relation("TransactionReturns", fields: [originalTransactionId], references: [id])
-  returnTransactions    Transaction[]   @relation("TransactionReturns")
-  salesCustomer         SalesCustomer?  @relation(fields: [salesCustomerId], references: [id])
-  transactionCustomer   Customer?       @relation("TransactionCustomers", fields: [transactionCustomerId], references: [id])
+  returnTransactions    Transaction[]    @relation("TransactionReturns")
+  customer              Customer       @relation("CustomerTransactions", fields: [customerId], references: [id], onDelete: Cascade)
+  salesCustomer         SalesCustomer? @relation(fields: [salesCustomerId], references: [id])
+  transactionCustomer   Customer?      @relation("TransactionCustomers", fields: [transactionCustomerId], references: [id])
 
   @@index([customerId])
   @@index([createdAt])
   @@index([salesCustomerId])
-  @@index([transactionType])
-  @@index([originalTransactionId])
   @@map("transactions")
 }
 
@@ -143,18 +136,14 @@ model Company {
 }
 
 model Settings {
-  id                  String    @id @default(uuid()) @db.Uuid
-  customerId          String    @unique @map("customer_id") @db.Uuid
-  activityLogEnabled  Boolean   @default(true) @map("activity_log_enabled")
-  itemLogActions      String    @default("update_delete") @map("item_log_actions") @db.VarChar(20)
-  receiptHeaderOption String    @default("both") @map("receipt_header_option") @db.VarChar(20)
-  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  receiptAutoPrint    Boolean   @default(true) @map("receipt_auto_print")
-  lastSyncAt          DateTime? @map("last_sync_at") @db.Timestamptz(6)
-  lastSyncStatus      String?   @map("last_sync_status") @db.VarChar(50)
-  supabaseUrl         String?   @map("supabase_url")
-  customer            Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  id                  String   @id @default(uuid()) @db.Uuid
+  customerId          String   @unique @map("customer_id") @db.Uuid
+  activityLogEnabled  Boolean  @default(true) @map("activity_log_enabled")
+  itemLogActions      String   @default("update_delete") @map("item_log_actions") @db.VarChar(20)
+  receiptHeaderOption String   @default("both") @map("receipt_header_option") @db.VarChar(20)
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  customer            Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([customerId])
   @@map("settings")
@@ -204,25 +193,21 @@ model SalesCustomer {
 }
 
 model QuickSaleItem {
-  id               String       @id @default(uuid()) @db.Uuid
-  name             String       @db.VarChar(255)
+  id               String   @id @default(uuid()) @db.Uuid
+  name             String   @db.VarChar(255)
   quantity         Int
-  price            Decimal      @db.Decimal(10, 2)
-  totalAmount      Decimal      @map("total_amount") @db.Decimal(10, 2)
-  soldAt           DateTime     @default(now()) @map("sold_at") @db.Timestamptz(6)
-  addedToInventory Boolean      @default(false) @map("added_to_inventory")
-  inventoryItemId  String?      @map("inventory_item_id") @db.Uuid
-  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  cost             Decimal?     @db.Decimal(10, 2)
-  transactionId    String?      @map("transaction_id") @db.Uuid
-  inventoryItem    Item?        @relation(fields: [inventoryItemId], references: [id])
-  transaction      Transaction? @relation(fields: [transactionId], references: [id])
+  price            Decimal  @db.Decimal(10, 2)
+  totalAmount      Decimal  @map("total_amount") @db.Decimal(10, 2)
+  soldAt           DateTime @default(now()) @map("sold_at") @db.Timestamptz(6)
+  addedToInventory Boolean  @default(false) @map("added_to_inventory")
+  inventoryItemId  String?  @map("inventory_item_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  inventoryItem    Item?    @relation(fields: [inventoryItemId], references: [id])
 
   @@index([addedToInventory])
   @@index([inventoryItemId])
   @@index([soldAt])
-  @@index([transactionId])
   @@map("quick_sale_items")
 }
 
@@ -253,13 +238,12 @@ model Permission {
   canEdit       Boolean  @default(false) @map("can_edit")
   canDelete     Boolean  @default(false) @map("can_delete")
   canViewProfit Boolean  @default(false) @map("can_view_profit")
-  isHidden      Boolean  @default(false) @map("is_hidden")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isHidden      Boolean  @default(false) @map("is_hidden")
 
   @@unique([customerType, page])
   @@index([customerType])
-  @@index([page])
   @@map("permissions")
 }
 
@@ -293,7 +277,6 @@ model Table {
 
   @@unique([customerId, tableNumber])
   @@index([customerId])
-  @@index([status])
   @@map("tables")
 }
 
@@ -307,7 +290,7 @@ model TableOrder {
   discount      Decimal      @default(0) @map("discount") @db.Decimal(10, 2)
   totalAmount   Decimal?     @map("total_amount") @db.Decimal(10, 2)
   paymentMethod String?      @map("payment_method") @db.VarChar(20)
-  transactionId String?      @unique @map("transaction_id") @db.Uuid
+  transactionId String?      @map("transaction_id") @db.Uuid
   notes         String?
   createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -317,8 +300,7 @@ model TableOrder {
 
   @@index([customerId])
   @@index([tableId])
-  @@index([status])
-  @@index([createdAt])
+  @@index([transactionId])
   @@map("table_orders")
 }
 
