@@ -5,6 +5,7 @@ import { storageService } from '../services/storage';
 import { formatCurrency } from '../utils/formatters';
 import { printReceipt } from '../utils/printer';
 import { SalesCustomer } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 import QuickAddItemModal from '../components/QuickAddItemModal';
 import CustomerSelectModal from '../components/CustomerSelectModal';
 
@@ -16,26 +17,29 @@ interface CartProps {
 }
 
 export default function Cart({ onNavigate }: CartProps) {
-  const {
-    items,
-    removeItem,
-    updateQuantity,
-    getTax,
-    getDiscount,
-    getItemDiscounts,
-    getActualSubtotal,
-    getTotal,
-    setTaxRate,
-    setDiscount,
-    taxRate,
-    discount,
-    clearCart,
-    paymentMethod,
-    setPaymentMethod,
-    saveCart,
-    loadCart,
-    isLoading,
-  } = useCartStore();
+  const { language } = useLanguage();
+  const cartStore = useCartStore();
+  const { 
+    items, 
+    addItem, 
+    updateQuantity, 
+    removeItem, 
+    clearCart, 
+    getTax, 
+    getDiscount, 
+    getItemDiscounts, 
+    getActualSubtotal, 
+    getTotal, 
+    setTaxRate, 
+    setDiscount, 
+    taxRate, 
+    discount, 
+    paymentMethod, 
+    setPaymentMethod, 
+    saveCart, 
+    loadCart, 
+    isLoading 
+  } = cartStore;
 
   const [receivedAmount, setReceivedAmount] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -269,6 +273,7 @@ export default function Cart({ onNavigate }: CartProps) {
           taxAmount: getTax(),
           discountAmount: getDiscount(),
           autoPrint,
+          language // Add language parameter
         });
       } catch (printError) {
         console.error('Print error:', printError);

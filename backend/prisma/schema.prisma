@@ -41,6 +41,8 @@ model Customer {
   carts                Cart[]
   tables               Table[]
   tableOrders          TableOrder[]
+  translations         Translation[]
+  eWayBills            EWayBill[]
 
   @@index([email])
   @@index([phone])
@@ -81,6 +83,9 @@ model Item {
   stock       Int      @default(0)
   purchaseQty Int      @default(0) @map("purchase_qty")
   imageUrl    String?  @map("image_url") @db.Text
+  hsnCode     String?  @map("hsn_code") @db.VarChar(8)
+  gstRate     Decimal  @default(0) @map("gst_rate") @db.Decimal(5, 2)
+  cessRate    Decimal  @default(0) @map("cess_rate") @db.Decimal(5, 2)
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   // Relations
@@ -93,6 +98,7 @@ model Item {
   @@index([barcode])
   @@index([code])
   @@index([mappingCode])
+  @@index([hsnCode])
   @@map("items")
 }
 
@@ -110,6 +116,10 @@ model Transaction {
   originalTransactionId String?  @map("original_transaction_id") @db.Uuid
   editedAt              DateTime? @map("edited_at") @db.Timestamptz(6)
   editedBy              String?  @map("edited_by") @db.Uuid
+  gstAmount             Decimal  @default(0) @map("gst_amount") @db.Decimal(10, 2)
+  cessAmount            Decimal  @default(0) @map("cess_amount") @db.Decimal(10, 2)
+  placeOfSupply         String?  @map("place_of_supply") @db.VarChar(50)
+  reverseCharge         Boolean  @default(false) @map("reverse_charge")
   createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   // Relations
@@ -122,31 +132,35 @@ model Transaction {
   returnTransactions   Transaction[] @relation("TransactionReturns")
   returns              ReturnRecord[]
   editedByUser         Customer?      @relation("TransactionEditor", fields: [editedBy], references: [id])
+  eWayBill            EWayBill?
 
   @@index([customerId])
   @@index([createdAt])
   @@index([salesCustomerId])
   @@index([transactionType])
   @@index([originalTransactionId])
+  @@index([placeOfSupply])
   @@map("transactions")
 }
 
 model Company {
-  id           String   @id @default(uuid()) @db.Uuid
-  customerId   String   @unique @map("customer_id") @db.Uuid
-  name         String   @db.VarChar(255)
-  address      String?  @db.Text
-  city         String?  @db.VarChar(100)
-  state        String?  @db.VarChar(100)
-  pincode      String?  @db.VarChar(20)
-  phone        String?  @db.VarChar(20)
-  email        String?  @db.VarChar(255)
-  gstin        String?  @db.VarChar(50)
-  website      String?  @db.VarChar(255)
-  logo         String?  @db.Text
-  businessType String?  @map("business_type") @db.VarChar(50)
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id              String   @id @default(uuid()) @db.Uuid
+  customerId      String   @unique @map("customer_id") @db.Uuid
+  name            String   @db.VarChar(255)
+  address         String?  @db.Text
+  city            String?  @db.VarChar(100)
+  state           String?  @db.VarChar(100)
+  pincode         String?  @db.VarChar(20)
+  phone           String?  @db.VarChar(20)
+  email           String?  @db.VarChar(255)
+  gstin           String?  @db.VarChar(50)
+  website         String?  @db.VarChar(255)
+  logo            String?  @db.Text
+  businessType    String?  @map("business_type") @db.VarChar(50)
+  defaultLanguage String?  @default("en") @map("default_language") @db.VarChar(10)
+  receiptLanguage String?  @default("en") @map("receipt_language") @db.VarChar(10)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // Relations
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
@@ -162,6 +176,7 @@ model Settings {
   itemLogActions      String    @default("update_delete") @map("item_log_actions") @db.VarChar(20)
   receiptHeaderOption String    @default("both") @map("receipt_header_option") @db.VarChar(20)
   receiptAutoPrint    Boolean   @default(true) @map("receipt_auto_print")
+  languageSettings    Json?     @default("{}") @map("language_settings") @db.JsonB
   supabaseUrl         String?   @map("supabase_url") @db.Text // Encrypted connection string
   lastSyncAt          DateTime? @map("last_sync_at") @db.Timestamptz(6)
   lastSyncStatus      String?   @map("last_sync_status") @db.VarChar(50) // 'success', 'failed', 'in_progress'
@@ -173,6 +188,46 @@ model Settings {
 
   @@index([customerId])
   @@map("settings")
+}
+
+model Translation {
+  id        String   @id @default(uuid()) @db.Uuid
+  customerId String  @map("customer_id") @db.Uuid
+  key       String   @db.VarChar(255)
+  language  String   @db.VarChar(10)
+  value     String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, key, language])
+  @@index([customerId])
+  @@index([key])
+  @@index([language])
+  @@map("translations")
+}
+
+model EWayBill {
+  id               String    @id @default(uuid()) @db.Uuid
+  transactionId    String    @unique @map("transaction_id") @db.Uuid
+  eWayBillNumber   String?   @unique @map("e_way_bill_number") @db.VarChar(12)
+  generatedDate    DateTime? @map("generated_date") @db.Date
+  validUntil       DateTime? @map("valid_until") @db.Date
+  status           String    @default("active") @db.VarChar(20)
+  customerId       String    @map("customer_id") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  customer    Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([eWayBillNumber])
+  @@index([status])
+  @@index([validUntil])
+  @@map("e_way_bills")
 }
 
 model ItemCodePrefix {

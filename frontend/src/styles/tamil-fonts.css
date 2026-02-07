@@ -1,0 +1,262 @@
+/* =====================================================
+ * TAMIL FONT STYLES FOR POS BILLING APPLICATION
+ * =====================================================
+ * Optimized for thermal printer compatibility
+ */
+
+/* Tamil font imports */
+@font-face {
+  font-family: 'Tamil Sangam MN';
+  src: local('Tamil Sangam MN'), local('TamilSangamMN');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Tamil Sangam MN';
+  src: local('Tamil Sangam MN Bold'), local('TamilSangamMN-Bold');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Noto Sans Tamil';
+  src: url('/fonts/noto-sans-tamil-regular.woff2') format('woff2'),
+       url('/fonts/noto-sans-tamil-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Noto Sans Tamil';
+  src: url('/fonts/noto-sans-tamil-bold.woff2') format('woff2'),
+       url('/fonts/noto-sans-tamil-bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Fallback Tamil font stack */
+.tamil-font {
+  font-family: 'Tamil Sangam MN', 'Noto Sans Tamil', 'Latha', 'Code2000', 'Arial Unicode MS', sans-serif;
+}
+
+/* Tamil text styles */
+.tamil-text {
+  font-family: 'Tamil Sangam MN', 'Noto Sans Tamil', 'Latha', 'Code2000', 'Arial Unicode MS', sans-serif;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+}
+
+/* Tamil text for receipts (thermal printer optimized) */
+.tamil-receipt {
+  font-family: 'Tamil Sangam MN', 'Noto Sans Tamil', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+/* Tamil headings */
+.tamil-heading {
+  font-family: 'Tamil Sangam MN', 'Noto Sans Tamil', 'Latha', sans-serif;
+  font-weight: 700;
+  font-size: 1.1em;
+  line-height: 1.4;
+}
+
+/* Tamil bold text */
+.tamil-bold {
+  font-family: 'Tamil Sangam MN', 'Noto Sans Tamil', 'Latha', sans-serif;
+  font-weight: 700;
+}
+
+/* Tamil small text */
+.tamil-small {
+  font-family: 'Tamil Sangam MN', 'Noto Sans Tamil', 'Latha', sans-serif;
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+
+/* =====================================================
+ * RECEIPT SPECIFIC TAMIL STYLES
+ * ===================================================== */
+
+/* Receipt body with Tamil support */
+.receipt-body.tamil {
+  font-family: 'Tamil Sangam MN', 'Noto Sans Tamil', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* Receipt headers in Tamil */
+.receipt-header.tamil .company-name,
+.receipt-header.tamil .receipt-title {
+  font-family: 'Tamil Sangam MN', 'Noto Sans Tamil', 'Latha', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: none;
+}
+
+/* Receipt items in Tamil */
+.receipt-items.tamil .item-name {
+  font-family: 'Tamil Sangam MN', 'Noto Sans Tamil', 'Latha', sans-serif;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+/* Receipt totals in Tamil */
+.receipt-totals.tamil .total-label {
+  font-family: 'Tamil Sangam MN', 'Noto Sans Tamil', 'Latha', sans-serif;
+  font-weight: 700;
+}
+
+/* Receipt footer in Tamil */
+.receipt-footer.tamil {
+  font-family: 'Tamil Sangam MN', 'Noto Sans Tamil', 'Latha', sans-serif;
+  font-size: 10px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* =====================================================
+ * PRINT MEDIA QUERIES FOR TAMIL
+ * ===================================================== */
+
+@media print {
+  /* Ensure Tamil fonts work in print mode */
+  .tamil-text,
+  .tamil-receipt,
+  .receipt-body.tamil {
+    font-family: 'Tamil Sangam MN', 'Noto Sans Tamil', 'Latha', monospace !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Optimize Tamil text for thermal printers */
+  .tamil-receipt,
+  .receipt-body.tamil {
+    font-size: 10px;
+    line-height: 1.4;
+    letter-spacing: -0.02em;
+  }
+
+  /* Ensure Tamil characters don't break */
+  .tamil-text,
+  .tamil-receipt {
+    word-break: keep-all;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* =====================================================
+ * RESPONSIVE TAMIL STYLES
+ * ===================================================== */
+
+/* Mobile devices */
+@media (max-width: 768px) {
+  .tamil-text {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .tamil-receipt {
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  .tamil-heading {
+    font-size: 16px;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .tamil-text,
+  .tamil-receipt {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* =====================================================
+ * ACCESSIBILITY FOR TAMIL
+ * ===================================================== */
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .tamil-text,
+  .tamil-receipt {
+    color: #000;
+    background: #fff;
+  }
+
+  .tamil-bold {
+    color: #000;
+    font-weight: 900;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .tamil-text,
+  .tamil-receipt {
+    transition: none;
+  }
+}
+
+/* =====================================================
+ * FALLBACK HANDLING
+ * ===================================================== */
+
+/* If Tamil fonts fail to load */
+@supports not (font-family: 'Tamil Sangam MN') {
+  .tamil-text,
+  .tamil-receipt {
+    font-family: 'Latha', 'Code2000', 'Arial Unicode MS', sans-serif;
+  }
+}
+
+/* Font loading states */
+.tamil-text.loading,
+.tamil-receipt.loading {
+  font-family: system-ui, -apple-system, sans-serif;
+  opacity: 0.8;
+}
+
+.tamil-text.loaded,
+.tamil-receipt.loaded {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+/* =====================================================
+ * UTILITY CLASSES
+ * ===================================================== */
+
+/* Tamil number formatting */
+.tamil-numbers {
+  font-family: 'Tamil Sangam MN', 'Noto Sans Tamil', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tamil currency symbols */
+.tamil-currency {
+  font-family: 'Tamil Sangam MN', 'Noto Sans Tamil', monospace;
+  font-weight: 700;
+}
+
+/* Tamil date formatting */
+.tamil-date {
+  font-family: 'Tamil Sangam MN', 'Noto Sans Tamil', monospace;
+  font-size: 0.9em;
+}
+
+/* Tamil address formatting */
+.tamil-address {
+  font-family: 'Tamil Sangam MN', 'Noto Sans Tamil', 'Latha', sans-serif;
+  font-size: 0.9em;
+  line-height: 1.4;
+}

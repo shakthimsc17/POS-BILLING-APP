@@ -1,14 +1,16 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { useInventoryStore } from './store/inventoryStore';
+import { LanguageProvider } from './contexts/LanguageContext';
+import { useCompanyStore } from './store/companyStore';
 import { useAuthStore } from './store/authStore';
 import { usePermissions } from './hooks/usePermissions';
+import { useInventoryStore } from './store/inventoryStore';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
 import AccessDenied from './components/AccessDenied';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
-import { useCompanyStore } from './store/companyStore';
 import './App.css';
+import './styles/tamil-fonts.css';
 
 // Lazy load pages for code splitting
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -101,17 +103,18 @@ function App() {
   }
 
   return (
-    <ErrorBoundary>
-      <div className="app">
-        <div
-          className="sidebar-trigger"
-          onMouseEnter={() => setSidebarOpen(true)}
-        />
-        <aside
-          className={`sidebar ${sidebarOpen ? 'open' : ''}`}
-          onMouseLeave={() => setSidebarOpen(false)}
-          onMouseEnter={() => setSidebarOpen(true)}
-        >
+    <LanguageProvider>
+      <ErrorBoundary>
+        <div className="app">
+          <div
+            className="sidebar-trigger"
+            onMouseEnter={() => setSidebarOpen(true)}
+          />
+          <aside
+            className={`sidebar ${sidebarOpen ? 'open' : ''}`}
+            onMouseLeave={() => setSidebarOpen(false)}
+            onMouseEnter={() => setSidebarOpen(true)}
+          >
           <div className="sidebar-header">
             {company.logo && (
               <div className="sidebar-logo-container">
@@ -364,13 +367,13 @@ function App() {
           </div>
         </aside>
 
-        <main className={`main-content ${sidebarOpen ? 'sidebar-open' : ''}`}>
-          <div className="page-content-wrapper">
-            <Suspense fallback={<LoadingSpinner message="Loading page..." />}>
-              {currentPage === 'dashboard' && (canView('dashboard') && !isHidden('dashboard') ? <Dashboard onNavigate={(p: any) => setCurrentPage(p as Page)} /> : <AccessDenied />)}
-              {currentPage === 'cart' && (canView('cart') && !isHidden('cart') ? <Cart onNavigate={(p: any) => setCurrentPage(p as Page)} /> : <AccessDenied />)}
-              {currentPage === 'categories' && (canView('categories') && !isHidden('categories') ? <Categories onNavigate={(p: any) => setCurrentPage(p as Page)} /> : <AccessDenied />)}
-              {currentPage === 'items' && (canView('items') && !isHidden('items') ? <Items onNavigate={(p: any) => setCurrentPage(p as Page)} /> : <AccessDenied />)}
+        <main className="main-content">
+          <div className="page-content">
+            <Suspense fallback={<LoadingSpinner />}>
+              {currentPage === 'dashboard' && (canView('dashboard') && !isHidden('dashboard') ? <Dashboard onNavigate={(page) => setCurrentPage(page as Page)} /> : <AccessDenied />)}
+              {currentPage === 'cart' && (canView('cart') && !isHidden('cart') ? <Cart onNavigate={(page) => setCurrentPage(page as Page)} /> : <AccessDenied />)}
+              {currentPage === 'categories' && (canView('categories') && !isHidden('categories') ? <Categories /> : <AccessDenied />)}
+              {currentPage === 'items' && (canView('items') && !isHidden('items') ? <Items /> : <AccessDenied />)}
               {currentPage === 'sales' && (canView('sales') && !isHidden('sales') ? <SalesOrders onNavigate={(page, orderId) => { if (page === 'order-details' && orderId) { setSelectedOrderId(orderId); setCurrentPage('order-details'); } }} /> : <AccessDenied />)}
               {currentPage === 'order-details' && selectedOrderId && (canView('sales') && !isHidden('sales') ? <OrderDetails orderId={selectedOrderId} onBack={() => { setCurrentPage('sales'); setSelectedOrderId(null); }} /> : <AccessDenied />)}
               {currentPage === 'sales-performance' && (canView('sales-performance') && !isHidden('sales-performance') ? <SalesPerformance /> : <AccessDenied />)}
@@ -416,7 +419,8 @@ function App() {
         </main>
       </div>
     </ErrorBoundary>
-  );
+  </LanguageProvider>
+);
 }
 
 export default App;
