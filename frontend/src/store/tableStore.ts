@@ -17,7 +17,7 @@ interface TableStore {
   getActiveTableOrder: (tableId: string) => Promise<TableOrder | null>;
   createTableOrder: (order: Omit<TableOrder, 'id' | 'customer_id' | 'created_at' | 'updated_at' | 'status' | 'transaction_id'>) => Promise<TableOrder>;
   updateTableOrder: (id: string, updates: Partial<TableOrder>) => Promise<TableOrder>;
-  completeTableOrder: (id: string, data: { payment_method: 'cash' | 'card' | 'upi'; received_amount?: number; sales_customer_id?: string }) => Promise<{ message: string; transaction: any }>;
+  completeTableOrder: (id: string, data: { payment_method: 'cash' | 'card' | 'upi'; received_amount?: number; change_amount?: number; sales_customer_id?: string }) => Promise<{ message: string; transaction: any }>;
   cancelTableOrder: (id: string) => Promise<void>;
 }
 

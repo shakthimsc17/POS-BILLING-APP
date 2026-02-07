@@ -483,7 +483,7 @@ export const storageService = {
     return apiClient.put<TableOrder>(`/table-orders/${id}`, updates);
   },
 
-  completeTableOrder: async (id: string, data: { payment_method: 'cash' | 'card' | 'upi'; received_amount?: number; sales_customer_id?: string }): Promise<{ message: string; transaction: Transaction }> => {
+  completeTableOrder: async (id: string, data: { payment_method: 'cash' | 'card' | 'upi'; received_amount?: number; change_amount?: number; sales_customer_id?: string }): Promise<{ message: string; transaction: Transaction }> => {
     return apiClient.post<{ message: string; transaction: Transaction }>(`/table-orders/${id}/complete`, data);
   },
 

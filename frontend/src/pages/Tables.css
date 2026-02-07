@@ -78,9 +78,47 @@
 }
 
 .table-card-body p {
-  margin: 0;
+  margin: 4px 0;
   color: #666;
-  font-size: 14px;
+  font-size: 0.9rem;
+}
+
+.table-order-id {
+  margin-top: 8px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.order-id-label {
+  font-size: 0.8rem;
+  color: #666;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.order-id-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #007bff;
+  font-family: 'Courier New', monospace;
+}
+
+.order-id-value.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  padding: 4px 6px;
+  background: #e9ecef;
+  border: 1px solid #dee2e6;
+}
+
+.order-id-value.clickable:hover {
+  background: #007bff;
+  color: white;
+  transform: translateY(-1px);
 }
 
 .table-card-actions {
