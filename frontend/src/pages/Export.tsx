@@ -116,9 +116,9 @@ export default function Export() {
       setLoading(true);
       try {
         const [itemsData, txData, catData, salesCustData] = await Promise.all([
-          storageService.getItems(),
-          storageService.getTransactions(),
-          storageService.getCategories(),
+          storageService.getItems({ all: true }),
+          storageService.getTransactions({ all: true }),
+          storageService.getCategories({ all: true }),
           storageService.getSalesCustomers().catch(() => []),
         ]);
         if (!cancelled) {

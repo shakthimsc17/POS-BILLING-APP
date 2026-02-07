@@ -4,6 +4,7 @@ import { useInventoryStore } from '../store/inventoryStore';
 import { useCompanyStore } from '../store/companyStore';
 import { Table, Item, CartItem } from '../types';
 import { formatCurrency } from '../utils/formatters';
+import { toast } from '../utils/toast';
 import SearchBarcodeInput from './SearchBarcodeInput';
 import QuickItemSearch from './QuickItemSearch';
 import ItemCard from './ItemCard';
@@ -166,7 +167,7 @@ export default function TableOrderModal({
 
   const handleSaveOrder = useCallback(async () => {
     if (!table || orderItems.length === 0) {
-      alert('Please add items to the order');
+      toast.error('Please add items to the order');
       return;
     }
 
@@ -195,11 +196,11 @@ export default function TableOrderModal({
         });
       }
 
-      alert('Order saved successfully!');
+      toast.success('Order saved successfully!');
       onOrderCreated();
       onClose();
     } catch (error: any) {
-      alert(error.message || 'Failed to save order');
+      toast.error(error.message || 'Failed to save order');
     } finally {
       setLoading(false);
     }
@@ -207,7 +208,7 @@ export default function TableOrderModal({
 
   const handleCompleteOrder = useCallback(async () => {
     if (!table || orderItems.length === 0) {
-      alert('Please add items to the order');
+      toast.error('Please add items to the order');
       return;
     }
 
@@ -252,12 +253,12 @@ export default function TableOrderModal({
         console.error('Print error:', printError);
       }
 
-      alert('Order completed successfully!');
+      toast.success('Order completed successfully!');
       setOrderItems([]);
       onOrderCreated();
       onClose();
     } catch (error: any) {
-      alert(error.message || 'Failed to complete order');
+      toast.error(error.message || 'Failed to complete order');
     } finally {
       setLoading(false);
     }
@@ -306,8 +307,8 @@ export default function TableOrderModal({
                         // Item is already added to orderItems via customAddItem
                         // Refresh if needed
                       }}
-                      customAddItem={(item, quantity) => {
-                        handleItemPress(item);
+                      customAddItem={(_item, _quantity) => {
+                        handleItemPress(_item);
                       }}
                       autoFocus={true}
                       placeholder="Enter mapping code (e.g., 1, 2)..."
