@@ -10,6 +10,13 @@ export const calculateTax = (subtotal: number, taxRate: number): number => {
 
 // Calculate GST based on individual item GST rates
 export const calculateItemGST = (items: CartItem[]): { totalGST: number; gstBreakdown: { rate: number; amount: number }[] } => {
+  console.log('🧮 Calculating GST for items:', items.map(ci => ({ 
+    name: ci.item.name, 
+    gst_rate: ci.item.gst_rate, 
+    price: ci.customPrice ?? (typeof ci.item.price === 'string' ? parseFloat(ci.item.price) : ci.item.price),
+    quantity: ci.quantity 
+  })));
+  
   const gstBreakdown: Record<number, number> = {};
   let totalGST = 0;
 
@@ -34,6 +41,8 @@ export const calculateItemGST = (items: CartItem[]): { totalGST: number; gstBrea
     rate: Number(rate),
     amount
   }));
+
+  console.log('🧮 GST Calculation Result:', { totalGST, gstBreakdown: breakdownArray });
 
   return { totalGST, gstBreakdown: breakdownArray };
 };

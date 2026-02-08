@@ -45,11 +45,11 @@ async function seedSampleItems() {
 
     // Create sample items with mapping codes
     const sampleItems = [
-      { name: 'Coffee', code: 'CF-001', mappingCode: '1', price: 50, cost: 30, stock: 100, categoryName: 'Beverages' },
-      { name: 'Tea', code: 'TE-001', mappingCode: '2', price: 30, cost: 20, stock: 100, categoryName: 'Beverages' },
-      { name: 'Sandwich', code: 'SN-001', mappingCode: '3', price: 80, cost: 50, stock: 50, categoryName: 'Meals' },
-      { name: 'French Fries', code: 'FF-001', mappingCode: '4', price: 60, cost: 35, stock: 80, categoryName: 'Snacks' },
-      { name: 'Burger', code: 'BG-001', mappingCode: '5', price: 120, cost: 80, stock: 40, categoryName: 'Meals' },
+      { name: 'Coffee', code: 'CF-001', mappingCode: '1', price: 50, cost: 30, stock: 100, categoryName: 'Beverages', gstRate: 5 },
+      { name: 'Tea', code: 'TE-001', mappingCode: '2', price: 30, cost: 20, stock: 100, categoryName: 'Beverages', gstRate: 5 },
+      { name: 'Sandwich', code: 'SN-001', mappingCode: '3', price: 80, cost: 50, stock: 50, categoryName: 'Meals', gstRate: 5 },
+      { name: 'French Fries', code: 'FF-001', mappingCode: '4', price: 60, cost: 35, stock: 80, categoryName: 'Snacks', gstRate: 12 },
+      { name: 'Burger', code: 'BG-001', mappingCode: '5', price: 120, cost: 80, stock: 40, categoryName: 'Meals', gstRate: 5 },
     ];
 
     for (const itemData of sampleItems) {
@@ -73,6 +73,7 @@ async function seedSampleItems() {
             stock: itemData.stock,
             customerId: adminCustomer.id,
             categoryId: category?.id,
+            gstRate: itemData.gstRate,
           },
         });
         console.log(`✅ Created item: ${itemData.name} (mapping code: ${itemData.mappingCode})`);
