@@ -51,10 +51,13 @@ export default function QuickItemSearch({
   const searchAndAddItem = async (code: string) => {
     if (!code) return;
 
+    console.log('🔍 QuickItemSearch: Searching for item with mapping code:', code);
     setIsSearching(true);
     try {
       const item = await storageService.searchItemByMappingCode(code);
+      console.log('🔍 QuickItemSearch: Search result:', item);
       if (item) {
+        console.log('🔍 QuickItemSearch: Adding item to cart:', item);
         addItem(item, 1);
         setMappingCode('');
 

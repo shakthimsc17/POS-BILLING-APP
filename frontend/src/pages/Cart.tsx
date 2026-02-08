@@ -26,6 +26,7 @@ export default function Cart({ onNavigate }: CartProps) {
     removeItem, 
     clearCart, 
     getTax, 
+    getGST,
     getDiscount, 
     getItemDiscounts, 
     getActualSubtotal, 
@@ -318,6 +319,13 @@ export default function Cart({ onNavigate }: CartProps) {
   const discountAmount = change < 0 ? Math.abs(change) : 0;
   const actualChange = change > 0 ? change : 0;
 
+  console.log('🛒 Cart Component: Render state', { 
+    itemsLength: items.length, 
+    items: items.map(ci => ({ name: ci.item.name, quantity: ci.quantity })),
+    total,
+    isLoading 
+  });
+
   if (items.length === 0) {
     return (
       <div className="cart-empty">
@@ -504,6 +512,18 @@ export default function Cart({ onNavigate }: CartProps) {
                 </div>
                 <span className="summary-value">{formatCurrency(getTax())}</span>
               </div>
+              {(() => {
+                const gstInfo = getGST();
+                if (gstInfo.gstBreakdown.length > 0) {
+                  return gstInfo.gstBreakdown.map(gst => (
+                    <div key={gst.rate} className="summary-row" style={{fontSize: '11px', color: '#666'}}>
+                      <span>GST @ {gst.rate}%:</span>
+                      <span>{formatCurrency(gst.amount)}</span>
+                    </div>
+                  ));
+                }
+                return null;
+              })()}
               <div className="summary-row">
                 <div className="summary-label-with-input">
                   <label>Discount (₹): <span className="function-key-hint">F2</span></label>

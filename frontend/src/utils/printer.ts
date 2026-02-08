@@ -3,6 +3,7 @@ import { CartItem } from '../types';
 import { formatCurrency } from './formatters';
 import { useCompanyStore } from '../store/companyStore';
 import { receiptSettings } from './receiptSettings';
+import { calculateItemGST } from './calculations';
 
 import { SalesCustomer } from '../types';
 
@@ -108,6 +109,9 @@ export async function printReceipt(options: PrintOptions) {
   const date = new Date(transaction.created_at);
   // Use transaction.totalAmount if available (includes tax/discount), otherwise calculate from items
   const total = transaction.total_amount ? Number(transaction.total_amount) : items.reduce((sum, item) => sum + item.subtotal, 0);
+
+  // Calculate GST breakdown
+  const gstInfo = calculateItemGST(items);
 
   // Create HTML for 3-inch (80mm) thermal printer
   const printHTML = `
@@ -482,6 +486,16 @@ export async function printReceipt(options: PrintOptions) {
               <span>${formatCurrency(taxAmount)}</span>
             </div>
           ` : ''}
+          
+          ${gstInfo.gstBreakdown.length > 0 ? 
+            gstInfo.gstBreakdown.map(gst => `
+              <div class="total-row" style="font-size: 11px; color: #666;">
+                <span>GST @ ${gst.rate}%:</span>
+                <span>${formatCurrency(gst.amount)}</span>
+              </div>
+            `).join('')
+            : ''
+          }
 
           <div class="total-row grand-total">
             <span>${getTranslation('totals.grandTotal')}:</span>

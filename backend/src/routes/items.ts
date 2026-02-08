@@ -50,6 +50,9 @@ router.get('/', [
       mrp: item.mrp,
       stock: item.stock,
       image_url: item.imageUrl,
+      hsn_code: item.hsnCode,
+      gst_rate: item.gstRate,
+      cess_rate: item.cessRate,
       created_at: item.createdAt.toISOString(),
     }));
 
@@ -107,6 +110,9 @@ router.get('/search', [query('q').notEmpty()], async (req: AuthRequest, res: Res
       mrp: item.mrp,
       stock: item.stock,
       image_url: item.image_url,
+      hsn_code: item.hsn_code,
+      gst_rate: item.gst_rate,
+      cess_rate: item.cess_rate,
       created_at: item.created_at ? new Date(item.created_at).toISOString() : new Date().toISOString(),
     }));
 
@@ -157,6 +163,9 @@ router.get('/by-categories', [query('categoryIds').notEmpty()], async (req: Auth
       mrp: item.mrp,
       stock: item.stock,
       image_url: item.imageUrl,
+      hsn_code: item.hsnCode,
+      gst_rate: item.gstRate,
+      cess_rate: item.cessRate,
       created_at: item.createdAt.toISOString(),
     }));
 
@@ -287,6 +296,9 @@ router.get('/search-by-barcode/:barcode', async (req: AuthRequest, res) => {
       mrp: item.mrp,
       stock: item.stock,
       image_url: item.image_url,
+      hsn_code: item.hsn_code,
+      gst_rate: item.gst_rate,
+      cess_rate: item.cess_rate,
       created_at: item.created_at ? new Date(item.created_at).toISOString() : new Date().toISOString(),
     }));
 
@@ -336,6 +348,12 @@ router.post(
         imageUrl,
         displayName,
         display_name, // Accept snake_case from frontend
+        hsnCode,
+        hsn_code, // Accept snake_case from frontend
+        gstRate,
+        gst_rate, // Accept snake_case from frontend
+        cessRate,
+        cess_rate, // Accept snake_case from frontend
       } = req.body;
 
       // Use categoryId (camelCase) or category_id (snake_case), whichever is provided
@@ -346,6 +364,15 @@ router.post(
       
       // Use mappingCode (camelCase) or mapping_code (snake_case), whichever is provided
       const finalMappingCode = mappingCode !== undefined ? (mappingCode === '' ? null : mappingCode) : (mapping_code !== undefined ? (mapping_code === '' ? null : mapping_code) : undefined);
+      
+      // Use hsnCode (camelCase) or hsn_code (snake_case), whichever is provided
+      const finalHsnCode = hsnCode !== undefined ? hsnCode : hsn_code;
+      
+      // Use gstRate (camelCase) or gst_rate (snake_case), whichever is provided
+      const finalGstRate = gstRate !== undefined ? gstRate : gst_rate;
+      
+      // Use cessRate (camelCase) or cess_rate (snake_case), whichever is provided
+      const finalCessRate = cessRate !== undefined ? cessRate : cess_rate;
       
       console.log('Creating item:', {
         name,
@@ -374,6 +401,9 @@ router.post(
           mrp: mrp ? parseFloat(mrp) : null,
           stock: stock ? parseInt(stock) : 0,
           imageUrl,
+          hsnCode: finalHsnCode || null,
+          gstRate: finalGstRate ? parseFloat(finalGstRate) : 0,
+          cessRate: finalCessRate ? parseFloat(finalCessRate) : 0,
         },
       });
       
@@ -412,6 +442,9 @@ router.post(
         mrp: item.mrp,
         stock: item.stock,
         image_url: item.imageUrl,
+        hsn_code: item.hsnCode,
+        gst_rate: item.gstRate,
+        cess_rate: item.cessRate,
         created_at: item.createdAt.toISOString(),
       });
     } catch (error: any) {
@@ -455,6 +488,12 @@ router.put(
         mrp,
         stock,
         imageUrl,
+        hsnCode,
+        hsn_code, // Accept snake_case from frontend
+        gstRate,
+        gst_rate, // Accept snake_case from frontend
+        cessRate,
+        cess_rate, // Accept snake_case from frontend
       } = req.body;
 
       // Use categoryId (camelCase) or category_id (snake_case), whichever is provided
@@ -463,6 +502,12 @@ router.put(
       const finalDisplayName = displayName !== undefined ? displayName : display_name;
       // Use mappingCode (camelCase) or mapping_code (snake_case), whichever is provided
       const finalMappingCode = mappingCode !== undefined ? (mappingCode === '' ? null : mappingCode) : (mapping_code !== undefined ? (mapping_code === '' ? null : mapping_code) : undefined);
+      // Use hsnCode (camelCase) or hsn_code (snake_case), whichever is provided
+      const finalHsnCode = hsnCode !== undefined ? hsnCode : hsn_code;
+      // Use gstRate (camelCase) or gst_rate (snake_case), whichever is provided
+      const finalGstRate = gstRate !== undefined ? gstRate : gst_rate;
+      // Use cessRate (camelCase) or cess_rate (snake_case), whichever is provided
+      const finalCessRate = cessRate !== undefined ? cessRate : cess_rate;
 
       // Check if item exists (shared inventory - no customerId check)
       const existing = await prisma.item.findUnique({
@@ -515,6 +560,9 @@ router.put(
       if (mrp !== undefined) updateData.mrp = mrp ? parseFloat(mrp) : null;
       if (stock !== undefined) updateData.stock = parseInt(stock);
       if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+      if (finalHsnCode !== undefined) updateData.hsnCode = finalHsnCode || null;
+      if (finalGstRate !== undefined) updateData.gstRate = finalGstRate ? parseFloat(finalGstRate) : 0;
+      if (finalCessRate !== undefined) updateData.cessRate = finalCessRate ? parseFloat(finalCessRate) : 0;
 
       const item = await prisma.item.update({
         where: { id },
@@ -554,6 +602,9 @@ router.put(
         mrp: item.mrp,
         stock: item.stock,
         image_url: item.imageUrl,
+        hsn_code: item.hsnCode,
+        gst_rate: item.gstRate,
+        cess_rate: item.cessRate,
         created_at: item.createdAt.toISOString(),
       });
     } catch (error: any) {
