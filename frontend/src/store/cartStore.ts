@@ -34,7 +34,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
   items: [],
   taxRate: 0,
   discount: 0,
-  paymentMethod: null,
+  paymentMethod: 'cash',
   isLoading: false,
 
   addItem: (item: Item, quantity: number = 1) => {
@@ -138,7 +138,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
   clearCart: () => {
     set({
       items: [],
-      paymentMethod: null,
+      paymentMethod: 'cash',
       discount: 0,
       taxRate: 0,
     });
@@ -231,7 +231,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
             items: items || [],
             taxRate: typeof savedCart.tax_rate === 'string' ? parseFloat(savedCart.tax_rate) : savedCart.tax_rate,
             discount: typeof savedCart.discount === 'string' ? parseFloat(savedCart.discount) : savedCart.discount,
-            paymentMethod: savedCart.payment_method || null,
+            paymentMethod: savedCart.payment_method || 'cash',
           });
           return { salesCustomerId: savedCart.sales_customer_id };
         } catch (parseError) {
