@@ -459,10 +459,15 @@
 
 .modal-content.items-modal .modal-actions .btn {
   flex: 1;
-  padding: 0.875rem 1.5rem;
+  padding: 0.875rem 1.75rem;
   font-weight: 600;
   border-radius: 8px;
   transition: all 0.2s ease;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .modal-content.items-modal .modal-actions .btn-primary {

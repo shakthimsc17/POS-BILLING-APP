@@ -44,7 +44,13 @@ type AuthPage = 'signin' | 'signup';
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [authPage, setAuthPage] = useState<AuthPage>('signin');
+  // Show sidebar toggle button on all pages
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Keep sidebar state consistent across all pages
+  useEffect(() => {
+    // Sidebar state is now controlled manually by user
+  }, [currentPage]);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const { loadCategories, loadItems } = useInventoryStore();
   const { customer, initialized, initialize, signOut } = useAuthStore();
@@ -106,14 +112,8 @@ function App() {
     <LanguageProvider>
       <ErrorBoundary>
         <div className="app">
-          <div
-            className="sidebar-trigger"
-            onMouseEnter={() => setSidebarOpen(true)}
-          />
           <aside
             className={`sidebar ${sidebarOpen ? 'open' : ''}`}
-            onMouseLeave={() => setSidebarOpen(false)}
-            onMouseEnter={() => setSidebarOpen(true)}
           >
           <div className="sidebar-header">
             {company.logo && (
@@ -367,7 +367,15 @@ function App() {
           </div>
         </aside>
 
-        <main className="main-content">
+        <main className={`main-content ${sidebarOpen ? 'sidebar-open' : ''}`}>
+          {/* Show sidebar toggle button inside main content */}
+          <button
+            className="sidebar-toggle-btn"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            {sidebarOpen ? '✕' : '☰'}
+          </button>
           <div className="page-content">
             <Suspense fallback={<LoadingSpinner />}>
               {currentPage === 'dashboard' && (canView('dashboard') && !isHidden('dashboard') ? <Dashboard onNavigate={(page) => setCurrentPage(page as Page)} /> : <AccessDenied />)}
