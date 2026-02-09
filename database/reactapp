@@ -5,7 +5,7 @@
 -- Dumped from database version 12.22 (Ubuntu 12.22-0ubuntu0.20.04.4)
 -- Dumped by pg_dump version 12.22 (Ubuntu 12.22-0ubuntu0.20.04.4)
 
--- Started on 2026-02-08 15:02:20 IST
+-- Started on 2026-02-07 08:56:49 IST
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -18,63 +18,12 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
---
--- TOC entry 2 (class 3079 OID 111897)
--- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
-
-
---
--- TOC entry 3287 (class 0 OID 0)
--- Dependencies: 2
--- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
---
-
-COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
-
-
---
--- TOC entry 245 (class 1255 OID 111896)
--- Name: update_e_way_bills_updated_at(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.update_e_way_bills_updated_at() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION public.update_e_way_bills_updated_at() OWNER TO postgres;
-
---
--- TOC entry 244 (class 1255 OID 111895)
--- Name: update_translations_updated_at(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.update_translations_updated_at() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION public.update_translations_updated_at() OWNER TO postgres;
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- TOC entry 203 (class 1259 OID 106791)
+-- TOC entry 202 (class 1259 OID 106791)
 -- Name: _prisma_migrations; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -93,7 +42,7 @@ CREATE TABLE public._prisma_migrations (
 ALTER TABLE public._prisma_migrations OWNER TO postgres;
 
 --
--- TOC entry 211 (class 1259 OID 106914)
+-- TOC entry 210 (class 1259 OID 106914)
 -- Name: activity_logs; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -111,7 +60,7 @@ CREATE TABLE public.activity_logs (
 ALTER TABLE public.activity_logs OWNER TO postgres;
 
 --
--- TOC entry 216 (class 1259 OID 106964)
+-- TOC entry 215 (class 1259 OID 106964)
 -- Name: carts; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -131,7 +80,7 @@ CREATE TABLE public.carts (
 ALTER TABLE public.carts OWNER TO postgres;
 
 --
--- TOC entry 214 (class 1259 OID 106942)
+-- TOC entry 213 (class 1259 OID 106942)
 -- Name: cash_flow_entries; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -151,7 +100,7 @@ CREATE TABLE public.cash_flow_entries (
 ALTER TABLE public.cash_flow_entries OWNER TO postgres;
 
 --
--- TOC entry 205 (class 1259 OID 106812)
+-- TOC entry 204 (class 1259 OID 106812)
 -- Name: categories; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -169,7 +118,7 @@ CREATE TABLE public.categories (
 ALTER TABLE public.categories OWNER TO postgres;
 
 --
--- TOC entry 208 (class 1259 OID 106875)
+-- TOC entry 207 (class 1259 OID 106875)
 -- Name: companies; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -188,16 +137,14 @@ CREATE TABLE public.companies (
     logo text,
     created_at timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    business_type character varying(50),
-    default_language character varying(10) DEFAULT 'en'::character varying,
-    receipt_language character varying(10) DEFAULT 'en'::character varying
+    business_type character varying(50)
 );
 
 
 ALTER TABLE public.companies OWNER TO postgres;
 
 --
--- TOC entry 204 (class 1259 OID 106801)
+-- TOC entry 203 (class 1259 OID 106801)
 -- Name: customers; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -221,28 +168,7 @@ CREATE TABLE public.customers (
 ALTER TABLE public.customers OWNER TO postgres;
 
 --
--- TOC entry 221 (class 1259 OID 111932)
--- Name: e_way_bills; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.e_way_bills (
-    id uuid NOT NULL,
-    transaction_id uuid NOT NULL,
-    e_way_bill_number character varying(12),
-    generated_date date,
-    valid_until date,
-    status character varying(20) DEFAULT 'active'::character varying NOT NULL,
-    created_at timestamp(6) with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp(6) with time zone DEFAULT now() NOT NULL,
-    customer_id uuid NOT NULL,
-    CONSTRAINT e_way_bills_status_check CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'expired'::character varying, 'cancelled'::character varying])::text[])))
-);
-
-
-ALTER TABLE public.e_way_bills OWNER TO postgres;
-
---
--- TOC entry 210 (class 1259 OID 106904)
+-- TOC entry 209 (class 1259 OID 106904)
 -- Name: item_code_prefixes; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -258,7 +184,7 @@ CREATE TABLE public.item_code_prefixes (
 ALTER TABLE public.item_code_prefixes OWNER TO postgres;
 
 --
--- TOC entry 206 (class 1259 OID 106821)
+-- TOC entry 205 (class 1259 OID 106821)
 -- Name: items; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -278,19 +204,14 @@ CREATE TABLE public.items (
     created_at timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     display_name character varying(255),
     purchase_qty integer DEFAULT 0 NOT NULL,
-    mapping_code character varying(100),
-    hsn_code character varying(8),
-    gst_rate numeric(5,2) DEFAULT 0 NOT NULL,
-    cess_rate numeric(5,2) DEFAULT 0 NOT NULL,
-    CONSTRAINT chk_items_cess_rate CHECK (((cess_rate >= (0)::numeric) AND (cess_rate <= (100)::numeric))),
-    CONSTRAINT chk_items_gst_rate CHECK (((gst_rate >= (0)::numeric) AND (gst_rate <= (100)::numeric)))
+    mapping_code character varying(100)
 );
 
 
 ALTER TABLE public.items OWNER TO postgres;
 
 --
--- TOC entry 215 (class 1259 OID 106952)
+-- TOC entry 214 (class 1259 OID 106952)
 -- Name: permissions; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -311,7 +232,7 @@ CREATE TABLE public.permissions (
 ALTER TABLE public.permissions OWNER TO postgres;
 
 --
--- TOC entry 213 (class 1259 OID 106933)
+-- TOC entry 212 (class 1259 OID 106933)
 -- Name: quick_sale_items; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -334,7 +255,7 @@ CREATE TABLE public.quick_sale_items (
 ALTER TABLE public.quick_sale_items OWNER TO postgres;
 
 --
--- TOC entry 219 (class 1259 OID 107675)
+-- TOC entry 218 (class 1259 OID 107675)
 -- Name: returns; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -361,7 +282,7 @@ CREATE TABLE public.returns (
 ALTER TABLE public.returns OWNER TO postgres;
 
 --
--- TOC entry 212 (class 1259 OID 106923)
+-- TOC entry 211 (class 1259 OID 106923)
 -- Name: sales_customers; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -379,7 +300,7 @@ CREATE TABLE public.sales_customers (
 ALTER TABLE public.sales_customers OWNER TO postgres;
 
 --
--- TOC entry 209 (class 1259 OID 106894)
+-- TOC entry 208 (class 1259 OID 106894)
 -- Name: settings; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -394,15 +315,14 @@ CREATE TABLE public.settings (
     receipt_auto_print boolean DEFAULT true NOT NULL,
     last_sync_at timestamp(6) with time zone,
     last_sync_status character varying(50),
-    supabase_url text,
-    language_settings jsonb DEFAULT '{}'::jsonb
+    supabase_url text
 );
 
 
 ALTER TABLE public.settings OWNER TO postgres;
 
 --
--- TOC entry 218 (class 1259 OID 106985)
+-- TOC entry 217 (class 1259 OID 106985)
 -- Name: table_orders; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -426,7 +346,7 @@ CREATE TABLE public.table_orders (
 ALTER TABLE public.table_orders OWNER TO postgres;
 
 --
--- TOC entry 217 (class 1259 OID 106976)
+-- TOC entry 216 (class 1259 OID 106976)
 -- Name: tables; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -444,7 +364,7 @@ CREATE TABLE public.tables (
 ALTER TABLE public.tables OWNER TO postgres;
 
 --
--- TOC entry 207 (class 1259 OID 106831)
+-- TOC entry 206 (class 1259 OID 106831)
 -- Name: transactions; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -462,45 +382,19 @@ CREATE TABLE public.transactions (
     edited_at timestamp(6) with time zone,
     edited_by uuid,
     original_transaction_id uuid,
-    transaction_type character varying(20) DEFAULT 'sale'::character varying NOT NULL,
-    gst_amount numeric(10,2) DEFAULT 0 NOT NULL,
-    cess_amount numeric(10,2) DEFAULT 0 NOT NULL,
-    place_of_supply character varying(50),
-    reverse_charge boolean DEFAULT false NOT NULL,
-    CONSTRAINT chk_transactions_cess_amount CHECK ((cess_amount >= (0)::numeric)),
-    CONSTRAINT chk_transactions_gst_amount CHECK ((gst_amount >= (0)::numeric))
+    transaction_type character varying(20) DEFAULT 'sale'::character varying NOT NULL
 );
 
 
 ALTER TABLE public.transactions OWNER TO postgres;
 
 --
--- TOC entry 220 (class 1259 OID 111908)
--- Name: translations; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.translations (
-    id uuid NOT NULL,
-    customer_id uuid NOT NULL,
-    key character varying(255) NOT NULL,
-    language character varying(10) NOT NULL,
-    value text NOT NULL,
-    created_at timestamp(6) with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp(6) with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT chk_translations_language CHECK (((language)::text = ANY ((ARRAY['en'::character varying, 'ta'::character varying, 'hi'::character varying, 'te'::character varying, 'ml'::character varying, 'bn'::character varying])::text[])))
-);
-
-
-ALTER TABLE public.translations OWNER TO postgres;
-
---
--- TOC entry 3263 (class 0 OID 106791)
--- Dependencies: 203
+-- TOC entry 3196 (class 0 OID 106791)
+-- Dependencies: 202
 -- Data for Name: _prisma_migrations; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public._prisma_migrations (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count) FROM stdin;
-3b9cdf93-8105-492f-985c-6e2db2932733	b24b2f6efecd0974cd4417d9c4225684e4c0085c69f606d0e3b2eae09795e6c3	2026-02-07 08:59:44.865098+05:30	20260207090000_add_returns_table		\N	2026-02-07 08:59:44.865098+05:30	0
 9deaf2d6-495c-443a-ab2b-cf6f28c5bd17	c6908ef37cc2acdaa6d977ba331ea12de4b4ad28989fda394093c96f15c20bd3	2026-02-05 21:49:21.839972+05:30	20260112145951_admin	\N	\N	2026-02-05 21:49:21.118063+05:30	1
 335f3f8a-49ee-4dcc-a718-4d51bdeff34b	9c84775fff2d9d7e86424bc455d9d98569b5f04ea342dce4e4f6219202e423a2	2026-02-05 21:49:22.020352+05:30	20260113151726_company	\N	\N	2026-02-05 21:49:21.851385+05:30	1
 43d2da1e-cc01-480e-860d-4fa7f8d78464	65e00246830aec3ef54c71f8f947ac781f4f661ec3eb64b72e389116fcbabf2b	2026-02-05 21:49:23.782056+05:30	20260127152538_add_table_management	\N	\N	2026-02-05 21:49:22.032198+05:30	1
@@ -510,47 +404,71 @@ bb76d9cc-174b-45a9-adc3-9f0e996603af	086156d361cf9c01018ff2f34424c5d7f1d4551ad17
 7e5eb344-a6ef-4171-9f20-8a96d8d8462d	7ed7e25f1130f8aed5020927e30058b7ac07fd042aea602f44206cac884b5a09	2026-02-05 21:49:24.537324+05:30	20260201000000_add_quick_sale_cost_and_transaction_id	\N	\N	2026-02-05 21:49:23.939259+05:30	1
 f4ae8c0a-8f2a-4f71-ac56-9c7546763acf	b47fcb67075b39716371eb0bb731799b8efe44fa51e1904e2032298af1bdc9e2	2026-02-05 22:01:18.450181+05:30	20260205161931_sync_schema_updates	\N	\N	2026-02-05 22:01:17.946027+05:30	1
 9ce022d1-1ea8-4b64-9b5f-1f987fcdabe4	978568d0c5fc8e4dbbc8c8b1fc78ccfa12733b6612464952bc4b03027f9f7248	2026-02-05 22:10:52.78559+05:30	20260205164036_add_supabase_backup_fields	\N	\N	2026-02-05 22:10:52.728109+05:30	1
-5d63a7c7-3c64-4781-953c-566169aebb65	b24b2f6efecd0974cd4417d9c4225684e4c0085c69f606d0e3b2eae09795e6c3	\N	20260207090000_add_returns_table	A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve\n\nMigration name: 20260207090000_add_returns_table\n\nDatabase error code: 42P07\n\nDatabase error:\nERROR: relation "returns" already exists\n\nDbError { severity: "ERROR", parsed_severity: Some(Error), code: SqlState(E42P07), message: "relation \\"returns\\" already exists", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some("heap.c"), line: Some(1163), routine: Some("heap_create_with_catalog") }\n\n   0: sql_schema_connector::apply_migration::apply_script\n           with migration_name="20260207090000_add_returns_table"\n             at schema-engine/connectors/sql-schema-connector/src/apply_migration.rs:106\n   1: schema_core::commands::apply_migrations::Applying migration\n           with migration_name="20260207090000_add_returns_table"\n             at schema-engine/core/src/commands/apply_migrations.rs:91\n   2: schema_core::state::ApplyMigrations\n             at schema-engine/core/src/state.rs:226	2026-02-07 08:59:39.907438+05:30	2026-02-07 08:59:34.953294+05:30	0
 \.
 
 
 --
--- TOC entry 3271 (class 0 OID 106914)
--- Dependencies: 211
+-- TOC entry 3204 (class 0 OID 106914)
+-- Dependencies: 210
 -- Data for Name: activity_logs; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.activity_logs (id, entity_type, entity_id, action, changed_by, changes, created_at) FROM stdin;
-220bc4fe-0791-428f-b315-5b86fec10bd6	item	870e3b26-49f9-4016-9fbd-be39cae91e2b	update	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"new": {"code": "test0090", "name": "test", "price": "650", "stock": 11}, "old": {"code": "test0090", "name": "test", "price": "650", "stock": 11}}	2026-02-08 12:24:12.139+05:30
+4843f1af-e2aa-4439-81b8-b10ec5e418c3	category	b017a7c8-cc65-494c-99e5-d9f442940ee4	create	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"name": "Womens", "subcategory": "Saree"}	2026-02-06 10:20:51.378+05:30
+6d00c814-722b-401e-a9f0-2ff93845ac6c	category	0ad349b4-9d03-48fa-9df1-600fcbee8730	create	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"name": "Mens", "subcategory": "Jatty"}	2026-02-06 10:21:14.313+05:30
+73b3ddc8-984c-497c-b0e6-9e4587286625	item	a143ef68-a8d2-4f1d-8269-b91e9211d304	create	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"code": "ASR-ME-90", "name": "Jatty", "price": "100"}	2026-02-06 10:24:55.194+05:30
+9a3936a7-9fe3-4183-90f8-d6d2341dc62a	item	4bb57794-d0dc-496d-90f0-0dcf626e31dd	create	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"code": "ASR-ME-S-02", "name": "saree-450", "price": "450"}	2026-02-06 10:24:55.206+05:30
+e98ccd18-4748-445b-8aad-185e79cc0f14	item	1a7d20a7-1d77-45b0-a216-21ac1a7f4f75	create	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"code": "ASR-ME-85", "name": "Baniyan", "price": "100"}	2026-02-06 10:24:55.207+05:30
+ce13d32a-19af-4838-9598-0862598716fe	transaction	22d4ca82-d37b-4c1a-b9e4-9061646bdbe8	create	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"itemsCount": 3, "totalAmount": "400", "paymentMethod": "cash"}	2026-02-06 10:26:14.718+05:30
+bc95af6c-e53a-4431-8b3d-7309af4b250d	item	1a7d20a7-1d77-45b0-a216-21ac1a7f4f75	update	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"new": {"code": "ASR-ME-85", "name": "Baniyan", "price": "100", "stock": 9}, "old": {"code": "ASR-ME-85", "name": "Baniyan", "price": "100", "stock": 9}}	2026-02-06 10:26:14.763+05:30
+5748df3a-3964-4f73-a77e-654b1d9c5811	item	a143ef68-a8d2-4f1d-8269-b91e9211d304	update	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"new": {"code": "ASR-ME-90", "name": "Jatty", "price": "100", "stock": 9}, "old": {"code": "ASR-ME-90", "name": "Jatty", "price": "100", "stock": 9}}	2026-02-06 10:26:14.829+05:30
+8b07d166-9a8e-40fd-8dcb-03ca97a0ce92	item	ba3e6f93-9b90-4fb7-8e61-fb0d1714fe05	update	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"new": {"code": "ASR-ME-S-01", "name": "Saree-250", "price": "250", "stock": 9}, "old": {"code": "ASR-ME-S-01", "name": "Saree-250", "price": "250", "stock": 9}}	2026-02-06 10:26:14.884+05:30
+02793b6e-37c7-4c8a-98e3-ca827f1a4f4f	item	ba3e6f93-9b90-4fb7-8e61-fb0d1714fe05	create	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"code": "ASR-ME-S-01", "name": "Saree-250", "price": "250"}	2026-02-06 10:24:55.207+05:30
+d64e181d-ee3b-465d-8c78-61beee536e55	transaction	8c4d7818-9731-4744-acff-d87735aa8f51	create	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"itemsCount": 3, "totalAmount": "434", "paymentMethod": "cash"}	2026-02-06 10:36:12.016+05:30
+7d67a63c-0dda-47d3-97e5-bb4b75c8a342	item	a143ef68-a8d2-4f1d-8269-b91e9211d304	update	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"new": {"code": "ASR-ME-90", "name": "Jatty", "price": "100", "stock": 8}, "old": {"code": "ASR-ME-90", "name": "Jatty", "price": "100", "stock": 8}}	2026-02-06 10:36:12.037+05:30
+1368c597-8565-4d71-abde-7dc1545f2a27	item	ba3e6f93-9b90-4fb7-8e61-fb0d1714fe05	update	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"new": {"code": "ASR-ME-S-01", "name": "Saree-250", "price": "250", "stock": 8}, "old": {"code": "ASR-ME-S-01", "name": "Saree-250", "price": "250", "stock": 8}}	2026-02-06 10:36:12.104+05:30
+fbe324f6-ec07-43d7-a353-0bcfc845fa4b	item	4bb57794-d0dc-496d-90f0-0dcf626e31dd	update	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"new": {"code": "ASR-ME-S-02", "name": "saree-450", "price": "450", "stock": 9}, "old": {"code": "ASR-ME-S-02", "name": "saree-450", "price": "450", "stock": 9}}	2026-02-06 10:37:14.615+05:30
+211788e8-86dc-45ba-b83d-1bdda21ed239	item	1a7d20a7-1d77-45b0-a216-21ac1a7f4f75	update	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"new": {"code": "ASR-ME-85", "name": "Baniyan", "price": "100", "stock": 8}, "old": {"code": "ASR-ME-85", "name": "Baniyan", "price": "100", "stock": 8}}	2026-02-06 10:36:12.071+05:30
+3c59a870-4b8a-4372-92e5-90fad9ddd21c	transaction	f884f360-f671-4d34-967b-dbbd0aaffb18	create	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"itemsCount": 2, "totalAmount": "200", "paymentMethod": "card"}	2026-02-06 10:36:59.72+05:30
+c27a9c05-15ea-4017-af22-4833492b97fd	item	1a7d20a7-1d77-45b0-a216-21ac1a7f4f75	update	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"new": {"code": "ASR-ME-85", "name": "Baniyan", "price": "100", "stock": 7}, "old": {"code": "ASR-ME-85", "name": "Baniyan", "price": "100", "stock": 7}}	2026-02-06 10:36:59.753+05:30
+8b7d8459-b2b3-4cb1-827b-49984466a4f5	item	a143ef68-a8d2-4f1d-8269-b91e9211d304	update	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"new": {"code": "ASR-ME-90", "name": "Jatty", "price": "100", "stock": 7}, "old": {"code": "ASR-ME-90", "name": "Jatty", "price": "100", "stock": 7}}	2026-02-06 10:36:59.799+05:30
+3abe121c-683b-45cc-a81f-b68ddd33f14a	transaction	483daf10-8736-4541-b985-515c76dce59f	create	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"itemsCount": 3, "totalAmount": "750", "paymentMethod": "card"}	2026-02-06 10:37:14.524+05:30
+5d8a1a07-f70c-4501-8870-c0a08556b5b5	item	ba3e6f93-9b90-4fb7-8e61-fb0d1714fe05	update	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"new": {"code": "ASR-ME-S-01", "name": "Saree-250", "price": "250", "stock": 7}, "old": {"code": "ASR-ME-S-01", "name": "Saree-250", "price": "250", "stock": 7}}	2026-02-06 10:37:14.546+05:30
+6412afac-e1a9-48f0-8692-ffaf24df33f9	item	a143ef68-a8d2-4f1d-8269-b91e9211d304	update	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"new": {"code": "ASR-ME-90", "name": "Jatty", "price": "100", "stock": 6}, "old": {"code": "ASR-ME-90", "name": "Jatty", "price": "100", "stock": 6}}	2026-02-06 10:37:14.58+05:30
+dadd8cfe-d1f0-47ca-859b-618049239528	transaction	d4c5b204-fa63-4019-9c8b-d7fb6b26efec	create	26d7ca67-ecc3-4735-897f-3862dbb8260d	{"itemsCount": 2, "totalAmount": "600", "paymentMethod": "card"}	2026-02-06 21:26:13.237+05:30
+737504fb-5861-4b70-9252-abd524bd3ab3	item	ba3e6f93-9b90-4fb7-8e61-fb0d1714fe05	update	26d7ca67-ecc3-4735-897f-3862dbb8260d	{"new": {"code": "ASR-ME-S-01", "name": "Saree-250", "price": "250", "stock": 3}, "old": {"code": "ASR-ME-S-01", "name": "Saree-250", "price": "250", "stock": 3}}	2026-02-06 21:26:13.293+05:30
+8403845e-5812-49c5-928b-45a2f694b3b3	item	a143ef68-a8d2-4f1d-8269-b91e9211d304	update	26d7ca67-ecc3-4735-897f-3862dbb8260d	{"new": {"code": "ASR-ME-90", "name": "Jatty", "price": "100", "stock": 3}, "old": {"code": "ASR-ME-90", "name": "Jatty", "price": "100", "stock": 3}}	2026-02-06 21:26:13.327+05:30
+1ccdca76-be7e-47c0-8f11-11e1fe2962ef	transaction	8d878f1f-1d1d-48ed-a619-c21c2fb0e4bc	create	115379c6-ab6e-4883-9901-e64b495fa7db	{"itemsCount": 2, "totalAmount": "700", "paymentMethod": "card"}	2026-02-06 22:12:30.671+05:30
+f6cf402b-fd16-461f-b40a-a546f377b4a8	item	ba3e6f93-9b90-4fb7-8e61-fb0d1714fe05	update	115379c6-ab6e-4883-9901-e64b495fa7db	{"new": {"code": "ASR-ME-S-01", "name": "Saree-250", "price": "250", "stock": 2}, "old": {"code": "ASR-ME-S-01", "name": "Saree-250", "price": "250", "stock": 2}}	2026-02-06 22:12:30.704+05:30
+543ca74b-0400-4869-b577-847f6e5bd813	item	4bb57794-d0dc-496d-90f0-0dcf626e31dd	update	115379c6-ab6e-4883-9901-e64b495fa7db	{"new": {"code": "ASR-ME-S-02", "name": "saree-450", "price": "450", "stock": 7}, "old": {"code": "ASR-ME-S-02", "name": "saree-450", "price": "450", "stock": 7}}	2026-02-06 22:12:30.738+05:30
+9ecc06be-348e-4752-b4c6-337d3af5f959	category	a5b018be-6970-4ad9-b2d4-1f4acda7447e	create	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"name": "Mens", "subcategory": "Baniyan"}	2026-02-06 10:20:51.378+05:30
+d4ec3226-415a-4a09-932d-fe8db7821599	category	ee652637-3ef7-4f3e-9c48-701a61c366c7	create	cffb43c0-c9b9-4027-9540-b84ce75a14cb	{"name": "Mens", "subcategory": "Towel"}	2026-02-06 10:21:14.382+05:30
 \.
 
 
 --
--- TOC entry 3276 (class 0 OID 106964)
--- Dependencies: 216
+-- TOC entry 3209 (class 0 OID 106964)
+-- Dependencies: 215
 -- Data for Name: carts; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.carts (id, customer_id, items_json, tax_rate, discount, payment_method, sales_customer_id, created_at, updated_at) FROM stdin;
-ca684eaf-ef9d-42d0-87c4-c0b955914b47	cffb43c0-c9b9-4027-9540-b84ce75a14cb	[]	0.00	0.00	cash	\N	2026-02-08 12:48:04.952+05:30	2026-02-08 12:48:04.952+05:30
 \.
 
 
 --
--- TOC entry 3274 (class 0 OID 106942)
--- Dependencies: 214
+-- TOC entry 3207 (class 0 OID 106942)
+-- Dependencies: 213
 -- Data for Name: cash_flow_entries; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.cash_flow_entries (id, customer_id, type, category, amount, description, entry_date, created_at, updated_at) FROM stdin;
-4031979a-ed5c-4288-a741-e43d048a7095	cffb43c0-c9b9-4027-9540-b84ce75a14cb	expense	Food	100.00	\N	2026-02-08 05:30:00+05:30	2026-02-08 12:10:59.175+05:30	2026-02-08 12:10:59.175+05:30
-d40c2e58-5c46-4cd7-88cf-4db59a90be5c	cffb43c0-c9b9-4027-9540-b84ce75a14cb	income	Profit	50.00	\N	2026-02-08 05:30:00+05:30	2026-02-08 12:11:20.212+05:30	2026-02-08 12:11:20.212+05:30
 \.
 
 
 --
--- TOC entry 3265 (class 0 OID 106812)
--- Dependencies: 205
+-- TOC entry 3198 (class 0 OID 106812)
+-- Dependencies: 204
 -- Data for Name: categories; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -559,81 +477,22 @@ a5b018be-6970-4ad9-b2d4-1f4acda7447e	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Mens	B
 b017a7c8-cc65-494c-99e5-d9f442940ee4	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Womens	Saree	\N	2026-02-06 10:20:51.267+05:30	\N
 0ad349b4-9d03-48fa-9df1-600fcbee8730	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Mens	Jatty	\N	2026-02-06 10:21:14.232+05:30	\N
 ee652637-3ef7-4f3e-9c48-701a61c366c7	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Mens	Towel	\N	2026-02-06 10:21:14.233+05:30	\N
-2a8e9063-9e66-465f-bd5f-63c5be26c592	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Mens	\N	\N	2026-02-07 16:24:45.492+05:30	\N
-47d8f6ee-007d-49aa-a1e1-d0a1bace3203	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Womens	\N	\N	2026-02-07 16:24:45.493+05:30	\N
-af8691b3-e0de-4c76-82f3-568a2a0bb869	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Child	\N	\N	2026-02-07 16:24:45.494+05:30	\N
-ab8c237f-3976-474b-8ed8-4c6c61c91aa2	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Mens	Shirt	\N	2026-02-07 16:26:43.094+05:30	\N
-66435778-45d7-474f-8901-01c69dfe7f0a	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Mens	Pant	\N	2026-02-07 16:36:26.552+05:30	\N
-a70143cf-f9e2-4dfe-8d4b-f865de112e34	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Men's T-Shirts	Nike	2026-02-07 19:37:51.196+05:30	\N
-06a9e0d0-7228-4219-b56b-4736caa53fc3	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Men's T-Shirts	Adidas	2026-02-07 19:37:51.246+05:30	\N
-2bcdb621-e3f5-47b2-94d5-aa267523d337	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Men's T-Shirts	Puma	2026-02-07 19:37:51.315+05:30	\N
-34883568-d51e-4ece-9979-5eb12c7d97c2	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Men's Shirts	Van Heusen	2026-02-07 19:37:51.369+05:30	\N
-1abd5a02-a526-4a3d-84e4-2d8315a442b8	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Men's Shirts	Arrow	2026-02-07 19:37:51.424+05:30	\N
-3ccce751-ed1e-4103-a74e-f062a843db2a	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Men's Shirts	Peter England	2026-02-07 19:37:51.479+05:30	\N
-6acb78c8-4eeb-4102-88b4-f5026bbb0f67	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Men's Jeans	Levi's	2026-02-07 19:37:51.526+05:30	\N
-4e4d9e21-93df-4505-9636-292412235dc1	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Men's Jeans	Wrangler	2026-02-07 19:37:51.58+05:30	\N
-8301768f-4282-4487-8da2-0b169f31ce2a	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Men's Jeans	Pepe Jeans	2026-02-07 19:37:51.613+05:30	\N
-b96112e0-aed8-4e1f-8d25-effb46e275c2	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Men's Trousers	Allen Solly	2026-02-07 19:37:51.681+05:30	\N
-7a0c11f4-8fdd-4b9c-927c-024664a040cb	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Men's Trousers	Blackberrys	2026-02-07 19:37:51.727+05:30	\N
-61548814-14e2-4352-be3c-e9c83bf11c2a	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Men's Formal Wear	Raymond	2026-02-07 19:37:51.77+05:30	\N
-8ee9f21d-9959-4e80-830b-15d911e9204f	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Men's Formal Wear	Blackberrys	2026-02-07 19:37:51.825+05:30	\N
-ae2d720f-e05b-44e1-b7b0-63712c68a0bf	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Women's Tops	Zara	2026-02-07 19:37:51.869+05:30	\N
-44144389-e5f1-4542-bacb-6baabce3636e	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Women's Tops	H&M	2026-02-07 19:37:51.923+05:30	\N
-1a24baf7-372f-42f1-823e-9d486711b006	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Women's Dresses	Forever 21	2026-02-07 19:37:51.97+05:30	\N
-8bad8a79-1daf-4b5f-ab7b-ef7bc7d45278	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Women's Dresses	Max	2026-02-07 19:37:52.024+05:30	\N
-f19ad074-2c47-4da7-9212-ceaa4c3ae14f	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Women's Jeans	Levi's	2026-02-07 19:37:52.083+05:30	\N
-ee11db41-790a-400f-964a-0cb6263224f4	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Women's Jeans	Pepe Jeans	2026-02-07 19:37:52.128+05:30	\N
-215c08c2-4849-402d-b47e-fb3e40086cf1	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Women's Skirts	Zara	2026-02-07 19:37:52.184+05:30	\N
-4e4d1c3d-6502-45b3-97d8-824092d6faff	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Women's Skirts	H&M	2026-02-07 19:37:52.236+05:30	\N
-4b69fcb3-9e2d-4d4e-a76a-2c9b895b0d58	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Women's Ethnic Wear	Fabindia	2026-02-07 19:37:52.333+05:30	\N
-1576ab71-71b3-4269-add9-9ea5e0d519c3	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Women's Ethnic Wear	Biba	2026-02-07 19:37:52.385+05:30	\N
-ca79963c-f8af-495d-b450-814154b233e4	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Women's Sarees	Manyavar	2026-02-07 19:37:52.427+05:30	\N
-64ce74b5-ab7f-48a4-a302-7ff0e0ce926b	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Clothing	Women's Sarees	Biba	2026-02-07 19:37:52.484+05:30	\N
-e6b7b182-34be-4046-92c3-72d2c11cbf13	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Footwear	Men's Sneakers	Nike	2026-02-07 19:37:52.527+05:30	\N
-f789797d-ec22-444c-ae52-3981ee8149aa	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Footwear	Men's Sneakers	Adidas	2026-02-07 19:37:52.573+05:30	\N
-58c14258-93ce-43d8-baba-527e204070ed	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Footwear	Men's Sneakers	Puma	2026-02-07 19:37:52.617+05:30	\N
-11838f8e-f7a9-4bd9-9d08-88f81f73cc26	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Footwear	Men's Formal Shoes	Bata	2026-02-07 19:37:52.662+05:30	\N
-1865fb72-1163-4025-b40c-55898aef35d1	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Footwear	Men's Formal Shoes	Red Tape	2026-02-07 19:37:52.705+05:30	\N
-bdc80339-7128-412e-9773-e18ea273164a	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Footwear	Men's Casual Shoes	Woodland	2026-02-07 19:37:52.751+05:30	\N
-3b250222-acb9-4e14-9782-2dfb93db68c4	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Footwear	Men's Sandals	Paragon	2026-02-07 19:37:52.806+05:30	\N
-b3b01f4c-40e5-4191-9aaf-463e50950763	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Footwear	Women's Sneakers	Nike	2026-02-07 19:37:52.851+05:30	\N
-7f4a5a89-865d-4225-ab1b-bf9619665da3	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Footwear	Women's Sneakers	Adidas	2026-02-07 19:37:52.905+05:30	\N
-ebbf6661-8e63-4e5a-abf6-4edde67b70e8	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Footwear	Women's Heels	Metro	2026-02-07 19:37:52.95+05:30	\N
-09d207a5-cc5c-482f-8fdb-922d1c846c54	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Footwear	Women's Heels	Red Tape	2026-02-07 19:37:52.997+05:30	\N
-acab4fa4-b91e-4dbe-b3dd-480b86f87c4f	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Footwear	Women's Flats	Bata	2026-02-07 19:37:53.038+05:30	\N
-2f840a65-7902-4877-bf2a-6067aadb1197	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Footwear	Women's Sandals	Paragon	2026-02-07 19:37:53.085+05:30	\N
-e935d264-f14d-41a3-ba98-eb59c073dc03	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Accessories	Men's Watches	Titan	2026-02-07 19:37:53.143+05:30	\N
-298177d7-ef42-4b7a-9642-2362584a16f8	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Accessories	Men's Watches	Fastrack	2026-02-07 19:37:53.187+05:30	\N
-84a3861f-77db-4b24-8333-f66a84e78d6d	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Accessories	Men's Belts	Allen Solly	2026-02-07 19:37:53.223+05:30	\N
-49f067fc-515a-448e-aec3-488c79d5f963	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Accessories	Men's Belts	Van Heusen	2026-02-07 19:37:53.259+05:30	\N
-57df9ba9-73d9-4e20-b60c-3f5dba34998e	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Accessories	Men's Wallets	Wildcraft	2026-02-07 19:37:53.305+05:30	\N
-b370c1cc-86f0-42f9-bc9f-3a7d9713e7f9	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Accessories	Women's Handbags	Caprese	2026-02-07 19:37:53.333+05:30	\N
-d600bb04-5bd4-4000-8c2a-ade8d171e7d4	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Accessories	Women's Handbags	Allen Solly	2026-02-07 19:37:53.366+05:30	\N
-e0ae3e89-9405-4c3f-bc1e-7cb907fe6303	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Accessories	Women's Jewelry	Tanishq	2026-02-07 19:37:53.404+05:30	\N
-1469879a-3902-46e9-8850-92cac18bcbe3	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Accessories	Women's Jewelry	PC Jeweller	2026-02-07 19:37:53.435+05:30	\N
-6068ade2-a395-4b43-a50e-51096fcbea7c	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Accessories	Women's Scarves	Zara	2026-02-07 19:37:53.467+05:30	\N
-5f819647-896e-42d7-902b-88a8f10a55a6	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Accessories	Women's Sunglasses	Ray-Ban	2026-02-07 19:37:53.502+05:30	\N
-4fa9c4c1-4468-43ac-bff2-025acdb14ab7	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Accessories	Women's Sunglasses	Tom Ford	2026-02-07 19:37:53.535+05:30	\N
-37c2456d-9f4f-4fc9-a63c-fd27d19d256a	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Beverages	\N	\N	2026-02-08 12:32:26.952+05:30	\N
-83b35b12-c3b7-43aa-a166-b315af5fef90	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Snacks	\N	\N	2026-02-08 12:32:27.003+05:30	\N
-96a5a0f5-b3dc-4bee-ac26-dedde468f8b1	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Meals	\N	\N	2026-02-08 12:32:27.015+05:30	\N
 \.
 
 
 --
--- TOC entry 3268 (class 0 OID 106875)
--- Dependencies: 208
+-- TOC entry 3201 (class 0 OID 106875)
+-- Dependencies: 207
 -- Data for Name: companies; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.companies (id, customer_id, name, address, city, state, pincode, phone, email, gstin, website, logo, created_at, updated_at, business_type, default_language, receipt_language) FROM stdin;
-016ea315-44a2-449c-b1f1-01c0d55fd5d6	cffb43c0-c9b9-4027-9540-b84ce75a14cb	My Store	test	trst	test	606213	6767676767	test@gmail.com				2026-02-07 11:39:19.879+05:30	2026-02-08 11:46:39.287+05:30	clothing	en	en
+COPY public.companies (id, customer_id, name, address, city, state, pincode, phone, email, gstin, website, logo, created_at, updated_at, business_type) FROM stdin;
 \.
 
 
 --
--- TOC entry 3264 (class 0 OID 106801)
--- Dependencies: 204
+-- TOC entry 3197 (class 0 OID 106801)
+-- Dependencies: 203
 -- Data for Name: customers; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -646,41 +505,34 @@ cffb43c0-c9b9-4027-9540-b84ce75a14cb	admin	admin@posbilling.com	$2b$10$xhz8pF7OM
 
 
 --
--- TOC entry 3281 (class 0 OID 111932)
--- Dependencies: 221
--- Data for Name: e_way_bills; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.e_way_bills (id, transaction_id, e_way_bill_number, generated_date, valid_until, status, created_at, updated_at, customer_id) FROM stdin;
-\.
-
-
---
--- TOC entry 3270 (class 0 OID 106904)
--- Dependencies: 210
+-- TOC entry 3203 (class 0 OID 106904)
+-- Dependencies: 209
 -- Data for Name: item_code_prefixes; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.item_code_prefixes (id, prefix, description, created_at, updated_at) FROM stdin;
 ed79c765-ff45-4158-aaaa-3e82c779e626	ASR-ME-	\N	2026-02-06 10:22:19.414+05:30	2026-02-06 10:22:19.414+05:30
-f665d50c-cd6e-43af-ba22-bc21006e8f2d	TF-SG-	Auto-created from item code	2026-02-07 19:42:54.812+05:30	2026-02-07 19:42:54.812+05:30
-0c72f062-0d4f-41ce-9c85-d1e9a9b827b4	RB-SG-	Auto-created from item code	2026-02-08 11:52:38.45+05:30	2026-02-08 11:52:38.45+05:30
 \.
 
 
 --
--- TOC entry 3266 (class 0 OID 106821)
--- Dependencies: 206
+-- TOC entry 3199 (class 0 OID 106821)
+-- Dependencies: 205
 -- Data for Name: items; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.items (id, customer_id, name, code, barcode, category_id, subcategory, cost, price, mrp, stock, image_url, created_at, display_name, purchase_qty, mapping_code, hsn_code, gst_rate, cess_rate) FROM stdin;
+COPY public.items (id, customer_id, name, code, barcode, category_id, subcategory, cost, price, mrp, stock, image_url, created_at, display_name, purchase_qty, mapping_code) FROM stdin;
+a143ef68-a8d2-4f1d-8269-b91e9211d304	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Jatty	ASR-ME-90	ASR-ME-90	ee652637-3ef7-4f3e-9c48-701a61c366c7	Baniyan	60.00	100.00	105.00	3	\N	2026-02-06 10:24:55.102+05:30	Jatty	7	\N
+ba3e6f93-9b90-4fb7-8e61-fb0d1714fe05	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Saree-250	ASR-ME-S-01	ASR-ME-S-01	b017a7c8-cc65-494c-99e5-d9f442940ee4	Saree	150.00	250.00	300.00	2	\N	2026-02-06 10:24:55.105+05:30	Saree	8	\N
+4bb57794-d0dc-496d-90f0-0dcf626e31dd	cffb43c0-c9b9-4027-9540-b84ce75a14cb	saree-450	ASR-ME-S-02	ASR-ME-S-02	b017a7c8-cc65-494c-99e5-d9f442940ee4	Saree	200.00	450.00	480.00	7	\N	2026-02-06 10:24:55.106+05:30	saree	3	\N
+1a7d20a7-1d77-45b0-a216-21ac1a7f4f75	cffb43c0-c9b9-4027-9540-b84ce75a14cb	Baniyan	ASR-ME-85	ASR-ME-85	ee652637-3ef7-4f3e-9c48-701a61c366c7	Baniyan	65.00	100.00	103.00	5	\N	2026-02-06 10:24:55.104+05:30	Baniyan	5	\N
+a7726d95-a0f5-4238-b50a-5e245e86647d	115379c6-ab6e-4883-9901-e64b495fa7db	Shirt	ASR-ME-01	ASR-ME-01	ee652637-3ef7-4f3e-9c48-701a61c366c7	Towel	400.00	650.00	\N	10	\N	2026-02-06 17:26:25.984+05:30	Shirt	0	3
 \.
 
 
 --
--- TOC entry 3275 (class 0 OID 106952)
--- Dependencies: 215
+-- TOC entry 3208 (class 0 OID 106952)
+-- Dependencies: 214
 -- Data for Name: permissions; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -704,8 +556,8 @@ f7e65131-c8a8-44ab-b7f2-9a933e257bb2	sales person	items	t	f	f	f	f	2026-02-06 22:
 
 
 --
--- TOC entry 3273 (class 0 OID 106933)
--- Dependencies: 213
+-- TOC entry 3206 (class 0 OID 106933)
+-- Dependencies: 212
 -- Data for Name: quick_sale_items; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -714,8 +566,8 @@ COPY public.quick_sale_items (id, name, quantity, price, total_amount, sold_at, 
 
 
 --
--- TOC entry 3279 (class 0 OID 107675)
--- Dependencies: 219
+-- TOC entry 3212 (class 0 OID 107675)
+-- Dependencies: 218
 -- Data for Name: returns; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -724,8 +576,8 @@ COPY public.returns (id, original_transaction_id, customer_id, return_type, reas
 
 
 --
--- TOC entry 3272 (class 0 OID 106923)
--- Dependencies: 212
+-- TOC entry 3205 (class 0 OID 106923)
+-- Dependencies: 211
 -- Data for Name: sales_customers; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -735,21 +587,21 @@ a3113e1e-0c3b-4fda-9cc2-42164477a96f	Shakthi	8787878787	\N	\N	2026-02-06 10:26:0
 
 
 --
--- TOC entry 3269 (class 0 OID 106894)
--- Dependencies: 209
+-- TOC entry 3202 (class 0 OID 106894)
+-- Dependencies: 208
 -- Data for Name: settings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.settings (id, customer_id, activity_log_enabled, item_log_actions, receipt_header_option, created_at, updated_at, receipt_auto_print, last_sync_at, last_sync_status, supabase_url, language_settings) FROM stdin;
-6d8526ca-3cf7-4634-8daf-270b3a205d9b	26d7ca67-ecc3-4735-897f-3862dbb8260d	t	update_delete	both	2026-02-06 21:25:13.535+05:30	2026-02-06 21:25:13.535+05:30	t	\N	\N	\N	{}
-eef93c0e-6bed-4f37-9f02-7b4fe93b12f3	115379c6-ab6e-4883-9901-e64b495fa7db	t	update_delete	both	2026-02-06 21:37:47.364+05:30	2026-02-06 21:37:47.364+05:30	t	\N	\N	\N	{}
-26ed713c-8d05-4bf5-97ef-323ddab4c5a7	cffb43c0-c9b9-4027-9540-b84ce75a14cb	f	update_delete	both	2026-02-05 22:33:39.035+05:30	2026-02-08 12:24:47.689+05:30	t	2026-02-05 22:56:27.385+05:30	success	upsUog3PSbwDmS87iFgo0KlY8S5AVAqrfzss9SDbmqSqVEEp2Qlioinx/Si3bde1HoAgG7onkNiFcxMh1NlHYK7Vpe8KzU8Xpw4Ivvcd6a2pVbFjcYEGcxMc4zR/J3k6JXqHVxN2AfqmfCxqFxIH/UhkwXJHilZp	{}
+COPY public.settings (id, customer_id, activity_log_enabled, item_log_actions, receipt_header_option, created_at, updated_at, receipt_auto_print, last_sync_at, last_sync_status, supabase_url) FROM stdin;
+26ed713c-8d05-4bf5-97ef-323ddab4c5a7	cffb43c0-c9b9-4027-9540-b84ce75a14cb	f	update_delete	both	2026-02-05 22:33:39.035+05:30	2026-02-06 10:44:50.368+05:30	t	2026-02-05 22:56:27.385+05:30	success	upsUog3PSbwDmS87iFgo0KlY8S5AVAqrfzss9SDbmqSqVEEp2Qlioinx/Si3bde1HoAgG7onkNiFcxMh1NlHYK7Vpe8KzU8Xpw4Ivvcd6a2pVbFjcYEGcxMc4zR/J3k6JXqHVxN2AfqmfCxqFxIH/UhkwXJHilZp
+6d8526ca-3cf7-4634-8daf-270b3a205d9b	26d7ca67-ecc3-4735-897f-3862dbb8260d	t	update_delete	both	2026-02-06 21:25:13.535+05:30	2026-02-06 21:25:13.535+05:30	t	\N	\N	\N
+eef93c0e-6bed-4f37-9f02-7b4fe93b12f3	115379c6-ab6e-4883-9901-e64b495fa7db	t	update_delete	both	2026-02-06 21:37:47.364+05:30	2026-02-06 21:37:47.364+05:30	t	\N	\N	\N
 \.
 
 
 --
--- TOC entry 3278 (class 0 OID 106985)
--- Dependencies: 218
+-- TOC entry 3211 (class 0 OID 106985)
+-- Dependencies: 217
 -- Data for Name: table_orders; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -758,183 +610,36 @@ COPY public.table_orders (id, customer_id, table_id, status, items_json, tax_rat
 
 
 --
--- TOC entry 3277 (class 0 OID 106976)
--- Dependencies: 217
+-- TOC entry 3210 (class 0 OID 106976)
+-- Dependencies: 216
 -- Data for Name: tables; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.tables (id, customer_id, table_number, capacity, status, created_at, updated_at) FROM stdin;
-64f5ce64-25a6-496f-9a6e-b1d581a7074c	cffb43c0-c9b9-4027-9540-b84ce75a14cb	T1	4	available	2026-02-07 11:40:25.162+05:30	2026-02-07 13:19:57.144+05:30
-fef424da-dedd-4ffa-b44f-6fa8b83ccc6d	cffb43c0-c9b9-4027-9540-b84ce75a14cb	T2	4	available	2026-02-07 12:03:11.427+05:30	2026-02-07 16:18:43.29+05:30
 \.
 
 
 --
--- TOC entry 3267 (class 0 OID 106831)
--- Dependencies: 207
+-- TOC entry 3200 (class 0 OID 106831)
+-- Dependencies: 206
 -- Data for Name: transactions; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.transactions (id, customer_id, transaction_customer_id, total_amount, payment_method, received_amount, change_amount, items_json, created_at, sales_customer_id, edited_at, edited_by, original_transaction_id, transaction_type, gst_amount, cess_amount, place_of_supply, reverse_charge) FROM stdin;
+COPY public.transactions (id, customer_id, transaction_customer_id, total_amount, payment_method, received_amount, change_amount, items_json, created_at, sales_customer_id, edited_at, edited_by, original_transaction_id, transaction_type) FROM stdin;
+8c4d7818-9731-4744-acff-d87735aa8f51	cffb43c0-c9b9-4027-9540-b84ce75a14cb	\N	434.00	cash	434.00	\N	[{"item":{"id":"a143ef68-a8d2-4f1d-8269-b91e9211d304","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Jatty","display_name":"Jatty","code":"ASR-ME-90","barcode":"ASR-ME-90","mapping_code":null,"category_id":"ee652637-3ef7-4f3e-9c48-701a61c366c7","subcategory":"Baniyan","cost":"60","price":"100","mrp":"105","stock":9,"image_url":null,"created_at":"2026-02-06T04:54:55.102Z"},"quantity":1,"subtotal":100,"originalPrice":100},{"item":{"id":"1a7d20a7-1d77-45b0-a216-21ac1a7f4f75","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Baniyan","display_name":"Baniyan","code":"ASR-ME-85","barcode":"ASR-ME-85","mapping_code":null,"category_id":"ee652637-3ef7-4f3e-9c48-701a61c366c7","subcategory":"Baniyan","cost":"65","price":"100","mrp":"103","stock":9,"image_url":null,"created_at":"2026-02-06T04:54:55.104Z"},"quantity":1,"subtotal":100,"originalPrice":100},{"item":{"id":"ba3e6f93-9b90-4fb7-8e61-fb0d1714fe05","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Saree-250","display_name":"Saree","code":"ASR-ME-S-01","barcode":"ASR-ME-S-01","mapping_code":null,"category_id":"b017a7c8-cc65-494c-99e5-d9f442940ee4","subcategory":"Saree","cost":"150","price":"250","mrp":"300","stock":9,"image_url":null,"created_at":"2026-02-06T04:54:55.105Z"},"quantity":1,"subtotal":250,"originalPrice":250}]	2026-02-06 10:36:11.886+05:30	a3113e1e-0c3b-4fda-9cc2-42164477a96f	\N	\N	\N	sale
+f884f360-f671-4d34-967b-dbbd0aaffb18	cffb43c0-c9b9-4027-9540-b84ce75a14cb	\N	200.00	card	200.00	\N	[{"item":{"id":"1a7d20a7-1d77-45b0-a216-21ac1a7f4f75","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Baniyan","display_name":"Baniyan","code":"ASR-ME-85","barcode":"ASR-ME-85","mapping_code":null,"category_id":"ee652637-3ef7-4f3e-9c48-701a61c366c7","subcategory":"Baniyan","cost":"65","price":"100","mrp":"103","stock":8,"image_url":null,"created_at":"2026-02-06T04:54:55.104Z"},"quantity":1,"subtotal":100,"originalPrice":100},{"item":{"id":"a143ef68-a8d2-4f1d-8269-b91e9211d304","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Jatty","display_name":"Jatty","code":"ASR-ME-90","barcode":"ASR-ME-90","mapping_code":null,"category_id":"ee652637-3ef7-4f3e-9c48-701a61c366c7","subcategory":"Baniyan","cost":"60","price":"100","mrp":"105","stock":8,"image_url":null,"created_at":"2026-02-06T04:54:55.102Z"},"quantity":1,"subtotal":100,"originalPrice":100}]	2026-02-06 10:36:59.627+05:30	\N	\N	\N	\N	sale
+483daf10-8736-4541-b985-515c76dce59f	cffb43c0-c9b9-4027-9540-b84ce75a14cb	\N	750.00	card	750.00	\N	[{"item":{"id":"ba3e6f93-9b90-4fb7-8e61-fb0d1714fe05","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Saree-250","display_name":"Saree","code":"ASR-ME-S-01","barcode":"ASR-ME-S-01","mapping_code":null,"category_id":"b017a7c8-cc65-494c-99e5-d9f442940ee4","subcategory":"Saree","cost":"150","price":"250","mrp":"300","stock":8,"image_url":null,"created_at":"2026-02-06T04:54:55.105Z"},"quantity":1,"subtotal":250,"originalPrice":250},{"item":{"id":"a143ef68-a8d2-4f1d-8269-b91e9211d304","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Jatty","display_name":"Jatty","code":"ASR-ME-90","barcode":"ASR-ME-90","mapping_code":null,"category_id":"ee652637-3ef7-4f3e-9c48-701a61c366c7","subcategory":"Baniyan","cost":"60","price":"100","mrp":"105","stock":7,"image_url":null,"created_at":"2026-02-06T04:54:55.102Z"},"quantity":1,"subtotal":100,"originalPrice":100},{"item":{"id":"4bb57794-d0dc-496d-90f0-0dcf626e31dd","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"saree-450","display_name":"saree","code":"ASR-ME-S-02","barcode":"ASR-ME-S-02","mapping_code":null,"category_id":"b017a7c8-cc65-494c-99e5-d9f442940ee4","subcategory":"Saree","cost":"200","price":"450","mrp":"480","stock":10,"image_url":null,"created_at":"2026-02-06T04:54:55.106Z"},"quantity":1,"subtotal":450,"originalPrice":450}]	2026-02-06 10:37:14.443+05:30	\N	\N	\N	\N	sale
+f11899f8-d782-450e-aaf4-6e8c95fe9872	cffb43c0-c9b9-4027-9540-b84ce75a14cb	\N	700.00	cash	1000.00	300.00	[{"item":{"id":"ba3e6f93-9b90-4fb7-8e61-fb0d1714fe05","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Saree-250","display_name":"Saree","code":"ASR-ME-S-01","barcode":"ASR-ME-S-01","mapping_code":null,"category_id":"b017a7c8-cc65-494c-99e5-d9f442940ee4","subcategory":"Saree","cost":"150","price":"250","mrp":"300","stock":7,"image_url":null,"created_at":"2026-02-06T04:54:55.105Z"},"quantity":1,"subtotal":250,"originalPrice":250},{"item":{"id":"4bb57794-d0dc-496d-90f0-0dcf626e31dd","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"saree-450","display_name":"saree","code":"ASR-ME-S-02","barcode":"ASR-ME-S-02","mapping_code":null,"category_id":"b017a7c8-cc65-494c-99e5-d9f442940ee4","subcategory":"Saree","cost":"200","price":"450","mrp":"480","stock":9,"image_url":null,"created_at":"2026-02-06T04:54:55.106Z"},"quantity":1,"subtotal":450,"originalPrice":450}]	2026-02-06 10:47:56.447+05:30	\N	\N	\N	\N	sale
+47b378c9-92bf-45ea-8b64-90a9aef61aac	cffb43c0-c9b9-4027-9540-b84ce75a14cb	\N	200.00	cash	200.00	\N	[{"item":{"id":"a143ef68-a8d2-4f1d-8269-b91e9211d304","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Jatty","display_name":"Jatty","code":"ASR-ME-90","barcode":"ASR-ME-90","mapping_code":null,"category_id":"ee652637-3ef7-4f3e-9c48-701a61c366c7","subcategory":"Baniyan","cost":"60","price":"100","mrp":"105","stock":6,"image_url":null,"created_at":"2026-02-06T04:54:55.102Z"},"quantity":1,"subtotal":100,"originalPrice":100},{"item":{"id":"1a7d20a7-1d77-45b0-a216-21ac1a7f4f75","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Baniyan","display_name":"Baniyan","code":"ASR-ME-85","barcode":"ASR-ME-85","mapping_code":null,"category_id":"ee652637-3ef7-4f3e-9c48-701a61c366c7","subcategory":"Baniyan","cost":"65","price":"100","mrp":"103","stock":7,"image_url":null,"created_at":"2026-02-06T04:54:55.104Z"},"quantity":1,"subtotal":100,"originalPrice":100}]	2026-02-06 11:06:06.798+05:30	a3113e1e-0c3b-4fda-9cc2-42164477a96f	\N	\N	\N	sale
+ad906806-7328-425e-8970-ab6001c1a4f3	cffb43c0-c9b9-4027-9540-b84ce75a14cb	\N	394.00	card	394.00	\N	[{"item":{"id":"ba3e6f93-9b90-4fb7-8e61-fb0d1714fe05","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Saree-250","display_name":"Saree","code":"ASR-ME-S-01","barcode":"ASR-ME-S-01","mapping_code":null,"category_id":"b017a7c8-cc65-494c-99e5-d9f442940ee4","subcategory":"Saree","cost":"150","price":"250","mrp":"300","stock":6,"image_url":null,"created_at":"2026-02-06T04:54:55.105Z"},"quantity":1,"subtotal":250,"originalPrice":250},{"item":{"id":"a143ef68-a8d2-4f1d-8269-b91e9211d304","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Jatty","display_name":"Jatty","code":"ASR-ME-90","barcode":"ASR-ME-90","mapping_code":null,"category_id":"ee652637-3ef7-4f3e-9c48-701a61c366c7","subcategory":"Baniyan","cost":"60","price":"100","mrp":"105","stock":5,"image_url":null,"created_at":"2026-02-06T04:54:55.102Z"},"quantity":1,"subtotal":100,"originalPrice":100},{"item":{"id":"1a7d20a7-1d77-45b0-a216-21ac1a7f4f75","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Baniyan","display_name":"Baniyan","code":"ASR-ME-85","barcode":"ASR-ME-85","mapping_code":null,"category_id":"ee652637-3ef7-4f3e-9c48-701a61c366c7","subcategory":"Baniyan","cost":"65","price":"100","mrp":"103","stock":6,"image_url":null,"created_at":"2026-02-06T04:54:55.104Z"},"quantity":1,"subtotal":100,"originalPrice":100}]	2026-02-06 15:18:49.109+05:30	a3113e1e-0c3b-4fda-9cc2-42164477a96f	\N	\N	\N	sale
+22d4ca82-d37b-4c1a-b9e4-9061646bdbe8	cffb43c0-c9b9-4027-9540-b84ce75a14cb	\N	400.00	cash	400.00	\N	[{"item":{"id":"1a7d20a7-1d77-45b0-a216-21ac1a7f4f75","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Baniyan","display_name":"Baniyan","code":"ASR-ME-85","barcode":"ASR-ME-85","mapping_code":null,"category_id":"ee652637-3ef7-4f3e-9c48-701a61c366c7","subcategory":"Baniyan","cost":"65","price":"100","mrp":"103","stock":10,"image_url":null,"created_at":"2026-02-06T04:54:55.104Z"},"quantity":1,"subtotal":100,"originalPrice":100},{"item":{"id":"a143ef68-a8d2-4f1d-8269-b91e9211d304","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Jatty","display_name":"Jatty","code":"ASR-ME-90","barcode":"ASR-ME-90","mapping_code":null,"category_id":"ee652637-3ef7-4f3e-9c48-701a61c366c7","subcategory":"Baniyan","cost":"60","price":"100","mrp":"105","stock":10,"image_url":null,"created_at":"2026-02-06T04:54:55.102Z"},"quantity":1,"subtotal":100,"originalPrice":100},{"item":{"id":"ba3e6f93-9b90-4fb7-8e61-fb0d1714fe05","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Saree-250","display_name":"Saree","code":"ASR-ME-S-01","barcode":"ASR-ME-S-01","mapping_code":null,"category_id":"b017a7c8-cc65-494c-99e5-d9f442940ee4","subcategory":"Saree","cost":"150","price":"250","mrp":"300","stock":10,"image_url":null,"created_at":"2026-02-06T04:54:55.105Z"},"quantity":1,"subtotal":250,"originalPrice":250}]	2026-02-05 04:56:00+05:30	a3113e1e-0c3b-4fda-9cc2-42164477a96f	\N	\N	\N	sale
+d4c5b204-fa63-4019-9c8b-d7fb6b26efec	26d7ca67-ecc3-4735-897f-3862dbb8260d	\N	600.00	card	600.00	\N	[{"item":{"id":"ba3e6f93-9b90-4fb7-8e61-fb0d1714fe05","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Saree-250","display_name":"Saree","code":"ASR-ME-S-01","barcode":"ASR-ME-S-01","mapping_code":null,"category_id":"b017a7c8-cc65-494c-99e5-d9f442940ee4","subcategory":"Saree","cost":"150","price":"250","mrp":"300","stock":5,"image_url":null,"created_at":"2026-02-06T04:54:55.105Z"},"quantity":2,"subtotal":500,"originalPrice":250},{"item":{"id":"a143ef68-a8d2-4f1d-8269-b91e9211d304","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Jatty","display_name":"Jatty","code":"ASR-ME-90","barcode":"ASR-ME-90","mapping_code":null,"category_id":"ee652637-3ef7-4f3e-9c48-701a61c366c7","subcategory":"Baniyan","cost":"60","price":"100","mrp":"105","stock":4,"image_url":null,"created_at":"2026-02-06T04:54:55.102Z"},"quantity":1,"subtotal":100,"originalPrice":100}]	2026-02-06 21:26:13.198+05:30	\N	\N	\N	\N	sale
+8d878f1f-1d1d-48ed-a619-c21c2fb0e4bc	115379c6-ab6e-4883-9901-e64b495fa7db	\N	700.00	card	700.00	\N	[{"item":{"id":"ba3e6f93-9b90-4fb7-8e61-fb0d1714fe05","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"Saree-250","display_name":"Saree","code":"ASR-ME-S-01","barcode":"ASR-ME-S-01","mapping_code":null,"category_id":"b017a7c8-cc65-494c-99e5-d9f442940ee4","subcategory":"Saree","cost":"150","price":"250","mrp":"300","stock":3,"image_url":null,"created_at":"2026-02-06T04:54:55.105Z"},"quantity":1,"subtotal":250,"originalPrice":250},{"item":{"id":"4bb57794-d0dc-496d-90f0-0dcf626e31dd","customer_id":"cffb43c0-c9b9-4027-9540-b84ce75a14cb","name":"saree-450","display_name":"saree","code":"ASR-ME-S-02","barcode":"ASR-ME-S-02","mapping_code":null,"category_id":"b017a7c8-cc65-494c-99e5-d9f442940ee4","subcategory":"Saree","cost":"200","price":"450","mrp":"480","stock":8,"image_url":null,"created_at":"2026-02-06T04:54:55.106Z"},"quantity":1,"subtotal":450,"originalPrice":450}]	2026-02-06 22:12:30.58+05:30	\N	\N	\N	\N	sale
 \.
 
 
 --
--- TOC entry 3280 (class 0 OID 111908)
--- Dependencies: 220
--- Data for Name: translations; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.translations (id, customer_id, key, language, value, created_at, updated_at) FROM stdin;
-382d3e21-aaec-4b17-9c15-519f20efbc1c	cffb43c0-c9b9-4027-9540-b84ce75a14cb	receipt.receipt	en	Receipt	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-3a2c355a-d967-4439-9b7b-b642c9ff37fe	cffb43c0-c9b9-4027-9540-b84ce75a14cb	receipt.date	en	Date	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-13fca47a-64bb-4e42-b2bd-255533f094c3	cffb43c0-c9b9-4027-9540-b84ce75a14cb	receipt.time	en	Time	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-fa28e5db-4dad-48e1-8f2c-a3fba8689d72	cffb43c0-c9b9-4027-9540-b84ce75a14cb	receipt.customer	en	Customer	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-45e026e5-bfd2-4009-86d7-b48e5303c165	cffb43c0-c9b9-4027-9540-b84ce75a14cb	items.sno	en	#	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-d6385c24-e75c-4f2d-a5f2-a4e0c22b76c4	cffb43c0-c9b9-4027-9540-b84ce75a14cb	items.item	en	Item	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-23ded3c2-8e17-40a8-8a29-9157de364165	cffb43c0-c9b9-4027-9540-b84ce75a14cb	items.rate	en	Rate	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-c04ec13a-7ee3-42c5-854c-1e970e8b3cc3	cffb43c0-c9b9-4027-9540-b84ce75a14cb	items.qty	en	Qty	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-a0fbc463-03e3-4dcc-b2da-95178d043e96	cffb43c0-c9b9-4027-9540-b84ce75a14cb	items.amount	en	Amt	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-2cd1e53d-f3a2-4f51-9c9b-e92e0c031071	cffb43c0-c9b9-4027-9540-b84ce75a14cb	totals.subtotal	en	Subtotal	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-3a255347-2e31-4c06-aae2-f3ed9524c3de	cffb43c0-c9b9-4027-9540-b84ce75a14cb	totals.discount	en	Discount	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-c5a05db8-2540-4eb7-860e-d9d5989a650e	cffb43c0-c9b9-4027-9540-b84ce75a14cb	totals.tax	en	GST/Tax	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-4552098a-0129-4c5e-a63d-bd65fa1a4694	cffb43c0-c9b9-4027-9540-b84ce75a14cb	totals.grandTotal	en	GRAND TOTAL	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-8daf4fea-1a87-4124-a17d-d725f98112e1	cffb43c0-c9b9-4027-9540-b84ce75a14cb	payment.cashReceived	en	Cash Received	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-e4b74bd5-fe33-4e9d-95f8-19e5dd7bb968	cffb43c0-c9b9-4027-9540-b84ce75a14cb	payment.change	en	Change	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-9e6cbc12-5276-4515-88f8-2ed9887bcc94	cffb43c0-c9b9-4027-9540-b84ce75a14cb	payment.method	en	Payment Method	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-fdf213c2-ee04-471d-bcfd-edf2b32a25aa	cffb43c0-c9b9-4027-9540-b84ce75a14cb	footer.thankYou	en	Thank You for Your Business!	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-ce63ef0e-7c0d-4b2b-8018-df2126a30d72	cffb43c0-c9b9-4027-9540-b84ce75a14cb	footer.visitAgain	en	Please visit again	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-4779e0c8-e6a7-43c4-8aa5-a0459b77084d	115379c6-ab6e-4883-9901-e64b495fa7db	receipt.receipt	en	Receipt	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-6220030d-cfb3-4b93-97ba-e5f5fb14a6ba	115379c6-ab6e-4883-9901-e64b495fa7db	receipt.date	en	Date	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-c3293ca3-e5c0-49a2-98e6-92628db4413e	115379c6-ab6e-4883-9901-e64b495fa7db	receipt.time	en	Time	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-34ca459d-e321-43c4-8f0f-3eebfd1a01e3	115379c6-ab6e-4883-9901-e64b495fa7db	receipt.customer	en	Customer	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-b1e72c98-c375-4d4e-8f9d-cc304e2c15d8	115379c6-ab6e-4883-9901-e64b495fa7db	items.sno	en	#	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-b49eee47-44b5-4f18-8c67-fd02b9aa02c3	115379c6-ab6e-4883-9901-e64b495fa7db	items.item	en	Item	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-12719a41-4642-45d3-8d84-665732414ccc	115379c6-ab6e-4883-9901-e64b495fa7db	items.rate	en	Rate	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-070c3874-5df2-48e1-abc1-362201fa141c	115379c6-ab6e-4883-9901-e64b495fa7db	items.qty	en	Qty	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-bfe437b0-ffd7-4f67-a200-ff927c9609e1	115379c6-ab6e-4883-9901-e64b495fa7db	items.amount	en	Amt	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-e58250e2-39d9-4eff-856a-1057b007b50a	115379c6-ab6e-4883-9901-e64b495fa7db	totals.subtotal	en	Subtotal	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-4e6441c4-d538-42ed-9ac0-c5da554a468e	115379c6-ab6e-4883-9901-e64b495fa7db	totals.discount	en	Discount	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-441356f3-8d32-49d3-804c-19a7a1151227	115379c6-ab6e-4883-9901-e64b495fa7db	totals.tax	en	GST/Tax	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-b06690c4-ba7d-4c32-9b63-ae5e5f7f4858	115379c6-ab6e-4883-9901-e64b495fa7db	totals.grandTotal	en	GRAND TOTAL	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-7fe87395-8f36-414b-8295-4a6779ece4a7	115379c6-ab6e-4883-9901-e64b495fa7db	payment.cashReceived	en	Cash Received	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-babe0267-046e-4a66-ad7b-209d70ab2c8b	115379c6-ab6e-4883-9901-e64b495fa7db	payment.change	en	Change	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-eb3d8c83-8872-46a8-81d9-321532844693	115379c6-ab6e-4883-9901-e64b495fa7db	payment.method	en	Payment Method	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-025ac8fa-0c43-48dd-99e0-ede006ce9748	115379c6-ab6e-4883-9901-e64b495fa7db	footer.thankYou	en	Thank You for Your Business!	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-a0da9bc5-8698-475a-8c73-c7ce16c9b979	115379c6-ab6e-4883-9901-e64b495fa7db	footer.visitAgain	en	Please visit again	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-a4bf6549-74d4-4d8a-bbd9-b0e043c6ea2f	26d7ca67-ecc3-4735-897f-3862dbb8260d	receipt.receipt	en	Receipt	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-efbe701a-d243-4e22-ae13-992cbce5bf88	26d7ca67-ecc3-4735-897f-3862dbb8260d	receipt.date	en	Date	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-b6d2102b-e371-4612-999c-5c725a32af5d	26d7ca67-ecc3-4735-897f-3862dbb8260d	receipt.time	en	Time	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-47a035f1-cb4a-45f7-b7ad-293644b61ca7	26d7ca67-ecc3-4735-897f-3862dbb8260d	receipt.customer	en	Customer	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-7caa48ae-88bb-4905-b72d-32f5b22b087c	26d7ca67-ecc3-4735-897f-3862dbb8260d	items.sno	en	#	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-81b7ea3c-9eba-45ae-8ec6-390cca7d35b3	26d7ca67-ecc3-4735-897f-3862dbb8260d	items.item	en	Item	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-231e2716-d8eb-498e-b6ca-194ba09d341c	26d7ca67-ecc3-4735-897f-3862dbb8260d	items.rate	en	Rate	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-0432934e-1282-4a16-9122-2d7045afea4b	26d7ca67-ecc3-4735-897f-3862dbb8260d	items.qty	en	Qty	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-e52a2c0d-ebae-4d9c-9449-1040ea5d6e96	26d7ca67-ecc3-4735-897f-3862dbb8260d	items.amount	en	Amt	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-6cc3c179-2ba1-4eee-9a1e-9fbe749bdf83	26d7ca67-ecc3-4735-897f-3862dbb8260d	totals.subtotal	en	Subtotal	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-e459febc-820b-48bb-8f9b-906bde2d4118	26d7ca67-ecc3-4735-897f-3862dbb8260d	totals.discount	en	Discount	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-c68b4192-d9a9-4067-9aec-0920149de97d	26d7ca67-ecc3-4735-897f-3862dbb8260d	totals.tax	en	GST/Tax	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-6c57c212-71be-48c8-9381-a07afecd4a89	26d7ca67-ecc3-4735-897f-3862dbb8260d	totals.grandTotal	en	GRAND TOTAL	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-11c14c45-3bb5-4438-8087-ca58e6e83ca9	26d7ca67-ecc3-4735-897f-3862dbb8260d	payment.cashReceived	en	Cash Received	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-b1a8f2a9-3d40-4f19-8d9a-ec5e4c1ddc2d	26d7ca67-ecc3-4735-897f-3862dbb8260d	payment.change	en	Change	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-0d7b5e93-eb81-4f22-80c7-c19d50f124bc	26d7ca67-ecc3-4735-897f-3862dbb8260d	payment.method	en	Payment Method	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-a2dd8374-7970-428d-9524-c70f77f073a3	26d7ca67-ecc3-4735-897f-3862dbb8260d	footer.thankYou	en	Thank You for Your Business!	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-9aa6cbd0-1dca-4d92-bd03-c73e704feb73	26d7ca67-ecc3-4735-897f-3862dbb8260d	footer.visitAgain	en	Please visit again	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-391c57f7-58f4-43ab-8cc6-15f91b9f646f	1704a06a-057d-4689-87ae-5e89eae6e77c	receipt.receipt	en	Receipt	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-42e3d555-c1d9-4b02-b86c-801960cc3e3d	1704a06a-057d-4689-87ae-5e89eae6e77c	receipt.date	en	Date	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-68d3cebf-388d-490d-97ba-7fc7abfd869d	1704a06a-057d-4689-87ae-5e89eae6e77c	receipt.time	en	Time	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-ee26e505-20af-4c91-9489-633d092d9972	1704a06a-057d-4689-87ae-5e89eae6e77c	receipt.customer	en	Customer	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-529698d3-aa85-44aa-8185-0fbf7fe47186	1704a06a-057d-4689-87ae-5e89eae6e77c	items.sno	en	#	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-2e2b66c5-c957-4ef8-89a3-fa1cc0fecd81	1704a06a-057d-4689-87ae-5e89eae6e77c	items.item	en	Item	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-ed0a1f58-1fe3-41f2-b57b-8f1455f75834	1704a06a-057d-4689-87ae-5e89eae6e77c	items.rate	en	Rate	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-d578b245-3414-4eb5-a7bc-928c16d62d1c	1704a06a-057d-4689-87ae-5e89eae6e77c	items.qty	en	Qty	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-50d9fe86-01da-4616-a30d-7ff01463c3ad	1704a06a-057d-4689-87ae-5e89eae6e77c	items.amount	en	Amt	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-df9dc8d5-95aa-4a48-b142-4b12007f6124	1704a06a-057d-4689-87ae-5e89eae6e77c	totals.subtotal	en	Subtotal	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-bcc56b25-d606-4851-8d1b-adf73a5deb7c	1704a06a-057d-4689-87ae-5e89eae6e77c	totals.discount	en	Discount	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-694dbd86-e58a-410d-9858-f0c7d085f937	1704a06a-057d-4689-87ae-5e89eae6e77c	totals.tax	en	GST/Tax	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-929d4746-cae3-48b4-a694-61fa347297e2	1704a06a-057d-4689-87ae-5e89eae6e77c	totals.grandTotal	en	GRAND TOTAL	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-527cb00f-4886-4d5e-95fd-4102cb84cae0	1704a06a-057d-4689-87ae-5e89eae6e77c	payment.cashReceived	en	Cash Received	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-200fa11e-7f08-4a2d-b074-718b1cdef32f	1704a06a-057d-4689-87ae-5e89eae6e77c	payment.change	en	Change	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-be3afaad-b50e-4097-92f8-a641bbb338e7	1704a06a-057d-4689-87ae-5e89eae6e77c	payment.method	en	Payment Method	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-43c883b2-f761-4dfa-9117-5946bd3a188f	1704a06a-057d-4689-87ae-5e89eae6e77c	footer.thankYou	en	Thank You for Your Business!	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-905e897e-5545-4d14-a12d-205320c92a4d	1704a06a-057d-4689-87ae-5e89eae6e77c	footer.visitAgain	en	Please visit again	2026-02-07 19:24:37.382789+05:30	2026-02-07 19:24:37.382789+05:30
-152a0e4e-3360-4af8-92b1-5a58b70efe2e	cffb43c0-c9b9-4027-9540-b84ce75a14cb	receipt.receipt	ta	ரசீது	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-30ba9dd8-9e64-408b-a9ba-b0d0f05b97b3	cffb43c0-c9b9-4027-9540-b84ce75a14cb	receipt.date	ta	தேதி	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-707b80fe-5e1f-4b0d-b41e-f031e2ae87b6	cffb43c0-c9b9-4027-9540-b84ce75a14cb	receipt.time	ta	நேரம்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-f9154437-99e5-4d4d-8f2b-2ea5f14f1c37	cffb43c0-c9b9-4027-9540-b84ce75a14cb	receipt.customer	ta	வாடிக்கையாளர்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-ec597f1c-e9a3-46a0-ad66-bab47bd661e0	cffb43c0-c9b9-4027-9540-b84ce75a14cb	items.sno	ta	எண்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-8f141765-3326-4a8d-9146-bb6568216092	cffb43c0-c9b9-4027-9540-b84ce75a14cb	items.item	ta	பொருள்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-2fc2a0d8-46a7-44d9-9bfc-aac2245f6021	cffb43c0-c9b9-4027-9540-b84ce75a14cb	items.rate	ta	விலை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-f2e2450f-2e0d-487b-90a9-ca08defab69d	cffb43c0-c9b9-4027-9540-b84ce75a14cb	items.qty	ta	எண்ணிக்கை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-956a5bb9-53d8-4275-9af6-3e8c3625cac8	cffb43c0-c9b9-4027-9540-b84ce75a14cb	items.amount	ta	தொகை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-2536a336-0f0b-43a9-bf4b-89abbbcf8d31	cffb43c0-c9b9-4027-9540-b84ce75a14cb	totals.subtotal	ta	கூட்டுத்தொகை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-451d16be-4b62-4dda-b5e6-a6a3b4fb7516	cffb43c0-c9b9-4027-9540-b84ce75a14cb	totals.discount	ta	தள்ளுபடி	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-693f4a4b-6058-4557-aca4-bd14c1b23201	cffb43c0-c9b9-4027-9540-b84ce75a14cb	totals.tax	ta	GST/வரி	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-3180c326-c31b-4246-a50b-94f6b64c17bf	cffb43c0-c9b9-4027-9540-b84ce75a14cb	totals.grandTotal	ta	மொத்தத் தொகை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-39047ef2-d659-4597-99c6-b8eb94b37900	cffb43c0-c9b9-4027-9540-b84ce75a14cb	payment.cashReceived	ta	பெறப்பட்ட பணம்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-4215dc0e-8ea9-4b80-a4e4-642121811720	cffb43c0-c9b9-4027-9540-b84ce75a14cb	payment.change	ta	மாற்றம்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-b8441e70-192f-4c63-968a-87b23e0d5534	cffb43c0-c9b9-4027-9540-b84ce75a14cb	payment.method	ta	கட்டண முறை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-d850847d-28b1-41bd-aab4-4fac7a4f9588	cffb43c0-c9b9-4027-9540-b84ce75a14cb	footer.thankYou	ta	உங்கள் வணிகத்திற்கு நன்றி!	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-fdead268-2eda-4afe-9cf2-27bca8f979ef	cffb43c0-c9b9-4027-9540-b84ce75a14cb	footer.visitAgain	ta	மீண்டும் வருகைத்தொடர்க	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-c00ab994-4480-45b7-b44d-b06f04a97bb0	115379c6-ab6e-4883-9901-e64b495fa7db	receipt.receipt	ta	ரசீது	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-ccc6f7dc-f0fa-4d10-909b-ef7a941a4a3e	115379c6-ab6e-4883-9901-e64b495fa7db	receipt.date	ta	தேதி	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-96405492-8970-48da-ab03-2b3e430a2908	115379c6-ab6e-4883-9901-e64b495fa7db	receipt.time	ta	நேரம்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-fba105c5-e018-4692-982b-cb3a4d444d13	115379c6-ab6e-4883-9901-e64b495fa7db	receipt.customer	ta	வாடிக்கையாளர்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-aaa32e32-5731-47ed-b80d-4d3fea6e6e90	115379c6-ab6e-4883-9901-e64b495fa7db	items.sno	ta	எண்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-f4b8a64a-d233-43d9-a022-fed450d79730	115379c6-ab6e-4883-9901-e64b495fa7db	items.item	ta	பொருள்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-763385f2-36c2-4de3-a153-d1440fe89dbf	115379c6-ab6e-4883-9901-e64b495fa7db	items.rate	ta	விலை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-5cc9e226-0cf3-4a56-aa49-de2c4573c8b9	115379c6-ab6e-4883-9901-e64b495fa7db	items.qty	ta	எண்ணிக்கை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-fb1840f7-fc5d-44e1-bd5e-b7d8c22e5747	115379c6-ab6e-4883-9901-e64b495fa7db	items.amount	ta	தொகை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-1579ff0d-2f46-4a4b-bf89-07811e0a5089	115379c6-ab6e-4883-9901-e64b495fa7db	totals.subtotal	ta	கூட்டுத்தொகை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-a9033411-40c1-4c9f-b17b-288b6e33e53c	115379c6-ab6e-4883-9901-e64b495fa7db	totals.discount	ta	தள்ளுபடி	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-a730ba2d-de37-42f0-94e2-2965665371e8	115379c6-ab6e-4883-9901-e64b495fa7db	totals.tax	ta	GST/வரி	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-d452f145-9b94-4b63-9119-8baecefe3f21	115379c6-ab6e-4883-9901-e64b495fa7db	totals.grandTotal	ta	மொத்தத் தொகை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-0005b912-a876-48e3-b913-ca657f375a5e	115379c6-ab6e-4883-9901-e64b495fa7db	payment.cashReceived	ta	பெறப்பட்ட பணம்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-81775b4f-bc71-4da6-8def-d06c3d219136	115379c6-ab6e-4883-9901-e64b495fa7db	payment.change	ta	மாற்றம்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-120c277a-084d-4f77-8129-2770f3bb8a91	115379c6-ab6e-4883-9901-e64b495fa7db	payment.method	ta	கட்டண முறை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-c61abf97-c4ac-4222-9037-ee71a282cb33	115379c6-ab6e-4883-9901-e64b495fa7db	footer.thankYou	ta	உங்கள் வணிகத்திற்கு நன்றி!	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-746befc8-7821-432d-8b69-e562b7879598	115379c6-ab6e-4883-9901-e64b495fa7db	footer.visitAgain	ta	மீண்டும் வருகைத்தொடர்க	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-31413017-e081-44d6-a7a3-9fb4a84e3db7	26d7ca67-ecc3-4735-897f-3862dbb8260d	receipt.receipt	ta	ரசீது	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-9228fdad-b5a9-46ad-9b85-93a526aa6dd8	26d7ca67-ecc3-4735-897f-3862dbb8260d	receipt.date	ta	தேதி	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-95f8b3db-b79b-4237-b8a4-5052bb090f49	26d7ca67-ecc3-4735-897f-3862dbb8260d	receipt.time	ta	நேரம்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-5c3de1cc-3414-4202-aa65-d6e316457981	26d7ca67-ecc3-4735-897f-3862dbb8260d	receipt.customer	ta	வாடிக்கையாளர்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-969d1abd-7f6b-4e32-aff9-99736ff800f5	26d7ca67-ecc3-4735-897f-3862dbb8260d	items.sno	ta	எண்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-fa8e3836-9f4a-4438-8efa-aa16ad99c600	26d7ca67-ecc3-4735-897f-3862dbb8260d	items.item	ta	பொருள்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-24f89c6e-9af0-465a-8dab-363cfc2a925c	26d7ca67-ecc3-4735-897f-3862dbb8260d	items.rate	ta	விலை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-95fe57bb-cd59-46e2-9a65-75fe078aaa05	26d7ca67-ecc3-4735-897f-3862dbb8260d	items.qty	ta	எண்ணிக்கை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-9f5f7518-f2d5-4103-bfa5-312832949e3f	26d7ca67-ecc3-4735-897f-3862dbb8260d	items.amount	ta	தொகை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-f5280bc1-7ddb-4fcf-8aee-c02e8135a642	26d7ca67-ecc3-4735-897f-3862dbb8260d	totals.subtotal	ta	கூட்டுத்தொகை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-3947bfd1-67e0-48e5-8bc7-8e9ed38bc0cf	26d7ca67-ecc3-4735-897f-3862dbb8260d	totals.discount	ta	தள்ளுபடி	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-1901bfa6-960c-43b9-a333-056d08d2ab0e	26d7ca67-ecc3-4735-897f-3862dbb8260d	totals.tax	ta	GST/வரி	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-4c8b5197-fd84-413d-b67b-df16feed5eef	26d7ca67-ecc3-4735-897f-3862dbb8260d	totals.grandTotal	ta	மொத்தத் தொகை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-9ed2e2ac-4474-46df-a699-62d9397696fd	26d7ca67-ecc3-4735-897f-3862dbb8260d	payment.cashReceived	ta	பெறப்பட்ட பணம்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-cfe2f4e2-bc75-4e58-9efb-47ab7d50ad35	26d7ca67-ecc3-4735-897f-3862dbb8260d	payment.change	ta	மாற்றம்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-04f91fe0-2ca7-4027-80ee-24b2b8f2788c	26d7ca67-ecc3-4735-897f-3862dbb8260d	payment.method	ta	கட்டண முறை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-7bf0a601-0538-4251-a17f-b8963f80d119	26d7ca67-ecc3-4735-897f-3862dbb8260d	footer.thankYou	ta	உங்கள் வணிகத்திற்கு நன்றி!	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-9d816e65-3fe0-4429-8e20-ea01763473ff	26d7ca67-ecc3-4735-897f-3862dbb8260d	footer.visitAgain	ta	மீண்டும் வருகைத்தொடர்க	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-6784b3f3-957d-421d-919d-ee3677f179fb	1704a06a-057d-4689-87ae-5e89eae6e77c	receipt.receipt	ta	ரசீது	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-9323c041-4dd1-4329-b9bd-67c1466314c6	1704a06a-057d-4689-87ae-5e89eae6e77c	receipt.date	ta	தேதி	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-09017aa7-4863-4385-92d0-99745e41eb96	1704a06a-057d-4689-87ae-5e89eae6e77c	receipt.time	ta	நேரம்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-848feaa8-ea87-47b0-a5fc-8a29b33f9a2f	1704a06a-057d-4689-87ae-5e89eae6e77c	receipt.customer	ta	வாடிக்கையாளர்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-487b82a3-8080-4194-93bb-7a37a4b83ad2	1704a06a-057d-4689-87ae-5e89eae6e77c	items.sno	ta	எண்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-959d941c-61e9-4586-ae3c-c53d89dcad2a	1704a06a-057d-4689-87ae-5e89eae6e77c	items.item	ta	பொருள்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-f42373f8-d40a-408c-bc3c-38506a324033	1704a06a-057d-4689-87ae-5e89eae6e77c	items.rate	ta	விலை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-972db3ff-4f38-4736-8a95-84e5294f62d1	1704a06a-057d-4689-87ae-5e89eae6e77c	items.qty	ta	எண்ணிக்கை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-8ca987c2-3e6d-44b8-acb8-723c2dd4e06a	1704a06a-057d-4689-87ae-5e89eae6e77c	items.amount	ta	தொகை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-d1250100-8e6a-4d2c-9a0c-ee0b85f10689	1704a06a-057d-4689-87ae-5e89eae6e77c	totals.subtotal	ta	கூட்டுத்தொகை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-58747a86-5a88-44ff-8a0c-e725eee5c5c4	1704a06a-057d-4689-87ae-5e89eae6e77c	totals.discount	ta	தள்ளுபடி	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-8544e0e5-d818-42aa-bdb9-ae4ebba55106	1704a06a-057d-4689-87ae-5e89eae6e77c	totals.tax	ta	GST/வரி	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-084ab2ee-2d4a-44b7-9aca-17579f8cae1a	1704a06a-057d-4689-87ae-5e89eae6e77c	totals.grandTotal	ta	மொத்தத் தொகை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-4922a89d-a9d3-4191-83b2-749ccea2d017	1704a06a-057d-4689-87ae-5e89eae6e77c	payment.cashReceived	ta	பெறப்பட்ட பணம்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-eeb0e892-15a8-49b1-a425-9061b29b971b	1704a06a-057d-4689-87ae-5e89eae6e77c	payment.change	ta	மாற்றம்	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-98fae632-3ede-45f7-8fae-13a24ec6b953	1704a06a-057d-4689-87ae-5e89eae6e77c	payment.method	ta	கட்டண முறை	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-99602ddf-f347-4346-987a-e540fbab6ad3	1704a06a-057d-4689-87ae-5e89eae6e77c	footer.thankYou	ta	உங்கள் வணிகத்திற்கு நன்றி!	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-f31bdc4c-0ecd-4d7d-bcd9-c3446336ca83	1704a06a-057d-4689-87ae-5e89eae6e77c	footer.visitAgain	ta	மீண்டும் வருகைத்தொடர்க	2026-02-07 19:24:37.437024+05:30	2026-02-07 19:24:37.437024+05:30
-\.
-
-
---
--- TOC entry 3002 (class 2606 OID 106800)
+-- TOC entry 2961 (class 2606 OID 106800)
 -- Name: _prisma_migrations _prisma_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -943,7 +648,7 @@ ALTER TABLE ONLY public._prisma_migrations
 
 
 --
--- TOC entry 3048 (class 2606 OID 106922)
+-- TOC entry 3002 (class 2606 OID 106922)
 -- Name: activity_logs activity_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -952,7 +657,7 @@ ALTER TABLE ONLY public.activity_logs
 
 
 --
--- TOC entry 3072 (class 2606 OID 106975)
+-- TOC entry 3026 (class 2606 OID 106975)
 -- Name: carts carts_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -961,7 +666,7 @@ ALTER TABLE ONLY public.carts
 
 
 --
--- TOC entry 3062 (class 2606 OID 106951)
+-- TOC entry 3016 (class 2606 OID 106951)
 -- Name: cash_flow_entries cash_flow_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -970,7 +675,7 @@ ALTER TABLE ONLY public.cash_flow_entries
 
 
 --
--- TOC entry 3011 (class 2606 OID 106820)
+-- TOC entry 2970 (class 2606 OID 106820)
 -- Name: categories categories_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -979,7 +684,7 @@ ALTER TABLE ONLY public.categories
 
 
 --
--- TOC entry 3034 (class 2606 OID 106884)
+-- TOC entry 2988 (class 2606 OID 106884)
 -- Name: companies companies_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -988,7 +693,7 @@ ALTER TABLE ONLY public.companies
 
 
 --
--- TOC entry 3008 (class 2606 OID 106811)
+-- TOC entry 2967 (class 2606 OID 106811)
 -- Name: customers customers_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -997,25 +702,7 @@ ALTER TABLE ONLY public.customers
 
 
 --
--- TOC entry 3101 (class 2606 OID 111943)
--- Name: e_way_bills e_way_bills_e_way_bill_number_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.e_way_bills
-    ADD CONSTRAINT e_way_bills_e_way_bill_number_key UNIQUE (e_way_bill_number);
-
-
---
--- TOC entry 3103 (class 2606 OID 111941)
--- Name: e_way_bills e_way_bills_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.e_way_bills
-    ADD CONSTRAINT e_way_bills_pkey PRIMARY KEY (id);
-
-
---
--- TOC entry 3040 (class 2606 OID 106913)
+-- TOC entry 2994 (class 2606 OID 106913)
 -- Name: item_code_prefixes item_code_prefixes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1024,7 +711,7 @@ ALTER TABLE ONLY public.item_code_prefixes
 
 
 --
--- TOC entry 3020 (class 2606 OID 106830)
+-- TOC entry 2977 (class 2606 OID 106830)
 -- Name: items items_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1033,7 +720,7 @@ ALTER TABLE ONLY public.items
 
 
 --
--- TOC entry 3068 (class 2606 OID 106963)
+-- TOC entry 3022 (class 2606 OID 106963)
 -- Name: permissions permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1042,7 +729,7 @@ ALTER TABLE ONLY public.permissions
 
 
 --
--- TOC entry 3055 (class 2606 OID 106941)
+-- TOC entry 3009 (class 2606 OID 106941)
 -- Name: quick_sale_items quick_sale_items_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1051,7 +738,7 @@ ALTER TABLE ONLY public.quick_sale_items
 
 
 --
--- TOC entry 3089 (class 2606 OID 107685)
+-- TOC entry 3043 (class 2606 OID 107685)
 -- Name: returns returns_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1060,7 +747,7 @@ ALTER TABLE ONLY public.returns
 
 
 --
--- TOC entry 3051 (class 2606 OID 106932)
+-- TOC entry 3005 (class 2606 OID 106932)
 -- Name: sales_customers sales_customers_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1069,7 +756,7 @@ ALTER TABLE ONLY public.sales_customers
 
 
 --
--- TOC entry 3038 (class 2606 OID 106903)
+-- TOC entry 2992 (class 2606 OID 106903)
 -- Name: settings settings_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1078,7 +765,7 @@ ALTER TABLE ONLY public.settings
 
 
 --
--- TOC entry 3081 (class 2606 OID 106997)
+-- TOC entry 3035 (class 2606 OID 106997)
 -- Name: table_orders table_orders_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1087,7 +774,7 @@ ALTER TABLE ONLY public.table_orders
 
 
 --
--- TOC entry 3076 (class 2606 OID 106984)
+-- TOC entry 3030 (class 2606 OID 106984)
 -- Name: tables tables_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1096,7 +783,7 @@ ALTER TABLE ONLY public.tables
 
 
 --
--- TOC entry 3027 (class 2606 OID 106839)
+-- TOC entry 2982 (class 2606 OID 106839)
 -- Name: transactions transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1105,25 +792,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- TOC entry 3094 (class 2606 OID 111921)
--- Name: translations translations_customer_id_key_language_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.translations
-    ADD CONSTRAINT translations_customer_id_key_language_key UNIQUE (customer_id, key, language);
-
-
---
--- TOC entry 3098 (class 2606 OID 111919)
--- Name: translations translations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.translations
-    ADD CONSTRAINT translations_pkey PRIMARY KEY (id);
-
-
---
--- TOC entry 3043 (class 1259 OID 107004)
+-- TOC entry 2997 (class 1259 OID 107004)
 -- Name: activity_logs_changed_by_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1131,7 +800,7 @@ CREATE INDEX activity_logs_changed_by_idx ON public.activity_logs USING btree (c
 
 
 --
--- TOC entry 3044 (class 1259 OID 107005)
+-- TOC entry 2998 (class 1259 OID 107005)
 -- Name: activity_logs_created_at_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1139,7 +808,7 @@ CREATE INDEX activity_logs_created_at_idx ON public.activity_logs USING btree (c
 
 
 --
--- TOC entry 3045 (class 1259 OID 107003)
+-- TOC entry 2999 (class 1259 OID 107003)
 -- Name: activity_logs_entity_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1147,7 +816,7 @@ CREATE INDEX activity_logs_entity_id_idx ON public.activity_logs USING btree (en
 
 
 --
--- TOC entry 3046 (class 1259 OID 107002)
+-- TOC entry 3000 (class 1259 OID 107002)
 -- Name: activity_logs_entity_type_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1155,7 +824,7 @@ CREATE INDEX activity_logs_entity_type_idx ON public.activity_logs USING btree (
 
 
 --
--- TOC entry 3069 (class 1259 OID 107017)
+-- TOC entry 3023 (class 1259 OID 107017)
 -- Name: carts_customer_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1163,7 +832,7 @@ CREATE INDEX carts_customer_id_idx ON public.carts USING btree (customer_id);
 
 
 --
--- TOC entry 3070 (class 1259 OID 107018)
+-- TOC entry 3024 (class 1259 OID 107018)
 -- Name: carts_customer_id_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1171,7 +840,7 @@ CREATE UNIQUE INDEX carts_customer_id_key ON public.carts USING btree (customer_
 
 
 --
--- TOC entry 3058 (class 1259 OID 107013)
+-- TOC entry 3012 (class 1259 OID 107013)
 -- Name: cash_flow_entries_category_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1179,7 +848,7 @@ CREATE INDEX cash_flow_entries_category_idx ON public.cash_flow_entries USING bt
 
 
 --
--- TOC entry 3059 (class 1259 OID 107010)
+-- TOC entry 3013 (class 1259 OID 107010)
 -- Name: cash_flow_entries_customer_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1187,7 +856,7 @@ CREATE INDEX cash_flow_entries_customer_id_idx ON public.cash_flow_entries USING
 
 
 --
--- TOC entry 3060 (class 1259 OID 107011)
+-- TOC entry 3014 (class 1259 OID 107011)
 -- Name: cash_flow_entries_entry_date_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1195,7 +864,7 @@ CREATE INDEX cash_flow_entries_entry_date_idx ON public.cash_flow_entries USING 
 
 
 --
--- TOC entry 3063 (class 1259 OID 107012)
+-- TOC entry 3017 (class 1259 OID 107012)
 -- Name: cash_flow_entries_type_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1203,7 +872,7 @@ CREATE INDEX cash_flow_entries_type_idx ON public.cash_flow_entries USING btree 
 
 
 --
--- TOC entry 3009 (class 1259 OID 106843)
+-- TOC entry 2968 (class 1259 OID 106843)
 -- Name: categories_customer_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1211,7 +880,7 @@ CREATE INDEX categories_customer_id_idx ON public.categories USING btree (custom
 
 
 --
--- TOC entry 3031 (class 1259 OID 106886)
+-- TOC entry 2985 (class 1259 OID 106886)
 -- Name: companies_customer_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1219,7 +888,7 @@ CREATE INDEX companies_customer_id_idx ON public.companies USING btree (customer
 
 
 --
--- TOC entry 3032 (class 1259 OID 106885)
+-- TOC entry 2986 (class 1259 OID 106885)
 -- Name: companies_customer_id_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1227,7 +896,7 @@ CREATE UNIQUE INDEX companies_customer_id_key ON public.companies USING btree (c
 
 
 --
--- TOC entry 3003 (class 1259 OID 107027)
+-- TOC entry 2962 (class 1259 OID 107027)
 -- Name: customers_customer_type_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1235,7 +904,7 @@ CREATE INDEX customers_customer_type_idx ON public.customers USING btree (custom
 
 
 --
--- TOC entry 3004 (class 1259 OID 106841)
+-- TOC entry 2963 (class 1259 OID 106841)
 -- Name: customers_email_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1243,7 +912,7 @@ CREATE INDEX customers_email_idx ON public.customers USING btree (email);
 
 
 --
--- TOC entry 3005 (class 1259 OID 106840)
+-- TOC entry 2964 (class 1259 OID 106840)
 -- Name: customers_email_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1251,7 +920,7 @@ CREATE UNIQUE INDEX customers_email_key ON public.customers USING btree (email);
 
 
 --
--- TOC entry 3006 (class 1259 OID 106842)
+-- TOC entry 2965 (class 1259 OID 106842)
 -- Name: customers_phone_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1259,71 +928,7 @@ CREATE INDEX customers_phone_idx ON public.customers USING btree (phone);
 
 
 --
--- TOC entry 3099 (class 1259 OID 111967)
--- Name: e_way_bills_e_way_bill_number_idx; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX e_way_bills_e_way_bill_number_idx ON public.e_way_bills USING btree (e_way_bill_number);
-
-
---
--- TOC entry 3104 (class 1259 OID 111960)
--- Name: e_way_bills_status_idx; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX e_way_bills_status_idx ON public.e_way_bills USING btree (status);
-
-
---
--- TOC entry 3105 (class 1259 OID 111966)
--- Name: e_way_bills_transaction_id_key; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE UNIQUE INDEX e_way_bills_transaction_id_key ON public.e_way_bills USING btree (transaction_id);
-
-
---
--- TOC entry 3106 (class 1259 OID 111961)
--- Name: e_way_bills_valid_until_idx; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX e_way_bills_valid_until_idx ON public.e_way_bills USING btree (valid_until);
-
-
---
--- TOC entry 3107 (class 1259 OID 111959)
--- Name: idx_e_way_bills_number; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_e_way_bills_number ON public.e_way_bills USING btree (e_way_bill_number) WHERE (e_way_bill_number IS NOT NULL);
-
-
---
--- TOC entry 3012 (class 1259 OID 111887)
--- Name: idx_items_hsn_code; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_items_hsn_code ON public.items USING btree (hsn_code) WHERE (hsn_code IS NOT NULL);
-
-
---
--- TOC entry 3021 (class 1259 OID 111890)
--- Name: idx_transactions_gst_amount; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_transactions_gst_amount ON public.transactions USING btree (gst_amount) WHERE (gst_amount > (0)::numeric);
-
-
---
--- TOC entry 3022 (class 1259 OID 111889)
--- Name: idx_transactions_place_of_supply; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_transactions_place_of_supply ON public.transactions USING btree (place_of_supply) WHERE (place_of_supply IS NOT NULL);
-
-
---
--- TOC entry 3041 (class 1259 OID 107001)
+-- TOC entry 2995 (class 1259 OID 107001)
 -- Name: item_code_prefixes_prefix_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1331,7 +936,7 @@ CREATE INDEX item_code_prefixes_prefix_idx ON public.item_code_prefixes USING bt
 
 
 --
--- TOC entry 3042 (class 1259 OID 107000)
+-- TOC entry 2996 (class 1259 OID 107000)
 -- Name: item_code_prefixes_prefix_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1339,7 +944,7 @@ CREATE UNIQUE INDEX item_code_prefixes_prefix_key ON public.item_code_prefixes U
 
 
 --
--- TOC entry 3013 (class 1259 OID 106846)
+-- TOC entry 2971 (class 1259 OID 106846)
 -- Name: items_barcode_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1347,7 +952,7 @@ CREATE INDEX items_barcode_idx ON public.items USING btree (barcode);
 
 
 --
--- TOC entry 3014 (class 1259 OID 106845)
+-- TOC entry 2972 (class 1259 OID 106845)
 -- Name: items_category_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1355,7 +960,7 @@ CREATE INDEX items_category_id_idx ON public.items USING btree (category_id);
 
 
 --
--- TOC entry 3015 (class 1259 OID 106847)
+-- TOC entry 2973 (class 1259 OID 106847)
 -- Name: items_code_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1363,7 +968,7 @@ CREATE INDEX items_code_idx ON public.items USING btree (code);
 
 
 --
--- TOC entry 3016 (class 1259 OID 106844)
+-- TOC entry 2974 (class 1259 OID 106844)
 -- Name: items_customer_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1371,15 +976,7 @@ CREATE INDEX items_customer_id_idx ON public.items USING btree (customer_id);
 
 
 --
--- TOC entry 3017 (class 1259 OID 111968)
--- Name: items_hsn_code_idx; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX items_hsn_code_idx ON public.items USING btree (hsn_code);
-
-
---
--- TOC entry 3018 (class 1259 OID 107691)
+-- TOC entry 2975 (class 1259 OID 107691)
 -- Name: items_mapping_code_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1387,7 +984,7 @@ CREATE INDEX items_mapping_code_idx ON public.items USING btree (mapping_code);
 
 
 --
--- TOC entry 3064 (class 1259 OID 107014)
+-- TOC entry 3018 (class 1259 OID 107014)
 -- Name: permissions_customer_type_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1395,7 +992,7 @@ CREATE INDEX permissions_customer_type_idx ON public.permissions USING btree (cu
 
 
 --
--- TOC entry 3065 (class 1259 OID 107016)
+-- TOC entry 3019 (class 1259 OID 107016)
 -- Name: permissions_customer_type_page_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1403,7 +1000,7 @@ CREATE UNIQUE INDEX permissions_customer_type_page_key ON public.permissions USI
 
 
 --
--- TOC entry 3066 (class 1259 OID 107015)
+-- TOC entry 3020 (class 1259 OID 107015)
 -- Name: permissions_page_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1411,7 +1008,7 @@ CREATE INDEX permissions_page_idx ON public.permissions USING btree (page);
 
 
 --
--- TOC entry 3052 (class 1259 OID 107007)
+-- TOC entry 3006 (class 1259 OID 107007)
 -- Name: quick_sale_items_added_to_inventory_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1419,7 +1016,7 @@ CREATE INDEX quick_sale_items_added_to_inventory_idx ON public.quick_sale_items 
 
 
 --
--- TOC entry 3053 (class 1259 OID 107008)
+-- TOC entry 3007 (class 1259 OID 107008)
 -- Name: quick_sale_items_inventory_item_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1427,7 +1024,7 @@ CREATE INDEX quick_sale_items_inventory_item_id_idx ON public.quick_sale_items U
 
 
 --
--- TOC entry 3056 (class 1259 OID 107009)
+-- TOC entry 3010 (class 1259 OID 107009)
 -- Name: quick_sale_items_sold_at_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1435,7 +1032,7 @@ CREATE INDEX quick_sale_items_sold_at_idx ON public.quick_sale_items USING btree
 
 
 --
--- TOC entry 3057 (class 1259 OID 107085)
+-- TOC entry 3011 (class 1259 OID 107085)
 -- Name: quick_sale_items_transaction_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1443,7 +1040,7 @@ CREATE INDEX quick_sale_items_transaction_id_idx ON public.quick_sale_items USIN
 
 
 --
--- TOC entry 3085 (class 1259 OID 107690)
+-- TOC entry 3039 (class 1259 OID 107690)
 -- Name: returns_created_at_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1451,7 +1048,7 @@ CREATE INDEX returns_created_at_idx ON public.returns USING btree (created_at);
 
 
 --
--- TOC entry 3086 (class 1259 OID 107686)
+-- TOC entry 3040 (class 1259 OID 107686)
 -- Name: returns_customer_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1459,7 +1056,7 @@ CREATE INDEX returns_customer_id_idx ON public.returns USING btree (customer_id)
 
 
 --
--- TOC entry 3087 (class 1259 OID 107687)
+-- TOC entry 3041 (class 1259 OID 107687)
 -- Name: returns_original_transaction_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1467,7 +1064,7 @@ CREATE INDEX returns_original_transaction_id_idx ON public.returns USING btree (
 
 
 --
--- TOC entry 3090 (class 1259 OID 107689)
+-- TOC entry 3044 (class 1259 OID 107689)
 -- Name: returns_return_type_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1475,7 +1072,7 @@ CREATE INDEX returns_return_type_idx ON public.returns USING btree (return_type)
 
 
 --
--- TOC entry 3091 (class 1259 OID 107688)
+-- TOC entry 3045 (class 1259 OID 107688)
 -- Name: returns_status_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1483,7 +1080,7 @@ CREATE INDEX returns_status_idx ON public.returns USING btree (status);
 
 
 --
--- TOC entry 3049 (class 1259 OID 107006)
+-- TOC entry 3003 (class 1259 OID 107006)
 -- Name: sales_customers_mobile_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1491,7 +1088,7 @@ CREATE INDEX sales_customers_mobile_idx ON public.sales_customers USING btree (m
 
 
 --
--- TOC entry 3035 (class 1259 OID 106999)
+-- TOC entry 2989 (class 1259 OID 106999)
 -- Name: settings_customer_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1499,7 +1096,7 @@ CREATE INDEX settings_customer_id_idx ON public.settings USING btree (customer_i
 
 
 --
--- TOC entry 3036 (class 1259 OID 106998)
+-- TOC entry 2990 (class 1259 OID 106998)
 -- Name: settings_customer_id_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1507,7 +1104,7 @@ CREATE UNIQUE INDEX settings_customer_id_key ON public.settings USING btree (cus
 
 
 --
--- TOC entry 3078 (class 1259 OID 107026)
+-- TOC entry 3032 (class 1259 OID 107026)
 -- Name: table_orders_created_at_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1515,7 +1112,7 @@ CREATE INDEX table_orders_created_at_idx ON public.table_orders USING btree (cre
 
 
 --
--- TOC entry 3079 (class 1259 OID 107023)
+-- TOC entry 3033 (class 1259 OID 107023)
 -- Name: table_orders_customer_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1523,7 +1120,7 @@ CREATE INDEX table_orders_customer_id_idx ON public.table_orders USING btree (cu
 
 
 --
--- TOC entry 3082 (class 1259 OID 107025)
+-- TOC entry 3036 (class 1259 OID 107025)
 -- Name: table_orders_status_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1531,7 +1128,7 @@ CREATE INDEX table_orders_status_idx ON public.table_orders USING btree (status)
 
 
 --
--- TOC entry 3083 (class 1259 OID 107024)
+-- TOC entry 3037 (class 1259 OID 107024)
 -- Name: table_orders_table_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1539,7 +1136,7 @@ CREATE INDEX table_orders_table_id_idx ON public.table_orders USING btree (table
 
 
 --
--- TOC entry 3084 (class 1259 OID 107022)
+-- TOC entry 3038 (class 1259 OID 107022)
 -- Name: table_orders_transaction_id_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1547,7 +1144,7 @@ CREATE UNIQUE INDEX table_orders_transaction_id_key ON public.table_orders USING
 
 
 --
--- TOC entry 3073 (class 1259 OID 107019)
+-- TOC entry 3027 (class 1259 OID 107019)
 -- Name: tables_customer_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1555,7 +1152,7 @@ CREATE INDEX tables_customer_id_idx ON public.tables USING btree (customer_id);
 
 
 --
--- TOC entry 3074 (class 1259 OID 107021)
+-- TOC entry 3028 (class 1259 OID 107021)
 -- Name: tables_customer_id_table_number_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1563,7 +1160,7 @@ CREATE UNIQUE INDEX tables_customer_id_table_number_key ON public.tables USING b
 
 
 --
--- TOC entry 3077 (class 1259 OID 107020)
+-- TOC entry 3031 (class 1259 OID 107020)
 -- Name: tables_status_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1571,7 +1168,7 @@ CREATE INDEX tables_status_idx ON public.tables USING btree (status);
 
 
 --
--- TOC entry 3023 (class 1259 OID 106849)
+-- TOC entry 2978 (class 1259 OID 106849)
 -- Name: transactions_created_at_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1579,7 +1176,7 @@ CREATE INDEX transactions_created_at_idx ON public.transactions USING btree (cre
 
 
 --
--- TOC entry 3024 (class 1259 OID 106848)
+-- TOC entry 2979 (class 1259 OID 106848)
 -- Name: transactions_customer_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1587,7 +1184,7 @@ CREATE INDEX transactions_customer_id_idx ON public.transactions USING btree (cu
 
 
 --
--- TOC entry 3025 (class 1259 OID 107693)
+-- TOC entry 2980 (class 1259 OID 107693)
 -- Name: transactions_original_transaction_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1595,15 +1192,7 @@ CREATE INDEX transactions_original_transaction_id_idx ON public.transactions USI
 
 
 --
--- TOC entry 3028 (class 1259 OID 111969)
--- Name: transactions_place_of_supply_idx; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX transactions_place_of_supply_idx ON public.transactions USING btree (place_of_supply);
-
-
---
--- TOC entry 3029 (class 1259 OID 107028)
+-- TOC entry 2983 (class 1259 OID 107028)
 -- Name: transactions_sales_customer_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1611,7 +1200,7 @@ CREATE INDEX transactions_sales_customer_id_idx ON public.transactions USING btr
 
 
 --
--- TOC entry 3030 (class 1259 OID 107692)
+-- TOC entry 2984 (class 1259 OID 107692)
 -- Name: transactions_transaction_type_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1619,47 +1208,7 @@ CREATE INDEX transactions_transaction_type_idx ON public.transactions USING btre
 
 
 --
--- TOC entry 3092 (class 1259 OID 111954)
--- Name: translations_customer_id_idx; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX translations_customer_id_idx ON public.translations USING btree (customer_id);
-
-
---
--- TOC entry 3095 (class 1259 OID 111955)
--- Name: translations_key_idx; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX translations_key_idx ON public.translations USING btree (key);
-
-
---
--- TOC entry 3096 (class 1259 OID 111956)
--- Name: translations_language_idx; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX translations_language_idx ON public.translations USING btree (language);
-
-
---
--- TOC entry 3136 (class 2620 OID 111965)
--- Name: e_way_bills trigger_e_way_bills_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
---
-
-CREATE TRIGGER trigger_e_way_bills_updated_at BEFORE UPDATE ON public.e_way_bills FOR EACH ROW EXECUTE FUNCTION public.update_e_way_bills_updated_at();
-
-
---
--- TOC entry 3135 (class 2620 OID 111964)
--- Name: translations trigger_translations_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
---
-
-CREATE TRIGGER trigger_translations_updated_at BEFORE UPDATE ON public.translations FOR EACH ROW EXECUTE FUNCTION public.update_translations_updated_at();
-
-
---
--- TOC entry 3118 (class 2606 OID 107039)
+-- TOC entry 3056 (class 2606 OID 107039)
 -- Name: activity_logs activity_logs_changed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1668,7 +1217,7 @@ ALTER TABLE ONLY public.activity_logs
 
 
 --
--- TOC entry 3122 (class 2606 OID 107054)
+-- TOC entry 3060 (class 2606 OID 107054)
 -- Name: carts carts_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1677,7 +1226,7 @@ ALTER TABLE ONLY public.carts
 
 
 --
--- TOC entry 3123 (class 2606 OID 107059)
+-- TOC entry 3061 (class 2606 OID 107059)
 -- Name: carts carts_sales_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1686,7 +1235,7 @@ ALTER TABLE ONLY public.carts
 
 
 --
--- TOC entry 3121 (class 2606 OID 107049)
+-- TOC entry 3059 (class 2606 OID 107049)
 -- Name: cash_flow_entries cash_flow_entries_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1695,7 +1244,7 @@ ALTER TABLE ONLY public.cash_flow_entries
 
 
 --
--- TOC entry 3108 (class 2606 OID 106850)
+-- TOC entry 3046 (class 2606 OID 106850)
 -- Name: categories categories_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1704,7 +1253,7 @@ ALTER TABLE ONLY public.categories
 
 
 --
--- TOC entry 3116 (class 2606 OID 106887)
+-- TOC entry 3054 (class 2606 OID 106887)
 -- Name: companies companies_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1713,25 +1262,7 @@ ALTER TABLE ONLY public.companies
 
 
 --
--- TOC entry 3134 (class 2606 OID 111980)
--- Name: e_way_bills e_way_bills_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.e_way_bills
-    ADD CONSTRAINT e_way_bills_customer_id_fkey FOREIGN KEY (customer_id) REFERENCES public.customers(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-
---
--- TOC entry 3133 (class 2606 OID 111975)
--- Name: e_way_bills e_way_bills_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.e_way_bills
-    ADD CONSTRAINT e_way_bills_transaction_id_fkey FOREIGN KEY (transaction_id) REFERENCES public.transactions(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-
---
--- TOC entry 3110 (class 2606 OID 106860)
+-- TOC entry 3048 (class 2606 OID 106860)
 -- Name: items items_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1740,7 +1271,7 @@ ALTER TABLE ONLY public.items
 
 
 --
--- TOC entry 3109 (class 2606 OID 106855)
+-- TOC entry 3047 (class 2606 OID 106855)
 -- Name: items items_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1749,7 +1280,7 @@ ALTER TABLE ONLY public.items
 
 
 --
--- TOC entry 3119 (class 2606 OID 107044)
+-- TOC entry 3057 (class 2606 OID 107044)
 -- Name: quick_sale_items quick_sale_items_inventory_item_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1758,7 +1289,7 @@ ALTER TABLE ONLY public.quick_sale_items
 
 
 --
--- TOC entry 3120 (class 2606 OID 107086)
+-- TOC entry 3058 (class 2606 OID 107086)
 -- Name: quick_sale_items quick_sale_items_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1767,7 +1298,7 @@ ALTER TABLE ONLY public.quick_sale_items
 
 
 --
--- TOC entry 3130 (class 2606 OID 107714)
+-- TOC entry 3068 (class 2606 OID 107714)
 -- Name: returns returns_approved_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1776,7 +1307,7 @@ ALTER TABLE ONLY public.returns
 
 
 --
--- TOC entry 3128 (class 2606 OID 107704)
+-- TOC entry 3066 (class 2606 OID 107704)
 -- Name: returns returns_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1785,7 +1316,7 @@ ALTER TABLE ONLY public.returns
 
 
 --
--- TOC entry 3129 (class 2606 OID 107709)
+-- TOC entry 3067 (class 2606 OID 107709)
 -- Name: returns returns_original_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1794,7 +1325,7 @@ ALTER TABLE ONLY public.returns
 
 
 --
--- TOC entry 3131 (class 2606 OID 107719)
+-- TOC entry 3069 (class 2606 OID 107719)
 -- Name: returns returns_processed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1803,7 +1334,7 @@ ALTER TABLE ONLY public.returns
 
 
 --
--- TOC entry 3117 (class 2606 OID 107034)
+-- TOC entry 3055 (class 2606 OID 107034)
 -- Name: settings settings_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1812,7 +1343,7 @@ ALTER TABLE ONLY public.settings
 
 
 --
--- TOC entry 3125 (class 2606 OID 107069)
+-- TOC entry 3063 (class 2606 OID 107069)
 -- Name: table_orders table_orders_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1821,7 +1352,7 @@ ALTER TABLE ONLY public.table_orders
 
 
 --
--- TOC entry 3126 (class 2606 OID 107074)
+-- TOC entry 3064 (class 2606 OID 107074)
 -- Name: table_orders table_orders_table_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1830,7 +1361,7 @@ ALTER TABLE ONLY public.table_orders
 
 
 --
--- TOC entry 3127 (class 2606 OID 107079)
+-- TOC entry 3065 (class 2606 OID 107079)
 -- Name: table_orders table_orders_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1839,7 +1370,7 @@ ALTER TABLE ONLY public.table_orders
 
 
 --
--- TOC entry 3124 (class 2606 OID 107064)
+-- TOC entry 3062 (class 2606 OID 107064)
 -- Name: tables tables_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1848,7 +1379,7 @@ ALTER TABLE ONLY public.tables
 
 
 --
--- TOC entry 3111 (class 2606 OID 106865)
+-- TOC entry 3049 (class 2606 OID 106865)
 -- Name: transactions transactions_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1857,7 +1388,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- TOC entry 3115 (class 2606 OID 107699)
+-- TOC entry 3053 (class 2606 OID 107699)
 -- Name: transactions transactions_edited_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1866,7 +1397,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- TOC entry 3114 (class 2606 OID 107694)
+-- TOC entry 3052 (class 2606 OID 107694)
 -- Name: transactions transactions_original_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1875,7 +1406,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- TOC entry 3113 (class 2606 OID 107029)
+-- TOC entry 3051 (class 2606 OID 107029)
 -- Name: transactions transactions_sales_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1884,7 +1415,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- TOC entry 3112 (class 2606 OID 106870)
+-- TOC entry 3050 (class 2606 OID 106870)
 -- Name: transactions transactions_transaction_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1892,18 +1423,8 @@ ALTER TABLE ONLY public.transactions
     ADD CONSTRAINT transactions_transaction_customer_id_fkey FOREIGN KEY (transaction_customer_id) REFERENCES public.customers(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
 
---
--- TOC entry 3132 (class 2606 OID 111970)
--- Name: translations translations_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.translations
-    ADD CONSTRAINT translations_customer_id_fkey FOREIGN KEY (customer_id) REFERENCES public.customers(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-
--- Completed on 2026-02-08 15:02:20 IST
+-- Completed on 2026-02-07 08:56:49 IST
 
 --
 -- PostgreSQL database dump complete
 --
-
