@@ -110,6 +110,7 @@ apply_all_migrations() {
         "add_mapping_code_column.sql"
         "add_autoprint_setting.sql"
         "add_missing_tables.sql"
+        "fix_missing_columns.sql"
     )
     
     for migration in "${migrations[@]}"; do
