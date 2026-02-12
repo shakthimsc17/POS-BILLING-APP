@@ -43,6 +43,8 @@ model Customer {
   tableOrders          TableOrder[]
   translations         Translation[]
   eWayBills            EWayBill[]
+  uomMasters           UomMaster[]
+  uomConversions       UomConversion[]
 
   @@index([email])
   @@index([phone])
@@ -86,11 +88,33 @@ model Item {
   hsnCode     String?  @map("hsn_code") @db.VarChar(8)
   gstRate     Decimal  @default(0) @map("gst_rate") @db.Decimal(5, 2)
   cessRate    Decimal  @default(0) @map("cess_rate") @db.Decimal(5, 2)
+  // UOM & Extended Item Details
+  uomId            String?   @map("uom_id") @db.Uuid
+  weightPerUnit    Decimal?  @map("weight_per_unit") @db.Decimal(10, 3)
+  volumePerUnit    Decimal?  @map("volume_per_unit") @db.Decimal(10, 3)
+  lengthPerUnit    Decimal?  @map("length_per_unit") @db.Decimal(10, 3)
+  widthPerUnit     Decimal?  @map("width_per_unit") @db.Decimal(10, 3)
+  heightPerUnit    Decimal?  @map("height_per_unit") @db.Decimal(10, 3)
+  manufacturer     String?   @db.VarChar(255)
+  brand            String?   @db.VarChar(255)
+  modelNumber      String?   @map("model_number") @db.VarChar(100)
+  batchNumber      String?   @map("batch_number") @db.VarChar(100)
+  expiryDate       DateTime? @map("expiry_date") @db.Date
+  shelfLifeDays    Int?      @map("shelf_life_days")
+  minStockLevel    Decimal?  @map("min_stock_level") @db.Decimal(10, 2)
+  maxStockLevel    Decimal?  @map("max_stock_level") @db.Decimal(10, 2)
+  reorderLevel     Decimal?  @map("reorder_level") @db.Decimal(10, 2)
+  packageType      String?   @map("package_type") @db.VarChar(50)
+  packageQuantity  Int?      @default(1) @map("package_quantity")
+  isPerishable     Boolean?  @default(false) @map("is_perishable")
+  storageConditions String?  @map("storage_conditions") @db.VarChar(255)
+
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   // Relations
   customer       Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
   category       Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  uom            UomMaster?      @relation(fields: [uomId], references: [id])
   quickSaleItems QuickSaleItem[]
 
   @@index([customerId])
@@ -437,4 +461,45 @@ model ReturnRecord {
   @@index([returnType])
   @@index([createdAt])
   @@map("returns")
+}
+
+model UomMaster {
+  id               String   @id @default(uuid()) @db.Uuid
+  customerId       String   @map("customer_id") @db.Uuid
+  name             String   @db.VarChar(50)
+  code             String   @db.VarChar(10)
+  category         String   @db.VarChar(20)
+  baseUomId        String?  @map("base_uom_id") @db.Uuid
+  conversionFactor Decimal? @default(1.0) @map("conversion_factor") @db.Decimal(10, 6)
+  isBaseUom        Boolean  @default(false) @map("is_base_uom")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  customer         Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items            Item[]
+  
+  baseUom          UomMaster?    @relation("BaseUomRelation", fields: [baseUomId], references: [id])
+  derivedUoms      UomMaster[]   @relation("BaseUomRelation")
+
+  conversionsFrom  UomConversion[] @relation("FromUom")
+  conversionsTo    UomConversion[] @relation("ToUom")
+
+  @@map("uom_master")
+}
+
+model UomConversion {
+  id               String   @id @default(uuid()) @db.Uuid
+  customerId       String   @map("customer_id") @db.Uuid
+  fromUomId        String   @map("from_uom_id") @db.Uuid
+  toUomId          String   @map("to_uom_id") @db.Uuid
+  conversionFactor Decimal  @map("conversion_factor") @db.Decimal(10, 6)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  customer         Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  fromUom          UomMaster @relation("FromUom", fields: [fromUomId], references: [id], onDelete: Cascade)
+  toUom            UomMaster @relation("ToUom", fields: [toUomId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, fromUomId, toUomId])
+  @@map("uom_conversions")
 }

@@ -19,27 +19,27 @@ interface CartProps {
 export default function Cart({ onNavigate }: CartProps) {
   const { language } = useLanguage();
   const cartStore = useCartStore();
-  const { 
-    items, 
-    addItem, 
-    updateQuantity, 
-    removeItem, 
-    clearCart, 
-    getTax, 
+  const {
+    items,
+    addItem,
+    updateQuantity,
+    removeItem,
+    clearCart,
+    getTax,
     getGST,
-    getDiscount, 
-    getItemDiscounts, 
-    getActualSubtotal, 
-    getTotal, 
-    setTaxRate, 
-    setDiscount, 
-    taxRate, 
-    discount, 
-    paymentMethod, 
-    setPaymentMethod, 
-    saveCart, 
-    loadCart, 
-    isLoading 
+    getDiscount,
+    getItemDiscounts,
+    getActualSubtotal,
+    getTotal,
+    setTaxRate,
+    setDiscount,
+    taxRate,
+    discount,
+    paymentMethod,
+    setPaymentMethod,
+    saveCart,
+    loadCart,
+    isLoading
   } = cartStore;
 
   const [receivedAmount, setReceivedAmount] = useState('');
@@ -319,11 +319,11 @@ export default function Cart({ onNavigate }: CartProps) {
   const discountAmount = change < 0 ? Math.abs(change) : 0;
   const actualChange = change > 0 ? change : 0;
 
-  console.log('🛒 Cart Component: Render state', { 
-    itemsLength: items.length, 
+  console.log('🛒 Cart Component: Render state', {
+    itemsLength: items.length,
     items: items.map(ci => ({ name: ci.item.name, quantity: ci.quantity })),
     total,
-    isLoading 
+    isLoading
   });
 
   if (items.length === 0) {
@@ -430,7 +430,9 @@ export default function Cart({ onNavigate }: CartProps) {
                       >
                         −
                       </button>
-                      <span className="qty-value">{cartItem.quantity}</span>
+                      <span className="qty-value">
+                        {cartItem.quantity} <span style={{ fontSize: '0.7em', color: '#666' }}>{cartItem.item.uom_name || ''}</span>
+                      </span>
                       <button
                         className="qty-btn"
                         onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity + 1)}
@@ -516,7 +518,7 @@ export default function Cart({ onNavigate }: CartProps) {
                 const gstInfo = getGST();
                 if (gstInfo.gstBreakdown.length > 0) {
                   return gstInfo.gstBreakdown.map(gst => (
-                    <div key={gst.rate} className="summary-row" style={{fontSize: '11px', color: '#666'}}>
+                    <div key={gst.rate} className="summary-row" style={{ fontSize: '11px', color: '#666' }}>
                       <span>GST @ {gst.rate}%:</span>
                       <span>{formatCurrency(gst.amount)}</span>
                     </div>
