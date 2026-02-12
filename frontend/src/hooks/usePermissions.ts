@@ -143,7 +143,7 @@ export function usePermissions() {
       const allowedPagesForNewCustomer = [
         'dashboard', 'sales', 'cart', 'items', 'categories', 
         'quick-sale-items', 'quick-item-sales', 'bulk-operations', 
-        'calculators', 'barcode-generator', 'settings'
+        'calculators', 'barcode-generator', 'settings', 'brands', 'suppliers'
       ];
       return allowedPagesForNewCustomer.includes(page);
     }
@@ -177,7 +177,7 @@ export function usePermissions() {
       const allowedPagesForNewCustomer = [
         'dashboard', 'sales', 'cart', 'items', 'categories', 
         'quick-sale-items', 'quick-item-sales', 'bulk-operations', 
-        'calculators', 'barcode-generator', 'settings'
+        'calculators', 'barcode-generator', 'settings', 'brands', 'suppliers'
       ];
       return allowedPagesForNewCustomer.includes(page);
     }
@@ -199,7 +199,7 @@ export function usePermissions() {
       const allowedPagesForNewCustomer = [
         'dashboard', 'sales', 'cart', 'items', 'categories', 
         'quick-sale-items', 'quick-item-sales', 'bulk-operations', 
-        'calculators', 'barcode-generator', 'settings'
+        'calculators', 'barcode-generator', 'settings', 'brands', 'suppliers'
       ];
       return allowedPagesForNewCustomer.includes(page);
     }

@@ -30,7 +30,7 @@ router.get('/', [
       prisma.item.findMany({
         ...(fetchAll ? {} : { skip, take: limit }),
         orderBy: { createdAt: 'desc' },
-        include: { uom: true },
+        include: { uom: true, brand: true },
       }),
       prisma.item.count(),
     ]);
@@ -62,7 +62,7 @@ router.get('/', [
       width_per_unit: item.widthPerUnit,
       height_per_unit: item.heightPerUnit,
       manufacturer: item.manufacturer,
-      brand: item.brand,
+      brand: item.brand?.name || null,
       model_number: item.modelNumber,
       batch_number: item.batchNumber,
       expiry_date: item.expiryDate ? item.expiryDate.toISOString().split('T')[0] : null,
@@ -110,10 +110,11 @@ router.get('/search', [query('q').notEmpty()], async (req: AuthRequest, res: Res
           { code: { contains: searchQuery, mode: 'insensitive' } },
           { barcode: { contains: searchQuery, mode: 'insensitive' } },
           { mappingCode: { contains: searchQuery, mode: 'insensitive' } },
-        ]
+          { brand: { name: { contains: searchQuery, mode: 'insensitive' } } },
+        ],
       },
+      include: { uom: true, brand: true },
       orderBy: { createdAt: 'desc' },
-      include: { uom: true }
     });
 
     // Transform to snake_case for frontend
@@ -143,7 +144,7 @@ router.get('/search', [query('q').notEmpty()], async (req: AuthRequest, res: Res
       width_per_unit: item.widthPerUnit,
       height_per_unit: item.heightPerUnit,
       manufacturer: item.manufacturer,
-      brand: item.brand,
+      brand: item.brand?.name || null,
       model_number: item.modelNumber,
       batch_number: item.batchNumber,
       expiry_date: item.expiryDate ? item.expiryDate.toISOString().split('T')[0] : null,
@@ -186,8 +187,8 @@ router.get('/by-categories', [query('categoryIds').notEmpty()], async (req: Auth
           in: categoryIds,
         },
       },
+      include: { uom: true, brand: true },
       orderBy: { createdAt: 'desc' },
-      include: { uom: true }
     });
 
     // Transform to snake_case for frontend
@@ -217,7 +218,7 @@ router.get('/by-categories', [query('categoryIds').notEmpty()], async (req: Auth
       width_per_unit: item.widthPerUnit,
       height_per_unit: item.heightPerUnit,
       manufacturer: item.manufacturer,
-      brand: item.brand,
+      brand: item.brand?.name || null,
       model_number: item.modelNumber,
       batch_number: item.batchNumber,
       expiry_date: item.expiryDate ? item.expiryDate.toISOString().split('T')[0] : null,
@@ -248,7 +249,7 @@ router.get('/barcode/:barcode', async (req: AuthRequest, res) => {
       where: {
         barcode,
       },
-      include: { uom: true }
+      include: { uom: true, brand: true },
     });
 
     if (!item) {
@@ -282,7 +283,7 @@ router.get('/barcode/:barcode', async (req: AuthRequest, res) => {
       width_per_unit: item.widthPerUnit,
       height_per_unit: item.heightPerUnit,
       manufacturer: item.manufacturer,
-      brand: item.brand,
+      brand: item.brand?.name || null,
       model_number: item.modelNumber,
       batch_number: item.batchNumber,
       expiry_date: item.expiryDate ? item.expiryDate.toISOString().split('T')[0] : null,
@@ -311,10 +312,9 @@ router.get('/search-by-mapping-code/:mappingCode', async (req: AuthRequest, res)
       where: {
         mappingCode: {
           equals: mappingCode,
-          mode: 'insensitive',
         },
       },
-      include: { uom: true }
+      include: { uom: true, brand: true },
     });
 
     if (!item) {
@@ -348,7 +348,7 @@ router.get('/search-by-mapping-code/:mappingCode', async (req: AuthRequest, res)
       width_per_unit: item.widthPerUnit,
       height_per_unit: item.heightPerUnit,
       manufacturer: item.manufacturer,
-      brand: item.brand,
+      brand: item.brand?.name || null,
       model_number: item.modelNumber,
       batch_number: item.batchNumber,
       expiry_date: item.expiryDate ? item.expiryDate.toISOString().split('T')[0] : null,
@@ -395,7 +395,7 @@ router.get('/search-by-barcode/:barcode', async (req: AuthRequest, res) => {
     
     const items = await prisma.item.findMany({
       where: { id: { in: itemIds } },
-      include: { uom: true }
+      include: { uom: true, brand: true }
     });
 
     // Re-sort items based on the raw query order
@@ -429,7 +429,7 @@ router.get('/search-by-barcode/:barcode', async (req: AuthRequest, res) => {
       width_per_unit: item.widthPerUnit,
       height_per_unit: item.heightPerUnit,
       manufacturer: item.manufacturer,
-      brand: item.brand,
+      brand: item.brand?.name || null,
       model_number: item.modelNumber,
       batch_number: item.batchNumber,
       expiry_date: item.expiryDate ? item.expiryDate.toISOString().split('T')[0] : null,
@@ -605,7 +605,7 @@ router.post(
           isPerishable: finalIsPerishable !== undefined ? finalIsPerishable : false,
           storageConditions: finalStorageConditions || null,
         },
-        include: { uom: true }
+        include: { uom: true, brand: true }
       });
       
       console.log('Item created:', {
@@ -654,7 +654,7 @@ router.post(
         width_per_unit: item.widthPerUnit,
         height_per_unit: item.heightPerUnit,
         manufacturer: item.manufacturer,
-        brand: item.brand,
+        brand: item.brand?.name || null,
         model_number: item.modelNumber,
         batch_number: item.batchNumber,
         expiry_date: item.expiryDate ? item.expiryDate.toISOString().split('T')[0] : null,
@@ -845,7 +845,7 @@ router.put(
       const item = await prisma.item.update({
         where: { id },
         data: updateData,
-        include: { uom: true }
+        include: { uom: true, brand: true }
       });
 
       // Log activity
@@ -892,7 +892,7 @@ router.put(
         width_per_unit: item.widthPerUnit,
         height_per_unit: item.heightPerUnit,
         manufacturer: item.manufacturer,
-        brand: item.brand,
+        brand: item.brand?.name || null,
         model_number: item.modelNumber,
         batch_number: item.batchNumber,
         expiry_date: item.expiryDate ? item.expiryDate.toISOString().split('T')[0] : null,

@@ -6,7 +6,14 @@ export default defineConfig({
   server: {
     port: parseInt(process.env.VITE_PORT || '3000', 10),
     host: true, // Allow external connections
-    open: true
+    open: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
   }
 })
 

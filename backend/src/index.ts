@@ -25,6 +25,9 @@ import tableOrdersRoutes from './routes/tableOrders.js';
 import exportDbRoutes from './routes/exportDb.js';
 import backupRoutes from './routes/backup.js';
 import uomRoutes from './routes/uom.js';
+import brandsRoutes from './routes/brands.js';
+import suppliersRoutes from './routes/suppliers.js';
+import codeGenerationRoutes from './routes/codeGeneration.js';
 
 dotenv.config();
 
@@ -107,6 +110,9 @@ app.use('/api/table-orders', tableOrdersRoutes);
 app.use('/api/export-db', exportDbRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/uom', uomRoutes);
+app.use('/api/brands', brandsRoutes);
+app.use('/api/suppliers', suppliersRoutes);
+app.use('/api/code-generation', codeGenerationRoutes);
 
 // Error handling
 app.use(errorHandler);

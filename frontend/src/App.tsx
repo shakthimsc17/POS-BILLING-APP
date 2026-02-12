@@ -40,8 +40,10 @@ const TableOrders = lazy(() => import('./pages/TableOrders'));
 const BarcodeGenerator = lazy(() => import('./pages/BarcodeGenerator'));
 const Returns = lazy(() => import('./pages/Returns'));
 const UomSettings = lazy(() => import('./pages/UomSettings'));
+const Brands = lazy(() => import('./pages/Brands'));
+const Suppliers = lazy(() => import('./pages/Suppliers'));
 
-type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'add-item' | 'view-item' | 'sales' | 'sales-performance' | 'customers' | 'import' | 'reports' | 'export' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items' | 'quick-item-sales' | 'cash-flow' | 'acl-permissions' | 'order-details' | 'tables' | 'table-orders' | 'barcode-generator' | 'returns' | 'uom-settings';
+type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'add-item' | 'view-item' | 'sales' | 'sales-performance' | 'customers' | 'import' | 'reports' | 'export' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items' | 'quick-item-sales' | 'cash-flow' | 'acl-permissions' | 'order-details' | 'tables' | 'table-orders' | 'barcode-generator' | 'returns' | 'uom-settings' | 'brands' | 'suppliers';
 type AuthPage = 'signin' | 'signup';
 
 function App() {
@@ -258,6 +260,24 @@ function App() {
                     <span className="nav-text">Units of Measure</span>
                   </button>
                 )}
+                {canView('brands') && !isHidden('brands') && (
+                  <button
+                    className={currentPage === 'brands' ? 'active' : ''}
+                    onClick={() => setCurrentPage('brands')}
+                  >
+                    <span className="nav-icon">🏷️</span>
+                    <span className="nav-text">Brands</span>
+                  </button>
+                )}
+                {canView('suppliers') && !isHidden('suppliers') && (
+                  <button
+                    className={currentPage === 'suppliers' ? 'active' : ''}
+                    onClick={() => setCurrentPage('suppliers')}
+                  >
+                    <span className="nav-icon">🏢</span>
+                    <span className="nav-text">Suppliers</span>
+                  </button>
+                )}
               </div>
 
               {(customer?.isAdmin || canView('customers') || canView('reports') || canView('activity-logs')) && (
@@ -416,9 +436,19 @@ function App() {
                 {currentPage === 'settings' && (canView('settings') && !isHidden('settings') ? <Settings /> : <AccessDenied />)}
                 {currentPage === 'acl-permissions' && customer?.isAdmin && <ACLPermissions />}
                 {currentPage === 'uom-settings' && (canView('settings') && !isHidden('settings') ? <UomSettings /> : <AccessDenied />)}
-                {currentPage === 'tables' && company.business_type === 'cafe' && (
+                {currentPage === 'brands' && (canView('brands') && !isHidden('brands') ? (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Brands />
+                  </Suspense>
+                ) : <AccessDenied />)}
+                {currentPage === 'suppliers' && (canView('suppliers') && !isHidden('suppliers') ? (
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Suppliers />
+                  </Suspense>
+                ) : <AccessDenied />)}
+                {currentPage === 'tables' && company.business_type === 'cafe' ? (
                   <Tables />
-                )}
+                ) : null}
                 {currentPage === 'table-orders' && company.business_type === 'cafe' && (
                   <TableOrders
                     onNavigate={(page, id) => {
