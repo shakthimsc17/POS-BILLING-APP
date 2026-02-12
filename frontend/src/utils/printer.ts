@@ -3,6 +3,7 @@ import { CartItem } from '../types';
 import { formatCurrency } from './formatters';
 import { useCompanyStore } from '../store/companyStore';
 import { receiptSettings } from './receiptSettings';
+import { calculateItemGST } from './calculations';
 
 import { SalesCustomer } from '../types';
 
@@ -13,6 +14,7 @@ interface PrintOptions {
   taxAmount?: number;
   discountAmount?: number;
   autoPrint?: boolean;
+  language?: 'en' | 'ta'; // Add language parameter
 }
 
 export async function printReceipt(options: PrintOptions) {
@@ -22,10 +24,74 @@ export async function printReceipt(options: PrintOptions) {
     customer, 
     taxAmount = 0, 
     discountAmount = 0, 
-    autoPrint = false 
+    autoPrint = false,
+    language = 'en' // Default to English
   } = options;
   
   console.log('Print receipt called with autoPrint:', autoPrint);
+  
+  // Get translation function based on language
+  const getTranslation = (key: string, fallback?: string): string => {
+    const translations = language === 'ta' ? {
+      // Receipt headers
+      'receipt.receipt': 'ரசீது',
+      'receipt.date': 'தேதி',
+      'receipt.time': 'நேரம்',
+      'receipt.customer': 'வாடிக்கையாளர்',
+      'receipt.bill': 'பில்',
+      
+      // Items table
+      'items.sno': 'எண்',
+      'items.item': 'பொருள்',
+      'items.rate': 'விலை',
+      'items.qty': 'எண்ணிக்கை',
+      'items.amount': 'தொகை',
+      'items.mrp': 'அதிகபட்ச விலை',
+      
+      // Totals
+      'totals.subtotal': 'கூட்டுத்தொகை',
+      'totals.discount': 'தள்ளுபடி',
+      'totals.tax': 'GST/வரி',
+      'totals.grandTotal': 'மொத்தத் தொகை',
+      
+      // Footer
+      'footer.thankYou': 'உங்கள் வணிகத்திற்கு நன்றி!',
+      'footer.visitAgain': 'மீண்டும் வருகைத் தொடர்க',
+      
+      // Payment
+      'payment.cashReceived': 'பெறப்பட்ட பணம்',
+      'payment.change': 'மாற்றம்',
+      'payment.method': 'கட்டண முறை',
+    } : {
+      // English translations
+      'receipt.receipt': 'Receipt',
+      'receipt.date': 'Date',
+      'receipt.time': 'Time',
+      'receipt.customer': 'Customer',
+      'receipt.bill': 'Bill',
+      
+      'items.sno': '#',
+      'items.item': 'Item',
+      'items.rate': 'Rate',
+      'items.qty': 'Qty',
+      'items.amount': 'Amt',
+      'items.mrp': 'MRP',
+      
+      'totals.subtotal': 'Subtotal',
+      'totals.discount': 'Discount',
+      'totals.tax': 'GST/Tax',
+      'totals.grandTotal': 'GRAND TOTAL',
+      
+      'footer.thankYou': 'Thank You for Your Business!',
+      'footer.visitAgain': 'Please visit again',
+      
+      'payment.cashReceived': 'Cash Received',
+      'payment.change': 'Change',
+      'payment.method': 'Payment Method',
+    };
+    
+    return (translations as any)[key] || fallback || key;
+  };
   
   // Ensure company data is loaded from database (not localStorage)
   const companyStore = useCompanyStore.getState();
@@ -43,6 +109,9 @@ export async function printReceipt(options: PrintOptions) {
   const date = new Date(transaction.created_at);
   // Use transaction.totalAmount if available (includes tax/discount), otherwise calculate from items
   const total = transaction.total_amount ? Number(transaction.total_amount) : items.reduce((sum, item) => sum + item.subtotal, 0);
+
+  // Calculate GST breakdown
+  const gstInfo = calculateItemGST(items);
 
   // Create HTML for 3-inch (80mm) thermal printer
   const printHTML = `
@@ -348,21 +417,21 @@ export async function printReceipt(options: PrintOptions) {
 
         <div class="receipt-info">
           <div class="receipt-info-row">
-            <p><strong>Receipt #:</strong> ${transaction.id.slice(0, 8).toUpperCase()}</p>
-            <p class="receipt-date-time"><strong>Date:</strong> ${date.toLocaleDateString()} &nbsp; <strong>Time:</strong> ${date.toLocaleTimeString()}</p>
+            <p><strong>${getTranslation('receipt.receipt')} #:</strong> ${transaction.id.slice(0, 8).toUpperCase()}</p>
+            <p><strong>${getTranslation('receipt.date')}:</strong> ${date.toLocaleDateString()} <strong>${getTranslation('receipt.time')}:</strong> ${date.toLocaleTimeString()}</p>
           </div>
-          ${customer ? `<p><strong>Customer:</strong> ${customer.name}${customer.mobile ? ` (${customer.mobile})` : ''}</p>` : ''}
+          ${customer ? `<p><strong>${getTranslation('receipt.customer')}:</strong> ${customer.name}${customer.mobile ? ` (${customer.mobile})` : ''}</p>` : ''}
           ${transaction.transaction_customer_id && !customer ? '<p><strong>Customer:</strong> Yes</p>' : ''}
         </div>
 
         <table class="items-table">
           <thead>
             <tr>
-              <th class="col-number">#</th>
-              <th class="col-item">Item</th>
-              <th class="col-rate">Rate</th>
-              <th class="col-qty">Qty</th>
-              <th class="col-amt">Amt</th>
+              <th class="col-number">${getTranslation('items.sno')}</th>
+              <th class="col-item">${getTranslation('items.item')}</th>
+              <th class="col-rate">${getTranslation('items.rate')}</th>
+              <th class="col-qty">${getTranslation('items.qty')}</th>
+              <th class="col-amt">${getTranslation('items.amount')}</th>
             </tr>
           </thead>
           <tbody>
@@ -371,8 +440,10 @@ export async function printReceipt(options: PrintOptions) {
                 (cartItem, index) => {
                   const mrp = cartItem.item.mrp ? (typeof cartItem.item.mrp === 'string' ? parseFloat(cartItem.item.mrp) : cartItem.item.mrp) : null;
                   const price = typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price;
-                  // Use display_name if available, otherwise use name, and convert to uppercase
-                  const itemDisplayName = (cartItem.item.display_name || cartItem.item.name).toUpperCase();
+                  // Use display_name only when language is Tamil, otherwise use regular name
+                  const itemDisplayName = language === 'ta' 
+                    ? (cartItem.item.display_name || cartItem.item.name)
+                    : cartItem.item.name.toUpperCase();
                   // Hide MRP for cafe business type
                   const showMrp = businessType !== 'cafe' && mrp;
                   return `
@@ -395,7 +466,7 @@ export async function printReceipt(options: PrintOptions) {
 
         <div class="totals-section">
           <div class="total-row">
-            <span>Subtotal:</span>
+            <span>${getTranslation('totals.subtotal')}:</span>
             <span>${formatCurrency(items.reduce((sum, ci) => {
               const op = ci.originalPrice ?? (typeof ci.item.price === 'string' ? parseFloat(ci.item.price) : ci.item.price);
               return sum + (ci.quantity * op);
@@ -404,33 +475,43 @@ export async function printReceipt(options: PrintOptions) {
           
           ${discountAmount > 0 ? `
             <div class="total-row">
-              <span>Discount:</span>
+              <span>${getTranslation('totals.discount')}:</span>
               <span>-${formatCurrency(discountAmount)}</span>
             </div>
           ` : ''}
           
           ${taxAmount > 0 ? `
             <div class="total-row">
-              <span>GST/Tax:</span>
+              <span>${getTranslation('totals.tax')}:</span>
               <span>${formatCurrency(taxAmount)}</span>
             </div>
           ` : ''}
+          
+          ${gstInfo.gstBreakdown.length > 0 ? 
+            gstInfo.gstBreakdown.map(gst => `
+              <div class="total-row" style="font-size: 11px; color: #666;">
+                <span>GST @ ${gst.rate}%:</span>
+                <span>${formatCurrency(gst.amount)}</span>
+              </div>
+            `).join('')
+            : ''
+          }
 
           <div class="total-row grand-total">
-            <span>GRAND TOTAL:</span>
+            <span>${getTranslation('totals.grandTotal')}:</span>
             <span>${formatCurrency(transaction.total_amount ? Number(transaction.total_amount) : total)}</span>
           </div>
 
           ${transaction.payment_method === 'cash' && transaction.received_amount
             ? `
             <div class="total-row" style="margin-top: 5px; font-size: 13px;">
-              <span>Cash Received:</span>
+              <span>${getTranslation('payment.cashReceived')}:</span>
               <span>${formatCurrency(transaction.received_amount)}</span>
             </div>
             ${transaction.change_amount && Number(transaction.change_amount) > 0
               ? `
               <div class="total-row" style="font-size: 13px;">
-                <span>Change:</span>
+                <span>${getTranslation('payment.change')}:</span>
                 <span>${formatCurrency(transaction.change_amount)}</span>
               </div>
             ` : ''}
@@ -438,7 +519,7 @@ export async function printReceipt(options: PrintOptions) {
         </div>
 
         <div class="payment-info">
-          <p><strong>Payment Method:</strong> ${transaction.payment_method.toUpperCase()}</p>
+          <p><strong>${getTranslation('payment.method')}:</strong> ${transaction.payment_method.toUpperCase()}</p>
         </div>
 
         <div class="footer">
@@ -446,23 +527,23 @@ export async function printReceipt(options: PrintOptions) {
             switch (businessType) {
               case 'cafe':
                 return `
-                  <p><strong>Thank You for Visiting!</strong></p>
+                  <p><strong>${getTranslation('footer.thankYou')}</strong></p>
                   <p>We hope you enjoyed your experience</p>
                 `;
               case 'clothing':
                 return `
-                  <p><strong>Your Style Matters to Us. Thank You!</strong></p>
-                  <p>Please visit again</p>
+                  <p><strong>${getTranslation('footer.thankYou')}</strong></p>
+                  <p>${getTranslation('footer.visitAgain')}</p>
                 `;
               case 'electrical':
                 return `
-                  <p><strong>Thank You for Your Purchase!</strong></p>
+                  <p><strong>${getTranslation('footer.thankYou')}</strong></p>
                   <p>Quality Products, Trusted Service</p>
                 `;
               default:
                 return `
-                  <p><strong>Thank You for Your Business!</strong></p>
-                  <p>Please visit again</p>
+                  <p><strong>${getTranslation('footer.thankYou')}</strong></p>
+                  <p>${getTranslation('footer.visitAgain')}</p>
                 `;
             }
           })()}

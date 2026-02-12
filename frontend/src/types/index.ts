@@ -24,6 +24,33 @@ export interface Item {
   stock: number;
   purchase_qty?: number;
   image_url?: string;
+  hsn_code?: string;
+  gst_rate?: number;
+  cess_rate?: number;
+
+  
+  // UOM & Extended Fields
+  uom_id?: string;
+  uom_name?: string;
+  weight_per_unit?: number | string;
+  volume_per_unit?: number | string;
+  length_per_unit?: number | string;
+  width_per_unit?: number | string;
+  height_per_unit?: number | string;
+  manufacturer?: string;
+  brand?: string;
+  model_number?: string;
+  batch_number?: string;
+  expiry_date?: string;
+  shelf_life_days?: number;
+  min_stock_level?: number | string;
+  max_stock_level?: number | string;
+  reorder_level?: number | string;
+  package_type?: string;
+  package_quantity?: number;
+  is_perishable?: boolean;
+  storage_conditions?: string;
+
   created_at: string;
 }
 
@@ -304,3 +331,28 @@ export interface ReturnRecord {
   };
 }
 
+
+
+export interface UomMaster {
+  id: string;
+  customer_id: string;
+  name: string;
+  code: string;
+  category: string;
+  base_uom_id?: string;
+  base_uom_name?: string;
+  conversion_factor?: number | string;
+  is_base_uom: boolean;
+  created_at: string;
+}
+
+export interface UomConversion {
+  id: string;
+  customer_id: string;
+  from_uom_id: string;
+  from_uom_name?: string;
+  to_uom_id: string;
+  to_uom_name?: string;
+  conversion_factor: number | string;
+  created_at: string;
+}

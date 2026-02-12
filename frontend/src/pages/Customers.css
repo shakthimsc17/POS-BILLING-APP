@@ -19,6 +19,9 @@
 
 .customers-table {
   overflow-x: auto;
+  max-width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .customer-type-badge {
@@ -48,6 +51,8 @@
 .customers-table table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 600px;
+  table-layout: fixed;
 }
 
 .customers-table thead {

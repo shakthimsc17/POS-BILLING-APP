@@ -32,9 +32,10 @@ model Customer {
   processedReturns     ReturnRecord[]  @relation("ReturnProcessor")
   settings             Settings?
   tableOrders          TableOrder[]
-  tables               Table[]
-  transactions         Transaction[]   @relation("CustomerTransactions")
-  transactionCustomers Transaction[]   @relation("TransactionCustomers")
+  translations         Translation[]
+  eWayBills            EWayBill[]
+  uomMasters           UomMaster[]
+  uomConversions       UomConversion[]
 
   @@index([email])
   @@index([phone])
@@ -58,24 +59,51 @@ model Category {
 }
 
 model Item {
-  id             String          @id @default(uuid()) @db.Uuid
-  customerId     String          @map("customer_id") @db.Uuid
-  name           String          @db.VarChar(255)
-  code           String          @db.VarChar(100)
-  barcode        String?         @db.VarChar(255)
-  categoryId     String?         @map("category_id") @db.Uuid
-  subcategory    String?         @db.VarChar(255)
-  cost           Decimal         @db.Decimal(10, 2)
-  price          Decimal         @db.Decimal(10, 2)
-  mrp            Decimal?        @db.Decimal(10, 2)
-  stock          Int             @default(0)
-  imageUrl       String?         @map("image_url")
-  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
-  displayName    String?         @map("display_name") @db.VarChar(255)
-  purchaseQty    Int             @default(0) @map("purchase_qty")
-  mappingCode    String?         @map("mapping_code") @db.VarChar(100)
-  category       Category?       @relation(fields: [categoryId], references: [id])
+  id          String   @id @default(uuid()) @db.Uuid
+  customerId  String   @map("customer_id") @db.Uuid
+  name        String   @db.VarChar(255)
+  displayName String?  @map("display_name") @db.VarChar(255)
+  code        String   @db.VarChar(100)
+  barcode     String?  @db.VarChar(255)
+  mappingCode String?  @map("mapping_code") @db.VarChar(100)
+  categoryId  String?  @map("category_id") @db.Uuid
+  subcategory String?  @db.VarChar(255)
+  cost        Decimal  @db.Decimal(10, 2)
+  price       Decimal  @db.Decimal(10, 2)
+  mrp         Decimal? @db.Decimal(10, 2)
+  stock       Int      @default(0)
+  purchaseQty Int      @default(0) @map("purchase_qty")
+  imageUrl    String?  @map("image_url") @db.Text
+  hsnCode     String?  @map("hsn_code") @db.VarChar(8)
+  gstRate     Decimal  @default(0) @map("gst_rate") @db.Decimal(5, 2)
+  cessRate    Decimal  @default(0) @map("cess_rate") @db.Decimal(5, 2)
+  // UOM & Extended Item Details
+  uomId            String?   @map("uom_id") @db.Uuid
+  weightPerUnit    Decimal?  @map("weight_per_unit") @db.Decimal(10, 3)
+  volumePerUnit    Decimal?  @map("volume_per_unit") @db.Decimal(10, 3)
+  lengthPerUnit    Decimal?  @map("length_per_unit") @db.Decimal(10, 3)
+  widthPerUnit     Decimal?  @map("width_per_unit") @db.Decimal(10, 3)
+  heightPerUnit    Decimal?  @map("height_per_unit") @db.Decimal(10, 3)
+  manufacturer     String?   @db.VarChar(255)
+  brand            String?   @db.VarChar(255)
+  modelNumber      String?   @map("model_number") @db.VarChar(100)
+  batchNumber      String?   @map("batch_number") @db.VarChar(100)
+  expiryDate       DateTime? @map("expiry_date") @db.Date
+  shelfLifeDays    Int?      @map("shelf_life_days")
+  minStockLevel    Decimal?  @map("min_stock_level") @db.Decimal(10, 2)
+  maxStockLevel    Decimal?  @map("max_stock_level") @db.Decimal(10, 2)
+  reorderLevel     Decimal?  @map("reorder_level") @db.Decimal(10, 2)
+  packageType      String?   @map("package_type") @db.VarChar(50)
+  packageQuantity  Int?      @default(1) @map("package_quantity")
+  isPerishable     Boolean?  @default(false) @map("is_perishable")
+  storageConditions String?  @map("storage_conditions") @db.VarChar(255)
+
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
   customer       Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  category       Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  uom            UomMaster?      @relation(fields: [uomId], references: [id])
   quickSaleItems QuickSaleItem[]
 
   @@index([customerId])
@@ -83,70 +111,136 @@ model Item {
   @@index([barcode])
   @@index([code])
   @@index([mappingCode])
+  @@index([hsnCode])
   @@map("items")
 }
 
 model Transaction {
-  id                    String         @id @default(uuid()) @db.Uuid
-  customerId            String         @map("customer_id") @db.Uuid
-  transactionCustomerId String?        @map("transaction_customer_id") @db.Uuid
-  totalAmount           Decimal        @map("total_amount") @db.Decimal(10, 2)
-  paymentMethod         String         @map("payment_method") @db.VarChar(20)
-  transactionType       String         @default("sale") @map("transaction_type") @db.VarChar(20)
-  originalTransactionId String?        @map("original_transaction_id") @db.Uuid
-  receivedAmount        Decimal?       @map("received_amount") @db.Decimal(10, 2)
-  changeAmount          Decimal?       @map("change_amount") @db.Decimal(10, 2)
-  itemsJson             String         @map("items_json")
-  createdAt             DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  salesCustomerId       String?        @map("sales_customer_id") @db.Uuid
-  returns               ReturnRecord[]
-  tableOrder            TableOrder[]
-  originalTransaction   Transaction?    @relation("TransactionReturns", fields: [originalTransactionId], references: [id])
-  returnTransactions    Transaction[]    @relation("TransactionReturns")
-  customer              Customer       @relation("CustomerTransactions", fields: [customerId], references: [id], onDelete: Cascade)
-  salesCustomer         SalesCustomer? @relation(fields: [salesCustomerId], references: [id])
-  transactionCustomer   Customer?      @relation("TransactionCustomers", fields: [transactionCustomerId], references: [id])
+  id                    String   @id @default(uuid()) @db.Uuid
+  customerId            String   @map("customer_id") @db.Uuid
+  transactionCustomerId String?  @map("transaction_customer_id") @db.Uuid
+  salesCustomerId       String?  @map("sales_customer_id") @db.Uuid
+  totalAmount           Decimal  @map("total_amount") @db.Decimal(10, 2)
+  paymentMethod         String   @map("payment_method") @db.VarChar(20)
+  receivedAmount        Decimal? @map("received_amount") @db.Decimal(10, 2)
+  changeAmount          Decimal? @map("change_amount") @db.Decimal(10, 2)
+  itemsJson             String   @map("items_json") @db.Text
+  transactionType       String   @default("sale") @map("transaction_type") @db.VarChar(20) // 'sale', 'return', 'exchange'
+  originalTransactionId String?  @map("original_transaction_id") @db.Uuid
+  editedAt              DateTime? @map("edited_at") @db.Timestamptz(6)
+  editedBy              String?  @map("edited_by") @db.Uuid
+  gstAmount             Decimal  @default(0) @map("gst_amount") @db.Decimal(10, 2)
+  cessAmount            Decimal  @default(0) @map("cess_amount") @db.Decimal(10, 2)
+  placeOfSupply         String?  @map("place_of_supply") @db.VarChar(50)
+  reverseCharge         Boolean  @default(false) @map("reverse_charge")
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  customer            Customer       @relation("CustomerTransactions", fields: [customerId], references: [id], onDelete: Cascade)
+  transactionCustomer Customer?      @relation("TransactionCustomers", fields: [transactionCustomerId], references: [id], onDelete: SetNull)
+  salesCustomer       SalesCustomer? @relation(fields: [salesCustomerId], references: [id], onDelete: SetNull)
+  tableOrder          TableOrder?
+  quickSaleItems       QuickSaleItem[]
+  originalTransaction Transaction? @relation("TransactionReturns", fields: [originalTransactionId], references: [id])
+  returnTransactions   Transaction[] @relation("TransactionReturns")
+  returns              ReturnRecord[]
+  editedByUser         Customer?      @relation("TransactionEditor", fields: [editedBy], references: [id])
+  eWayBill            EWayBill?
 
   @@index([customerId])
   @@index([createdAt])
   @@index([salesCustomerId])
+  @@index([transactionType])
+  @@index([originalTransactionId])
+  @@index([placeOfSupply])
   @@map("transactions")
 }
 
 model Company {
-  id           String   @id @default(uuid()) @db.Uuid
-  customerId   String   @unique @map("customer_id") @db.Uuid
-  name         String   @db.VarChar(255)
-  address      String?
-  city         String?  @db.VarChar(100)
-  state        String?  @db.VarChar(100)
-  pincode      String?  @db.VarChar(20)
-  phone        String?  @db.VarChar(20)
-  email        String?  @db.VarChar(255)
-  gstin        String?  @db.VarChar(50)
-  website      String?  @db.VarChar(255)
-  logo         String?
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  businessType String?  @map("business_type") @db.VarChar(50)
-  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  id              String   @id @default(uuid()) @db.Uuid
+  customerId      String   @unique @map("customer_id") @db.Uuid
+  name            String   @db.VarChar(255)
+  address         String?  @db.Text
+  city            String?  @db.VarChar(100)
+  state           String?  @db.VarChar(100)
+  pincode         String?  @db.VarChar(20)
+  phone           String?  @db.VarChar(20)
+  email           String?  @db.VarChar(255)
+  gstin           String?  @db.VarChar(50)
+  website         String?  @db.VarChar(255)
+  logo            String?  @db.Text
+  businessType    String?  @map("business_type") @db.VarChar(50)
+  defaultLanguage String?  @default("en") @map("default_language") @db.VarChar(10)
+  receiptLanguage String?  @default("en") @map("receipt_language") @db.VarChar(10)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([customerId])
   @@map("companies")
 }
 
 model Settings {
-  id                  String   @id @default(uuid()) @db.Uuid
-  customerId          String   @unique @map("customer_id") @db.Uuid
-  activityLogEnabled  Boolean  @default(true) @map("activity_log_enabled")
-  itemLogActions      String   @default("update_delete") @map("item_log_actions") @db.VarChar(20)
-  receiptHeaderOption String   @default("both") @map("receipt_header_option") @db.VarChar(20)
-  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  customer            Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  id                  String    @id @default(uuid()) @db.Uuid
+  customerId          String    @unique @map("customer_id") @db.Uuid
+  activityLogEnabled  Boolean   @default(true) @map("activity_log_enabled")
+  itemLogActions      String    @default("update_delete") @map("item_log_actions") @db.VarChar(20)
+  receiptHeaderOption String    @default("both") @map("receipt_header_option") @db.VarChar(20)
+  receiptAutoPrint    Boolean   @default(true) @map("receipt_auto_print")
+  languageSettings    Json?     @default("{}") @map("language_settings") @db.JsonB
+  supabaseUrl         String?   @map("supabase_url") @db.Text // Encrypted connection string
+  lastSyncAt          DateTime? @map("last_sync_at") @db.Timestamptz(6)
+  lastSyncStatus      String?   @map("last_sync_status") @db.VarChar(50) // 'success', 'failed', 'in_progress'
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([customerId])
   @@map("settings")
+}
+
+model Translation {
+  id        String   @id @default(uuid()) @db.Uuid
+  customerId String  @map("customer_id") @db.Uuid
+  key       String   @db.VarChar(255)
+  language  String   @db.VarChar(10)
+  value     String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, key, language])
+  @@index([customerId])
+  @@index([key])
+  @@index([language])
+  @@map("translations")
+}
+
+model EWayBill {
+  id               String    @id @default(uuid()) @db.Uuid
+  transactionId    String    @unique @map("transaction_id") @db.Uuid
+  eWayBillNumber   String?   @unique @map("e_way_bill_number") @db.VarChar(12)
+  generatedDate    DateTime? @map("generated_date") @db.Date
+  validUntil       DateTime? @map("valid_until") @db.Date
+  status           String    @default("active") @db.VarChar(20)
+  customerId       String    @map("customer_id") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  customer    Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([eWayBillNumber])
+  @@index([status])
+  @@index([validUntil])
+  @@map("e_way_bills")
 }
 
 model ItemCodePrefix {
@@ -332,4 +426,45 @@ model ReturnRecord {
   @@index([returnType])
   @@index([createdAt])
   @@map("returns")
+}
+
+model UomMaster {
+  id               String   @id @default(uuid()) @db.Uuid
+  customerId       String   @map("customer_id") @db.Uuid
+  name             String   @db.VarChar(50)
+  code             String   @db.VarChar(10)
+  category         String   @db.VarChar(20)
+  baseUomId        String?  @map("base_uom_id") @db.Uuid
+  conversionFactor Decimal? @default(1.0) @map("conversion_factor") @db.Decimal(10, 6)
+  isBaseUom        Boolean  @default(false) @map("is_base_uom")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  customer         Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items            Item[]
+  
+  baseUom          UomMaster?    @relation("BaseUomRelation", fields: [baseUomId], references: [id])
+  derivedUoms      UomMaster[]   @relation("BaseUomRelation")
+
+  conversionsFrom  UomConversion[] @relation("FromUom")
+  conversionsTo    UomConversion[] @relation("ToUom")
+
+  @@map("uom_master")
+}
+
+model UomConversion {
+  id               String   @id @default(uuid()) @db.Uuid
+  customerId       String   @map("customer_id") @db.Uuid
+  fromUomId        String   @map("from_uom_id") @db.Uuid
+  toUomId          String   @map("to_uom_id") @db.Uuid
+  conversionFactor Decimal  @map("conversion_factor") @db.Decimal(10, 6)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  customer         Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  fromUom          UomMaster @relation("FromUom", fields: [fromUomId], references: [id], onDelete: Cascade)
+  toUom            UomMaster @relation("ToUom", fields: [toUomId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, fromUomId, toUomId])
+  @@map("uom_conversions")
 }

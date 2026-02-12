@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useCompanyStore } from '../store/companyStore';
 import { storageService } from '../services/storage';
 import { ItemCodePrefix, Settings as SettingsType } from '../types';
+import TamilLanguageSettings from '../components/TamilLanguageSettings';
 import './Settings.css';
 
 export default function Settings() {
@@ -257,6 +258,11 @@ export default function Settings() {
       </div>
 
       <div className="settings-content">
+        {/* Tamil Language Settings */}
+        <div className="card settings-card">
+          <TamilLanguageSettings />
+        </div>
+
         {/* Activity Log Settings */}
         <div className="card settings-card">
           <h2>📋 Activity Log Settings</h2>

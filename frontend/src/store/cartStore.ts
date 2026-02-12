@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { CartItem, Item } from '../types';
-import { calculateTax, calculateDiscount } from '../utils/calculations';
+import { calculateTax, calculateDiscount, calculateItemGST } from '../utils/calculations';
 import { storageService } from '../services/storage';
 
 interface CartStore {
@@ -20,6 +20,7 @@ interface CartStore {
   setDiscount: (amount: number) => void;
   getSubtotal: () => number;
   getTax: () => number;
+  getGST: () => { totalGST: number; gstBreakdown: { rate: number; amount: number }[] };
   getDiscount: () => number;
   getItemDiscounts: () => number;
   getActualSubtotal: () => number;
@@ -34,43 +35,52 @@ export const useCartStore = create<CartStore>((set, get) => ({
   items: [],
   taxRate: 0,
   discount: 0,
-  paymentMethod: null,
+  paymentMethod: 'cash',
   isLoading: false,
 
   addItem: (item: Item, quantity: number = 1) => {
+    console.log('🛒 Cart Store: addItem called', { item, quantity });
     const currentItems = get().items;
+    console.log('🛒 Cart Store: Current items before adding', currentItems);
     const existingItem = currentItems.find((ci) => ci.item.id === item.id);
     const itemPrice = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
+    console.log('🛒 Cart Store: Item details', { itemId: item.id, itemName: item.name, itemPrice, existingItem: !!existingItem });
     
     // Stock validation removed - allow adding out-of-stock items
     // Quick sale items already skip validation
 
     if (existingItem) {
       const currentPrice = existingItem.customPrice ?? itemPrice;
-      set({
-        items: currentItems.map((ci) =>
-          ci.item.id === item.id
-            ? {
-                ...ci,
-                quantity: ci.quantity + quantity,
-                subtotal: (ci.quantity + quantity) * currentPrice,
-              }
-            : ci
-        ),
-      });
+      const newItems = currentItems.map((ci) =>
+        ci.item.id === item.id
+          ? {
+              ...ci,
+              quantity: ci.quantity + quantity,
+              subtotal: (ci.quantity + quantity) * currentPrice,
+            }
+          : ci
+      );
+      console.log('🛒 Cart Store: Updated items (existing)', newItems);
+      set({ items: newItems });
     } else {
-      set({
-        items: [
-          ...currentItems,
-          {
-            item,
-            quantity,
-            subtotal: quantity * itemPrice,
-            originalPrice: itemPrice,
-          },
-        ],
-      });
+      const newItems = [
+        ...currentItems,
+        {
+          item,
+          quantity,
+          subtotal: quantity * itemPrice,
+          originalPrice: itemPrice,
+        },
+      ];
+      console.log('🛒 Cart Store: Updated items (new)', newItems);
+      set({ items: newItems });
     }
+    
+    // Verify the state after update
+    setTimeout(() => {
+      const updatedItems = get().items;
+      console.log('🛒 Cart Store: Items after update', updatedItems);
+    }, 100);
   },
 
   removeItem: (itemId: string) => {
@@ -138,7 +148,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
   clearCart: () => {
     set({
       items: [],
-      paymentMethod: null,
+      paymentMethod: 'cash',
       discount: 0,
       taxRate: 0,
     });
@@ -164,7 +174,21 @@ export const useCartStore = create<CartStore>((set, get) => ({
   },
 
   getTax: () => {
-    return calculateTax(get().getSubtotal(), get().taxRate);
+    // For backward compatibility, use global tax rate if no items have GST rates
+    const items = get().items;
+    const hasItemGST = items.some(item => item.item.gst_rate && item.item.gst_rate > 0);
+    
+    if (hasItemGST) {
+      // Use item-specific GST calculation
+      return get().getGST().totalGST;
+    } else {
+      // Use global tax rate (legacy behavior)
+      return calculateTax(get().getSubtotal(), get().taxRate);
+    }
+  },
+
+  getGST: () => {
+    return calculateItemGST(get().items);
   },
 
   getDiscount: () => {
@@ -222,16 +246,26 @@ export const useCartStore = create<CartStore>((set, get) => ({
   loadCart: async () => {
     try {
       set({ isLoading: true });
+      const currentItems = get().items;
+      
+      // Don't load saved cart if current cart already has items
+      if (currentItems.length > 0) {
+        console.log('🛒 Cart Store: Current cart has items, skipping saved cart load');
+        set({ isLoading: false });
+        return null;
+      }
+      
       const savedCart = await storageService.getCart();
       
       if (savedCart) {
         try {
           const items = JSON.parse(savedCart.items_json);
+          console.log('🛒 Cart Store: Loading saved cart with items:', items);
           set({
             items: items || [],
             taxRate: typeof savedCart.tax_rate === 'string' ? parseFloat(savedCart.tax_rate) : savedCart.tax_rate,
             discount: typeof savedCart.discount === 'string' ? parseFloat(savedCart.discount) : savedCart.discount,
-            paymentMethod: savedCart.payment_method || null,
+            paymentMethod: savedCart.payment_method || 'cash',
           });
           return { salesCustomerId: savedCart.sales_customer_id };
         } catch (parseError) {

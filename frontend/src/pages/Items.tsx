@@ -8,7 +8,7 @@ import { storageService } from '../services/storage';
 import './Items.css';
 
 interface ItemsProps {
-  onNavigate?: (page: string) => void;
+  onNavigate?: (page: string, itemId?: string) => void;
 }
 
 export default function Items({ onNavigate }: ItemsProps = {}) {
@@ -27,11 +27,14 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
   const [price, setPrice] = useState('');
   const [mrp, setMrp] = useState('');
   const [stock, setStock] = useState('0');
-  
+  const [hsnCode, setHsnCode] = useState('');
+  const [gstRate, setGstRate] = useState('');
+  const [cessRate, setCessRate] = useState('');
+
   // Quick edit mapping code state
   const [editingMappingCode, setEditingMappingCode] = useState<string | null>(null);
   const [quickEditMappingCode, setQuickEditMappingCode] = useState('');
-  
+
   // Item code prefix states
   const [prefixes, setPrefixes] = useState<ItemCodePrefix[]>([]);
   const [selectedPrefixId, setSelectedPrefixId] = useState('');
@@ -112,6 +115,12 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
   }, [name]);
 
   const handleAdd = async () => {
+    // Navigate to add item page instead of opening modal
+    if (onNavigate) {
+      onNavigate('add-item');
+      return;
+    }
+
     // Ensure categories are loaded before opening modal
     if (categories.length === 0) {
       await loadCategories();
@@ -133,7 +142,17 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
     setModalVisible(true);
   };
 
+  const handleViewItem = (item: Item) => {
+    if (onNavigate) {
+      onNavigate('view-item', item.id);
+    }
+  };
+
   const handleEdit = async (item: Item) => {
+    if (onNavigate) {
+      onNavigate('view-item', item.id);
+      return;
+    }
     // Ensure categories are loaded before opening modal
     if (categories.length === 0) {
       await loadCategories();
@@ -150,7 +169,10 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
     setPrice(item.price.toString());
     setMrp(item.mrp?.toString() || '');
     setStock(item.stock.toString());
-    
+    setHsnCode(item.hsn_code || '');
+    setGstRate(item.gst_rate?.toString() || '');
+    setCessRate(item.cess_rate?.toString() || '');
+
     // Try to extract prefix and product code-size from item code
     const matchingPrefix = prefixes.find(p => item.code.startsWith(p.prefix));
     if (matchingPrefix) {
@@ -163,7 +185,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
       setProductCodeSize('');
       setUseManualCode(true);
     }
-    
+
     setModalVisible(true);
   };
 
@@ -205,7 +227,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
 
     try {
       let finalCode = code.trim();
-      
+
       // For cafe, skip prefix logic
       if (company.business_type === 'cafe') {
         // Simple code for cafe - just use what's entered
@@ -214,12 +236,12 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
         // If manual code entry, check if prefix exists, if not try to create it
         // First check if code starts with any existing prefix
         const matchingPrefix = prefixes.find(p => finalCode.startsWith(p.prefix));
-        
+
         if (!matchingPrefix) {
           // Try to extract a potential prefix (everything before the last dash/underscore + separator)
           const separators = /[-_]/;
           const lastSeparatorIndex = finalCode.search(separators);
-          
+
           if (lastSeparatorIndex > 0) {
             // Find the last separator
             let lastIndex = -1;
@@ -229,11 +251,11 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                 break;
               }
             }
-            
+
             if (lastIndex > 0) {
               const potentialPrefix = finalCode.substring(0, lastIndex + 1);
               const existingPrefix = prefixes.find(p => p.prefix === potentialPrefix);
-              
+
               if (!existingPrefix && potentialPrefix.length > 0) {
                 // Auto-create the prefix
                 try {
@@ -265,6 +287,9 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
           price: Number(price),
           mrp: mrp ? Number(mrp) : undefined,
           stock: Number(stock),
+          hsn_code: hsnCode.trim() || undefined,
+          gst_rate: gstRate ? Number(gstRate) : undefined,
+          cess_rate: cessRate ? Number(cessRate) : undefined,
         });
         // updateItem already calls loadItems in store, but force refresh after delay
         setTimeout(async () => {
@@ -283,6 +308,9 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
           price: Number(price),
           mrp: mrp ? Number(mrp) : undefined,
           stock: Number(stock),
+          hsn_code: hsnCode.trim() || undefined,
+          gst_rate: gstRate ? Number(gstRate) : undefined,
+          cess_rate: cessRate ? Number(cessRate) : undefined,
         });
         // addItem already calls loadItems in store, but force refresh after delay
         setTimeout(async () => {
@@ -338,7 +366,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
       setTimeout(async () => {
         await loadItems();
       }, 500);
-      
+
       // Show notification
       const notification = document.createElement('div');
       notification.className = 'notification';
@@ -377,9 +405,9 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      if (!item.name.toLowerCase().includes(query) && 
-          !item.code.toLowerCase().includes(query) &&
-          !(item.barcode && item.barcode.toLowerCase().includes(query))) {
+      if (!item.name.toLowerCase().includes(query) &&
+        !item.code.toLowerCase().includes(query) &&
+        !(item.barcode && item.barcode.toLowerCase().includes(query))) {
         return false;
       }
     }
@@ -388,7 +416,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
     if (filterCategory) {
       const selectedCategory = categories.find(c => c.id === filterCategory);
       if (selectedCategory) {
-        const itemCategory = item.category_id 
+        const itemCategory = item.category_id
           ? categories.find(c => c.id === item.category_id)
           : null;
         if (!itemCategory || itemCategory.name !== selectedCategory.name) {
@@ -448,8 +476,8 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
     const mainCategoryNames = [...new Set(categories.map(c => c.name))];
     return mainCategoryNames.map(name => {
       // Find the main category (without subcategory) or first category with this name
-      return categories.find(c => c.name === name && !c.subcategory) || 
-             categories.find(c => c.name === name);
+      return categories.find(c => c.name === name && !c.subcategory) ||
+        categories.find(c => c.name === name);
     }).filter((cat): cat is Category => !!cat);
   };
 
@@ -470,9 +498,9 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
       <div className="items-header">
         {company.logo && (
           <div className="page-logo-container">
-            <img 
-              src={company.logo} 
-              alt={company.name || 'Company Logo'} 
+            <img
+              src={company.logo}
+              alt={company.name || 'Company Logo'}
               className="page-logo"
             />
           </div>
@@ -482,8 +510,8 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
         </div>
         <div className="header-actions">
           {items.length > 0 && isAdmin && (
-            <button 
-              className="btn btn-danger" 
+            <button
+              className="btn btn-danger"
               onClick={() => setDeleteAllModalVisible(true)}
               style={{ marginRight: '10px' }}
             >
@@ -495,8 +523,8 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
               + Add Item
             </button>
             {onNavigate && (
-              <button 
-                className="btn btn-secondary" 
+              <button
+                className="btn btn-secondary"
                 onClick={() => onNavigate('bulk-operations')}
                 title="Bulk Create Items"
               >
@@ -596,6 +624,8 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                   <th>Code</th>
                   {company?.business_type === 'cafe' && <th>Mapping Code</th>}
                   <th>Category</th>
+                  <th>HSN Code</th>
+                  <th>GST Rate</th>
                   {isAdmin && <th>Cost</th>}
                   <th>Sale Price</th>
                   <th>MRP</th>
@@ -608,7 +638,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                 {displayedItems.map((item) => {
                   // Find category by matching category_id - always show category name
                   let categoryName = '-';
-                  
+
                   if (item.category_id) {
                     if (categories.length === 0) {
                       // Categories not loaded yet
@@ -616,7 +646,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                     } else {
                       // Try to find category by ID
                       const category = categories.find(c => c.id === item.category_id);
-                      
+
                       if (category) {
                         // Show category name with subcategory if available
                         categoryName = category.name;
@@ -637,8 +667,10 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                     }
                   }
                   // Calculate GM percentage: ((price - cost) / price) * 100
-                  const gmPercentage = item.price > 0 && item.cost > 0 
-                    ? ((item.price - item.cost) / item.price) * 100 
+                  const priceValue = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
+                  const costValue = typeof item.cost === 'string' ? parseFloat(item.cost) : item.cost;
+                  const gmPercentage = priceValue > 0 && costValue > 0
+                    ? ((priceValue - costValue) / priceValue) * 100
                     : 0;
                   return (
                     <tr key={item.id}>
@@ -697,6 +729,8 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                         </td>
                       )}
                       <td className="item-category">{categoryName}</td>
+                      <td className="item-hsn">{item.hsn_code || '-'}</td>
+                      <td className="item-gst-rate">{item.gst_rate ? `${item.gst_rate}%` : '-'}</td>
                       {isAdmin && (
                         <td className="item-cost">
                           {item.cost ? formatCurrency(item.cost) : '-'}
@@ -715,12 +749,14 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                           ) : '-'}
                         </td>
                       )}
-                      <td>
-                        <span className={item.stock > 0 ? 'stock-ok' : 'stock-out'}>
-                          {item.stock}
-                        </span>
-                      </td>
+                      <td className="item-stock">{item.stock} <span style={{ fontSize: '0.8em', color: '#666' }}>{item.uom_name || ''}</span></td>
                       <td className="item-actions">
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => handleViewItem(item)}
+                        >
+                          View
+                        </button>
                         <button
                           className="btn btn-secondary"
                           onClick={() => handleEdit(item)}
@@ -775,341 +811,117 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
               <button className="modal-close" onClick={() => setModalVisible(false)}>×</button>
             </div>
             <div className="modal-body">
-            <div className="items-modal-grid">
-            {/* Basic Information - 3 columns */}
-            <div className="form-field">
-              <label>
-                Name *:
-                <input
-                  type="text"
-                  className="input"
-                  value={name}
-                  onChange={(e) => {
-                    const newName = e.target.value;
-                    setName(newName);
-                    if (!displayName || displayName === name || displayName === editingItem?.name) {
-                      setDisplayName(newName);
-                    }
-                  }}
-                />
-              </label>
-            </div>
-            <div className="form-field">
-              <label>
-                Display Name:
-                <input
-                  type="text"
-                  className="input"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Auto-filled from name, can be modified"
-                />
-                <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
-                  for receipts
-                </small>
-              </label>
-            </div>
-
-            {/* Code Entry - Simplified for cafe, full for others */}
-            {company?.business_type === 'cafe' ? (
-              <>
+              <div className="items-modal-grid">
+                {/* Basic Information - 3 columns */}
                 <div className="form-field">
-                <label>
-                  Item Code *:
-                  <input
-                    type="text"
-                    className="input"
-                    value={code}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setCode(v);
-                      setBarcode(v);
-                    }}
-                    placeholder="Enter item code"
-                  />
-                </label>
-                </div>
-                <div className="form-field">
-                <label>
-                  Barcode:
-                  <input
-                    type="text"
-                    className="input"
-                    value={barcode}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setBarcode(v);
-                      setCode(v);
-                    }}
-                    placeholder="Auto-updates with item code"
-                  />
-                  <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
-                    Updates with item code; edit here if barcode should differ.
-                  </small>
-                </label>
-                </div>
-                <div className="form-field">
-                <label>
-                  Mapping Code (for Quick Search):
-                  <input
-                    type="text"
-                    className="input"
-                    value={mappingCode}
-                    onChange={(e) => setMappingCode(e.target.value)}
-                    placeholder="e.g., 1, 2, 3..."
-                  />
-                  <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
-                    Enter a number or code for quick item search in cafe mode
-                  </small>
-                </label>
-                </div>
-                <div className="form-field">
-                <label>
-                  Stock:
-                  <input
-                    type="number"
-                    className="input"
-                    value={stock}
-                    onChange={(e) => setStock(e.target.value)}
-                    onFocus={(e) => {
-                      if (e.target.value === '0') {
-                        e.target.value = '';
-                        setStock('');
-                      }
-                    }}
-                    onBlur={(e) => {
-                      if (e.target.value === '') {
-                        setStock('0');
-                      }
-                    }}
-                    min="0"
-                  />
-                </label>
+                  <label>
+                    Name *:
+                    <input
+                      type="text"
+                      className="input"
+                      value={name}
+                      onChange={(e) => {
+                        const newName = e.target.value;
+                        setName(newName);
+                        if (!displayName || displayName === name || displayName === editingItem?.name) {
+                          setDisplayName(newName);
+                        }
+                      }}
+                    />
+                  </label>
                 </div>
                 <div className="form-field">
                   <label>
-                    Category:
-                    <select
+                    Display Name:
+                    <input
+                      type="text"
                       className="input"
-                      value={categoryId}
-                      onChange={(e) => {
-                        setCategoryId(e.target.value);
-                        setSubcategory('');
-                      }}
-                    >
-                      <option value="">None</option>
-                      {categories.length === 0 ? (
-                        <option value="" disabled>Loading categories...</option>
-                      ) : (
-                        getUniqueMainCategories().map((cat) => (
-                          <option key={cat.id} value={cat.id}>
-                            {cat.name}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                  </label>
-                </div>
-                {categoryId && getSubcategories().length > 0 ? (
-                  <div className="form-field">
-                    <label>
-                      Subcategory:
-                      <select
-                        className="input"
-                        value={subcategory}
-                        onChange={(e) => setSubcategory(e.target.value)}
-                      >
-                        <option value="">None</option>
-                        {getSubcategories().map((subcat, idx) => (
-                          <option key={idx} value={subcat}>
-                            {subcat}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                ) : categoryId && getSubcategories().length === 0 ? (
-                  <div className="form-field">
-                    <label>
-                      Subcategory (Optional):
-                      <input
-                        type="text"
-                        className="input"
-                        placeholder="Enter subcategory"
-                        value={subcategory}
-                        onChange={(e) => setSubcategory(e.target.value)}
-                      />
-                    </label>
-                  </div>
-                ) : (
-                  <div className="form-field">
-                    <label>
-                      Subcategory:
-                      <input
-                        type="text"
-                        className="input"
-                        placeholder="Select category first"
-                        value={subcategory}
-                        disabled
-                      />
-                    </label>
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <div className="form-field form-field-full-width">
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: 0 }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <input
-                        type="radio"
-                        checked={!useManualCode}
-                        onChange={() => {
-                          setUseManualCode(false);
-                          setCode('');
-                          setBarcode('');
-                        }}
-                      />
-                      <span>Use Prefix Dropdown</span>
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <input
-                        type="radio"
-                        checked={useManualCode}
-                        onChange={() => {
-                          setUseManualCode(true);
-                          setSelectedPrefixId('');
-                          setProductCodeSize('');
-                        }}
-                      />
-                      <span>Enter Code Manually</span>
-                    </span>
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder="Auto-filled from name, can be modified"
+                    />
+                    <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                      for receipts
+                    </small>
                   </label>
                 </div>
 
-                {!useManualCode ? (
+                {/* Code Entry - Simplified for cafe, full for others */}
+                {company?.business_type === 'cafe' ? (
                   <>
                     <div className="form-field">
                       <label>
-                        Item Code Prefix *:
-                        <select
+                        Item Code *:
+                        <input
+                          type="text"
                           className="input"
-                          value={selectedPrefixId}
+                          value={code}
                           onChange={(e) => {
-                            setSelectedPrefixId(e.target.value);
-                            setProductCodeSize('');
-                            setCode('');
-                            setBarcode('');
+                            const v = e.target.value;
+                            setCode(v);
+                            setBarcode(v);
                           }}
-                        >
-                          <option value="">Select prefix...</option>
-                          {prefixes.map((prefix) => (
-                            <option key={prefix.id} value={prefix.id}>
-                              {prefix.prefix} {prefix.description ? `(${prefix.description})` : ''}
-                            </option>
-                          ))}
-                        </select>
+                          placeholder="Enter item code"
+                        />
                       </label>
                     </div>
-                    {selectedPrefixId && (
-                      <div className="form-field">
-                        <label>
-                          Product Code-Size (e.g., "PROD001-L"):
-                          <input
-                            type="text"
-                            className="input"
-                            value={productCodeSize}
-                            onChange={(e) => setProductCodeSize(e.target.value)}
-                            placeholder="PROD001-L"
-                          />
-                          <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
-                            This will auto-fill the barcode and code fields
-                          </small>
-                        </label>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="form-field">
-                    <label>
-                      Item Code * (Manual Entry):
-                      <input
-                        type="text"
-                        className="input"
-                        value={code}
-                        onChange={(e) => {
-                          setCode(e.target.value);
-                          setBarcode(e.target.value);
-                        }}
-                        placeholder="Enter item code (e.g., shopname-place-PROD001-L)"
-                      />
-                      <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
-                        New codes will be automatically added to the prefix list
-                      </small>
-                    </label>
-                  </div>
-                )}
-
-                <div className="form-field">
-                  <label>
-                    Barcode:
-                    <input
-                      type="text"
-                      className="input"
-                      value={barcode}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        setBarcode(v);
-                        setCode(v);
-                      }}
-                      placeholder="Auto-filled from prefix + product code-size"
-                    />
-                    <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
-                      Updates with item code (prefix + product code-size or manual entry).
-                    </small>
-                  </label>
-                </div>
-                <div className="form-field">
-                  <label>
-                    Mapping Code (for Quick Search):
-                    <input
-                      type="text"
-                      className="input"
-                      value={mappingCode}
-                      onChange={(e) => setMappingCode(e.target.value)}
-                      placeholder="e.g., 1, 2, 3..."
-                    />
-                    <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
-                      Optional: Enter a number or code for quick item search
-                    </small>
-                  </label>
-                </div>
-                <div className="form-field">
-                  <label>
-                    Stock:
-                    <input
-                      type="number"
-                      className="input"
-                      value={stock}
-                      onChange={(e) => setStock(e.target.value)}
-                      onFocus={(e) => {
-                        if (e.target.value === '0') {
-                          e.target.value = '';
-                          setStock('');
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (e.target.value === '') {
-                          setStock('0');
-                        }
-                      }}
-                      min="0"
-                    />
-                  </label>
-                </div>
-
-                {(!company?.business_type || company?.business_type !== 'cafe' || editingItem) && (
-                  <>
+                    <div className="form-field">
+                      <label>
+                        Barcode:
+                        <input
+                          type="text"
+                          className="input"
+                          value={barcode}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setBarcode(v);
+                            setCode(v);
+                          }}
+                          placeholder="Auto-updates with item code"
+                        />
+                        <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                          Updates with item code; edit here if barcode should differ.
+                        </small>
+                      </label>
+                    </div>
+                    <div className="form-field">
+                      <label>
+                        Mapping Code (for Quick Search):
+                        <input
+                          type="text"
+                          className="input"
+                          value={mappingCode}
+                          onChange={(e) => setMappingCode(e.target.value)}
+                          placeholder="e.g., 1, 2, 3..."
+                        />
+                        <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                          Enter a number or code for quick item search in cafe mode
+                        </small>
+                      </label>
+                    </div>
+                    <div className="form-field">
+                      <label>
+                        Stock:
+                        <input
+                          type="number"
+                          className="input"
+                          value={stock}
+                          onChange={(e) => setStock(e.target.value)}
+                          onFocus={(e) => {
+                            if (e.target.value === '0') {
+                              e.target.value = '';
+                              setStock('');
+                            }
+                          }}
+                          onBlur={(e) => {
+                            if (e.target.value === '') {
+                              setStock('0');
+                            }
+                          }}
+                          min="0"
+                        />
+                      </label>
+                    </div>
                     <div className="form-field">
                       <label>
                         Category:
@@ -1132,11 +944,6 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                             ))
                           )}
                         </select>
-                        {categories.length === 0 && (
-                          <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
-                            No categories available. Create categories first.
-                          </small>
-                        )}
                       </label>
                     </div>
                     {categoryId && getSubcategories().length > 0 ? (
@@ -1185,62 +992,340 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                       </div>
                     )}
                   </>
-                )}
-              </>
-            )}
+                ) : (
+                  <>
+                    <div className="form-field form-field-full-width">
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: 0 }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input
+                            type="radio"
+                            checked={!useManualCode}
+                            onChange={() => {
+                              setUseManualCode(false);
+                              setCode('');
+                              setBarcode('');
+                            }}
+                          />
+                          <span>Use Prefix Dropdown</span>
+                        </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input
+                            type="radio"
+                            checked={useManualCode}
+                            onChange={() => {
+                              setUseManualCode(true);
+                              setSelectedPrefixId('');
+                              setProductCodeSize('');
+                            }}
+                          />
+                          <span>Enter Code Manually</span>
+                        </span>
+                      </label>
+                    </div>
 
-            {/* Pricing - 3 columns */}
-            <div className="form-field">
-              <label>
-                Cost (₹) *:
-                <input
-                  type="number"
-                  className="input"
-                  value={cost}
-                  onChange={(e) => setCost(e.target.value)}
-                  step="0.01"
-                  min="0"
-                  placeholder="Purchase cost"
-                />
-              </label>
-            </div>
-            <div className="form-field">
-              <label>
-                Sale Price (₹) *:
-                <input
-                  type="number"
-                  className="input"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  step="0.01"
-                  min="0"
-                  placeholder="Selling price"
-                />
-              </label>
-            </div>
-            <div className="form-field">
-              <label>
-                MRP (₹) (Optional - for display):
-                <input
-                  type="number"
-                  className="input"
-                  value={mrp}
-                  onChange={(e) => setMrp(e.target.value)}
-                  step="0.01"
-                  min="0"
-                  placeholder="Maximum Retail Price"
-                />
-              </label>
-            </div>
-            </div>
-            </div>
-            <div className="modal-actions">
-              <button className="btn btn-secondary" onClick={() => setModalVisible(false)}>
-                Cancel
-              </button>
-              <button className="btn btn-primary" onClick={handleSave}>
-                Save
-              </button>
+                    {!useManualCode ? (
+                      <>
+                        <div className="form-field">
+                          <label>
+                            Item Code Prefix *:
+                            <select
+                              className="input"
+                              value={selectedPrefixId}
+                              onChange={(e) => {
+                                setSelectedPrefixId(e.target.value);
+                                setProductCodeSize('');
+                                setCode('');
+                                setBarcode('');
+                              }}
+                            >
+                              <option value="">Select prefix...</option>
+                              {prefixes.map((prefix) => (
+                                <option key={prefix.id} value={prefix.id}>
+                                  {prefix.prefix} {prefix.description ? `(${prefix.description})` : ''}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
+                        {selectedPrefixId && (
+                          <div className="form-field">
+                            <label>
+                              Product Code-Size (e.g., "PROD001-L"):
+                              <input
+                                type="text"
+                                className="input"
+                                value={productCodeSize}
+                                onChange={(e) => setProductCodeSize(e.target.value)}
+                                placeholder="PROD001-L"
+                              />
+                              <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                                This will auto-fill the barcode and code fields
+                              </small>
+                            </label>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="form-field">
+                        <label>
+                          Item Code * (Manual Entry):
+                          <input
+                            type="text"
+                            className="input"
+                            value={code}
+                            onChange={(e) => {
+                              setCode(e.target.value);
+                              setBarcode(e.target.value);
+                            }}
+                            placeholder="Enter item code (e.g., shopname-place-PROD001-L)"
+                          />
+                          <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                            New codes will be automatically added to the prefix list
+                          </small>
+                        </label>
+                      </div>
+                    )}
+
+                    <div className="form-field">
+                      <label>
+                        Barcode:
+                        <input
+                          type="text"
+                          className="input"
+                          value={barcode}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setBarcode(v);
+                            setCode(v);
+                          }}
+                          placeholder="Auto-filled from prefix + product code-size"
+                        />
+                        <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                          Updates with item code (prefix + product code-size or manual entry).
+                        </small>
+                      </label>
+                    </div>
+                    <div className="form-field">
+                      <label>
+                        Mapping Code (for Quick Search):
+                        <input
+                          type="text"
+                          className="input"
+                          value={mappingCode}
+                          onChange={(e) => setMappingCode(e.target.value)}
+                          placeholder="e.g., 1, 2, 3..."
+                        />
+                        <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                          Optional: Enter a number or code for quick item search
+                        </small>
+                      </label>
+                    </div>
+                    <div className="form-field">
+                      <label>
+                        Stock:
+                        <input
+                          type="number"
+                          className="input"
+                          value={stock}
+                          onChange={(e) => setStock(e.target.value)}
+                          onFocus={(e) => {
+                            if (e.target.value === '0') {
+                              e.target.value = '';
+                              setStock('');
+                            }
+                          }}
+                          onBlur={(e) => {
+                            if (e.target.value === '') {
+                              setStock('0');
+                            }
+                          }}
+                          min="0"
+                        />
+                      </label>
+                    </div>
+
+                    {/* GST Fields */}
+                    <div className="form-field">
+                      <label>
+                        HSN Code:
+                        <input
+                          type="text"
+                          className="input"
+                          value={hsnCode}
+                          onChange={(e) => setHsnCode(e.target.value)}
+                          placeholder="e.g., 847120"
+                        />
+                        <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                          Harmonized System of Nomenclature code for GST
+                        </small>
+                      </label>
+                    </div>
+
+                    <div className="form-field">
+                      <label>
+                        GST Rate (%):
+                        <input
+                          type="text"
+                          className="input"
+                          value={gstRate}
+                          onChange={(e) => setGstRate(e.target.value)}
+                          placeholder="e.g., 5, 12, 18"
+                        />
+                        <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                          GST percentage rate (0, 5, 12, 18, 28)
+                        </small>
+                      </label>
+                    </div>
+
+                    <div className="form-field">
+                      <label>
+                        CESS Rate (%):
+                        <input
+                          type="text"
+                          className="input"
+                          value={cessRate}
+                          onChange={(e) => setCessRate(e.target.value)}
+                          placeholder="e.g., 0, 1, 2"
+                        />
+                        <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                          Additional cess rate (optional)
+                        </small>
+                      </label>
+                    </div>
+
+                    {((company?.business_type as any) !== 'cafe' || editingItem) && (
+                      <>
+                        <div className="form-field">
+                          <label>
+                            Category:
+                            <select
+                              className="input"
+                              value={categoryId}
+                              onChange={(e) => {
+                                setCategoryId(e.target.value);
+                                setSubcategory('');
+                              }}
+                            >
+                              <option value="">None</option>
+                              {categories.length === 0 ? (
+                                <option value="" disabled>Loading categories...</option>
+                              ) : (
+                                getUniqueMainCategories().map((cat) => (
+                                  <option key={cat.id} value={cat.id}>
+                                    {cat.name}
+                                  </option>
+                                ))
+                              )}
+                            </select>
+                            {categories.length === 0 && (
+                              <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                                No categories available. Create categories first.
+                              </small>
+                            )}
+                          </label>
+                        </div>
+                        {categoryId && getSubcategories().length > 0 ? (
+                          <div className="form-field">
+                            <label>
+                              Subcategory:
+                              <select
+                                className="input"
+                                value={subcategory}
+                                onChange={(e) => setSubcategory(e.target.value)}
+                              >
+                                <option value="">None</option>
+                                {getSubcategories().map((subcat, idx) => (
+                                  <option key={idx} value={subcat}>
+                                    {subcat}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
+                        ) : categoryId && getSubcategories().length === 0 ? (
+                          <div className="form-field">
+                            <label>
+                              Subcategory (Optional):
+                              <input
+                                type="text"
+                                className="input"
+                                placeholder="Enter subcategory"
+                                value={subcategory}
+                                onChange={(e) => setSubcategory(e.target.value)}
+                              />
+                            </label>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="form-field">
+                              <label>
+                                Subcategory:
+                                <input
+                                  type="text"
+                                  className="input"
+                                  placeholder="Select category first"
+                                  value={subcategory}
+                                  disabled
+                                />
+                              </label>
+                            </div>
+                            <div className="form-field">
+                              <label>
+                                Sale Price (₹) *:
+                                <input
+                                  type="number"
+                                  className="input"
+                                  value={price}
+                                  onChange={(e) => setPrice(e.target.value)}
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="Selling price"
+                                />
+                              </label>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
+                    <div className="form-field">
+                      <label>
+                        Cost (₹):
+                        <input
+                          type="number"
+                          className="input"
+                          value={cost}
+                          onChange={(e) => setCost(e.target.value)}
+                          step="0.01"
+                          min="0"
+                          placeholder="Purchase cost"
+                        />
+                      </label>
+                    </div>
+                    <div className="form-field">
+                      <label>
+                        MRP (₹) (Optional - for display):
+                        <input
+                          type="number"
+                          className="input"
+                          value={mrp}
+                          onChange={(e) => setMrp(e.target.value)}
+                          step="0.01"
+                          min="0"
+                          placeholder="Maximum Retail Price"
+                        />
+                      </label>
+                    </div>
+                  </>
+                )}
+                <div className="modal-actions">
+                  <button className="btn btn-secondary" onClick={() => setModalVisible(false)}>
+                    Cancel
+                  </button>
+                  <button className="btn btn-primary" onClick={handleSave}>
+                    Save
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

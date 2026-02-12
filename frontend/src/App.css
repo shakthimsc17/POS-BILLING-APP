@@ -3,17 +3,47 @@
   display: flex;
   flex-direction: row;
   position: relative;
+  width: 100vw;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
-/* Sidebar Trigger - Invisible area on left edge */
-.sidebar-trigger {
+/* Sidebar Toggle Button */
+.sidebar-toggle-btn {
   position: fixed;
-  left: 0;
-  top: 0;
-  width: 20px;
-  height: 100vh;
-  z-index: 1001;
+  left: 10px;
+  top: 10px;
+  width: 45px;
+  height: 45px;
+  background: #2c3e50;
+  border: 2px solid #34495e;
+  border-radius: 50%;
   cursor: pointer;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  margin: 10px;
+}
+
+/* Position toggle button next to sidebar when open */
+.main-content.sidebar-open .sidebar-toggle-btn {
+  left: 271px;
+}
+
+.sidebar-toggle-btn:hover {
+  background: #34495e;
+  border-color: #4a5f7a;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.sidebar-toggle-btn:active {
+  transform: scale(0.95);
 }
 
 /* Sidebar Styles */
@@ -28,12 +58,13 @@
   left: -260px;
   top: 0;
   z-index: 1000;
-  transition: left 0.3s ease;
+  transition: left 0.3s ease, box-shadow 0.3s ease;
   overflow: hidden;
 }
 
 .sidebar.open {
   left: 0;
+  box-shadow: 2px 0 15px rgba(0, 0, 0, 0.25);
 }
 
 .sidebar-header {
@@ -221,22 +252,30 @@
 .main-content {
   flex: 1;
   margin-left: 0;
-  width: 100%;
-  transition: margin-left 0.3s ease;
+  width: 100vw;
+  max-width: 100vw;
+  transition: margin-left 0.3s ease, width 0.3s ease, max-width 0.3s ease;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .main-content.sidebar-open {
   margin-left: 260px;
-  max-width: calc(100% - 260px);
+  width: calc(100vw - 260px);
+  max-width: calc(100vw - 260px);
+  overflow-x: hidden;
 }
 
-.page-content-wrapper {
+.page-content {
   flex: 1;
   padding: 2rem;
   background: #f5f7fa;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 /* Page Footer */
@@ -285,7 +324,7 @@
 }
 
 .btn {
-  padding: 0.75rem 1.5rem;
+  padding: 0.875rem 1.75rem;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -294,7 +333,11 @@
   transition: all 0.3s ease;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+  min-height: 44px;
+  text-decoration: none;
+  box-sizing: border-box;
 }
 
 .btn-primary {
@@ -370,9 +413,85 @@
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
 
-@media (max-width: 768px) {
-  .sidebar-trigger {
-    width: 15px;
+/* Utility classes for overflow prevention */
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.overflow-x-hidden {
+  overflow-x: hidden;
+}
+
+.overflow-y-auto {
+  overflow-y: auto;
+}
+
+.max-width-full {
+  max-width: 100%;
+}
+
+.max-width-viewport {
+  max-width: 100vw;
+}
+
+.width-full {
+  width: 100%;
+}
+
+.width-auto {
+  width: auto;
+}
+
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-ellipsis-2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+}
+
+/* Responsive table container */
+.table-responsive {
+  overflow-x: auto;
+  max-width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Fixed table layout for better control */
+.table-fixed {
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* Responsive Design Breakpoints */
+
+/* Mobile: 320px - 767px (Minimum width support) */
+@media (max-width: 767px) {
+  .app {
+    min-width: 320px;
+    width: 100vw;
+    max-width: 100vw;
+  }
+
+  .sidebar-toggle-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    left: 5px;
+    margin: 5px;
+  }
+
+  .main-content.sidebar-open .sidebar-toggle-btn {
+    left: 251px;
   }
 
   .sidebar {
@@ -383,9 +502,22 @@
     left: 0;
   }
 
+  .main-content {
+    margin-left: 20px;
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+    min-width: 300px;
+  }
+
   .main-content.sidebar-open {
     margin-left: 240px;
-    max-width: calc(100% - 240px);
+    width: calc(100vw - 240px);
+    max-width: calc(100vw - 240px);
+    overflow-x: hidden;
+  }
+
+  .page-content {
+    padding: 1rem;
   }
 
   .sidebar-quick-actions {
@@ -411,8 +543,211 @@
     font-size: 0.85rem;
   }
 
-  .page-content-wrapper {
+  .btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+    min-height: 40px;
+  }
+
+  .card {
     padding: 1rem;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Tablet: 768px - 1023px */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .app {
+    min-width: 768px;
+    width: 100vw;
+    max-width: 100vw;
+  }
+
+  .sidebar-toggle-btn {
+    width: 42px;
+    height: 42px;
+    font-size: 19px;
+    left: 8px;
+    margin: 8px;
+  }
+
+  .main-content.sidebar-open .sidebar-toggle-btn {
+    left: 261px;
+  }
+
+  .sidebar {
+    width: 250px;
+  }
+
+  .main-content {
+    margin-left: 50px;
+    width: calc(100vw - 50px);
+    max-width: calc(100vw - 50px);
+  }
+
+  .main-content.sidebar-open {
+    margin-left: 250px;
+    width: calc(100vw - 250px);
+    max-width: calc(100vw - 250px);
+  }
+
+  .page-content {
+    padding: 1.5rem;
+  }
+
+  .grid-2 {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+
+  .grid-4 {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+
+  .grid-small {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+
+  .sidebar-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .btn {
+    padding: 0.875rem 1.75rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Small Desktop: 1024px - 1199px */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .app {
+    min-width: 1024px;
+    width: 100vw;
+    max-width: 100vw;
+  }
+
+  .sidebar {
+    width: 260px;
+  }
+
+  .main-content {
+    margin-left: 66px;
+    width: calc(100vw - 66px);
+    max-width: calc(100vw - 66px);
+  }
+
+  .main-content.sidebar-open {
+    margin-left: 260px;
+    width: calc(100vw - 260px);
+    max-width: calc(100vw - 260px);
+  }
+
+  .page-content {
+    padding: 2rem;
+    margin: 0 auto;
+  }
+
+  .grid-2 {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+
+  .grid-4 {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+
+  .grid-small {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+}
+
+/* Large Desktop: 1200px and above (Optimal range) */
+@media (min-width: 1200px) {
+  .app {
+    min-width: 1200px;
+    width: 100vw;
+    max-width: 100vw;
+  }
+
+  .sidebar {
+    width: 280px;
+  }
+
+  .main-content {
+    margin-left: 80px;
+    width: calc(100vw - 80px);
+    max-width: calc(100vw - 80px);
+  }
+
+  .main-content.sidebar-open {
+    margin-left: 280px;
+    width: calc(100vw - 280px);
+    max-width: calc(100vw - 280px);
+  }
+
+  .page-content {
+    padding: 2.5rem;
+    margin: 0 auto;
+  }
+
+  .grid-2 {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+
+  .grid-4 {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+
+  .grid-small {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+
+  .sidebar-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .btn {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    min-height: 48px;
+  }
+
+  .card {
+    padding: 2rem;
+  }
+}
+
+/* Extra Large Desktop: 1600px and above */
+@media (min-width: 1600px) {
+  .app {
+    width: 100vw;
+    max-width: 100vw;
+  }
+
+  .sidebar {
+    width: 261px;
+  }
+
+  .main-content {
+    margin-left: 80px;
+    width: calc(100vw - 80px);
+    max-width: calc(100vw - 80px);
+  }
+
+  .main-content.sidebar-open {
+    margin-left: 261px;
+    width: calc(100vw - 261px);
+    max-width: calc(100vw - 261px);
   }
 }
 

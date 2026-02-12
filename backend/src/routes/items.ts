@@ -30,6 +30,7 @@ router.get('/', [
       prisma.item.findMany({
         ...(fetchAll ? {} : { skip, take: limit }),
         orderBy: { createdAt: 'desc' },
+        include: { uom: true },
       }),
       prisma.item.count(),
     ]);
@@ -50,6 +51,29 @@ router.get('/', [
       mrp: item.mrp,
       stock: item.stock,
       image_url: item.imageUrl,
+      hsn_code: item.hsnCode,
+      gst_rate: item.gstRate,
+      cess_rate: item.cessRate,
+      uom_id: item.uomId,
+      uom_name: item.uom?.name,
+      weight_per_unit: item.weightPerUnit,
+      volume_per_unit: item.volumePerUnit,
+      length_per_unit: item.lengthPerUnit,
+      width_per_unit: item.widthPerUnit,
+      height_per_unit: item.heightPerUnit,
+      manufacturer: item.manufacturer,
+      brand: item.brand,
+      model_number: item.modelNumber,
+      batch_number: item.batchNumber,
+      expiry_date: item.expiryDate ? item.expiryDate.toISOString().split('T')[0] : null,
+      shelf_life_days: item.shelfLifeDays,
+      min_stock_level: item.minStockLevel,
+      max_stock_level: item.maxStockLevel,
+      reorder_level: item.reorderLevel,
+      package_type: item.packageType,
+      package_quantity: item.packageQuantity,
+      is_perishable: item.isPerishable,
+      storage_conditions: item.storageConditions,
       created_at: item.createdAt.toISOString(),
     }));
 
@@ -78,36 +102,60 @@ router.get('/search', [query('q').notEmpty()], async (req: AuthRequest, res: Res
     }
 
     const searchQuery = req.query.q as string;
-    const searchTerm = `%${searchQuery}%`;
 
-    const items = await prisma.$queryRaw<any[]>`
-      SELECT * FROM items
-      WHERE (
-        name ILIKE ${searchTerm}
-        OR code ILIKE ${searchTerm}
-        OR barcode ILIKE ${searchTerm}
-        OR mapping_code ILIKE ${searchTerm}
-      )
-      ORDER BY created_at DESC
-    `;
+    const items = await prisma.item.findMany({
+      where: {
+        OR: [
+          { name: { contains: searchQuery, mode: 'insensitive' } },
+          { code: { contains: searchQuery, mode: 'insensitive' } },
+          { barcode: { contains: searchQuery, mode: 'insensitive' } },
+          { mappingCode: { contains: searchQuery, mode: 'insensitive' } },
+        ]
+      },
+      orderBy: { createdAt: 'desc' },
+      include: { uom: true }
+    });
 
-    // Transform to snake_case for frontend (raw query returns snake_case, but ensure consistency)
-    const transformedItems = items.map((item: any) => ({
+    // Transform to snake_case for frontend
+    const transformedItems = items.map(item => ({
       id: item.id,
-      customer_id: item.customer_id,
+      customer_id: item.customerId,
       name: item.name,
-      display_name: item.display_name,
+      display_name: item.displayName,
       code: item.code,
       barcode: item.barcode,
-      mapping_code: item.mapping_code,
-      category_id: item.category_id,
+      mapping_code: item.mappingCode,
+      category_id: item.categoryId,
       subcategory: item.subcategory,
       cost: item.cost,
       price: item.price,
       mrp: item.mrp,
       stock: item.stock,
-      image_url: item.image_url,
-      created_at: item.created_at ? new Date(item.created_at).toISOString() : new Date().toISOString(),
+      image_url: item.imageUrl,
+      hsn_code: item.hsnCode,
+      gst_rate: item.gstRate,
+      cess_rate: item.cessRate,
+      uom_id: item.uomId,
+      uom_name: item.uom?.name,
+      weight_per_unit: item.weightPerUnit,
+      volume_per_unit: item.volumePerUnit,
+      length_per_unit: item.lengthPerUnit,
+      width_per_unit: item.widthPerUnit,
+      height_per_unit: item.heightPerUnit,
+      manufacturer: item.manufacturer,
+      brand: item.brand,
+      model_number: item.modelNumber,
+      batch_number: item.batchNumber,
+      expiry_date: item.expiryDate ? item.expiryDate.toISOString().split('T')[0] : null,
+      shelf_life_days: item.shelfLifeDays,
+      min_stock_level: item.minStockLevel,
+      max_stock_level: item.maxStockLevel,
+      reorder_level: item.reorderLevel,
+      package_type: item.packageType,
+      package_quantity: item.packageQuantity,
+      is_perishable: item.isPerishable,
+      storage_conditions: item.storageConditions,
+      created_at: item.createdAt.toISOString(),
     }));
 
     res.json(transformedItems);
@@ -139,6 +187,7 @@ router.get('/by-categories', [query('categoryIds').notEmpty()], async (req: Auth
         },
       },
       orderBy: { createdAt: 'desc' },
+      include: { uom: true }
     });
 
     // Transform to snake_case for frontend
@@ -157,6 +206,29 @@ router.get('/by-categories', [query('categoryIds').notEmpty()], async (req: Auth
       mrp: item.mrp,
       stock: item.stock,
       image_url: item.imageUrl,
+      hsn_code: item.hsnCode,
+      gst_rate: item.gstRate,
+      cess_rate: item.cessRate,
+      uom_id: item.uomId,
+      uom_name: item.uom?.name,
+      weight_per_unit: item.weightPerUnit,
+      volume_per_unit: item.volumePerUnit,
+      length_per_unit: item.lengthPerUnit,
+      width_per_unit: item.widthPerUnit,
+      height_per_unit: item.heightPerUnit,
+      manufacturer: item.manufacturer,
+      brand: item.brand,
+      model_number: item.modelNumber,
+      batch_number: item.batchNumber,
+      expiry_date: item.expiryDate ? item.expiryDate.toISOString().split('T')[0] : null,
+      shelf_life_days: item.shelfLifeDays,
+      min_stock_level: item.minStockLevel,
+      max_stock_level: item.maxStockLevel,
+      reorder_level: item.reorderLevel,
+      package_type: item.packageType,
+      package_quantity: item.packageQuantity,
+      is_perishable: item.isPerishable,
+      storage_conditions: item.storageConditions,
       created_at: item.createdAt.toISOString(),
     }));
 
@@ -176,6 +248,7 @@ router.get('/barcode/:barcode', async (req: AuthRequest, res) => {
       where: {
         barcode,
       },
+      include: { uom: true }
     });
 
     if (!item) {
@@ -198,6 +271,29 @@ router.get('/barcode/:barcode', async (req: AuthRequest, res) => {
       mrp: item.mrp,
       stock: item.stock,
       image_url: item.imageUrl,
+      hsn_code: item.hsnCode,
+      gst_rate: item.gstRate,
+      cess_rate: item.cessRate,
+      uom_id: item.uomId,
+      uom_name: item.uom?.name,
+      weight_per_unit: item.weightPerUnit,
+      volume_per_unit: item.volumePerUnit,
+      length_per_unit: item.lengthPerUnit,
+      width_per_unit: item.widthPerUnit,
+      height_per_unit: item.heightPerUnit,
+      manufacturer: item.manufacturer,
+      brand: item.brand,
+      model_number: item.modelNumber,
+      batch_number: item.batchNumber,
+      expiry_date: item.expiryDate ? item.expiryDate.toISOString().split('T')[0] : null,
+      shelf_life_days: item.shelfLifeDays,
+      min_stock_level: item.minStockLevel,
+      max_stock_level: item.maxStockLevel,
+      reorder_level: item.reorderLevel,
+      package_type: item.packageType,
+      package_quantity: item.packageQuantity,
+      is_perishable: item.isPerishable,
+      storage_conditions: item.storageConditions,
       created_at: item.createdAt.toISOString(),
     });
   } catch (error: any) {
@@ -218,6 +314,7 @@ router.get('/search-by-mapping-code/:mappingCode', async (req: AuthRequest, res)
           mode: 'insensitive',
         },
       },
+      include: { uom: true }
     });
 
     if (!item) {
@@ -240,6 +337,29 @@ router.get('/search-by-mapping-code/:mappingCode', async (req: AuthRequest, res)
       mrp: item.mrp,
       stock: item.stock,
       image_url: item.imageUrl,
+      hsn_code: item.hsnCode,
+      gst_rate: item.gstRate,
+      cess_rate: item.cessRate,
+      uom_id: item.uomId,
+      uom_name: item.uom?.name,
+      weight_per_unit: item.weightPerUnit,
+      volume_per_unit: item.volumePerUnit,
+      length_per_unit: item.lengthPerUnit,
+      width_per_unit: item.widthPerUnit,
+      height_per_unit: item.heightPerUnit,
+      manufacturer: item.manufacturer,
+      brand: item.brand,
+      model_number: item.modelNumber,
+      batch_number: item.batchNumber,
+      expiry_date: item.expiryDate ? item.expiryDate.toISOString().split('T')[0] : null,
+      shelf_life_days: item.shelfLifeDays,
+      min_stock_level: item.minStockLevel,
+      max_stock_level: item.maxStockLevel,
+      reorder_level: item.reorderLevel,
+      package_type: item.packageType,
+      package_quantity: item.packageQuantity,
+      is_perishable: item.isPerishable,
+      storage_conditions: item.storageConditions,
       created_at: item.createdAt.toISOString(),
     });
   } catch (error: any) {
@@ -254,8 +374,8 @@ router.get('/search-by-barcode/:barcode', async (req: AuthRequest, res) => {
     const { barcode } = req.params;
     const searchTerm = `%${barcode}%`;
 
-    const items = await prisma.$queryRaw<any[]>`
-      SELECT * FROM items
+    const itemsRaw = await prisma.$queryRaw<any[]>`
+      SELECT id FROM items
       WHERE barcode ILIKE ${searchTerm}
       ORDER BY 
         CASE 
@@ -267,31 +387,65 @@ router.get('/search-by-barcode/:barcode', async (req: AuthRequest, res) => {
       LIMIT 10
     `;
 
-    if (items.length === 0) {
+    if (itemsRaw.length === 0) {
       return res.status(404).json({ error: 'Item not found' });
     }
 
+    const itemIds = itemsRaw.map((item: any) => item.id);
+    
+    const items = await prisma.item.findMany({
+      where: { id: { in: itemIds } },
+      include: { uom: true }
+    });
+
+    // Re-sort items based on the raw query order
+    const itemMap = new Map(items.map(item => [item.id, item]));
+    const sortedItems = itemIds.map((id: string) => itemMap.get(id)).filter(item => item !== undefined);
+
     // Transform to snake_case for frontend
-    const transformedItems = items.map((item: any) => ({
+    const transformedItems = sortedItems.map((item: any) => ({
       id: item.id,
-      customer_id: item.customer_id,
+      customer_id: item.customerId,
       name: item.name,
-      display_name: item.display_name,
+      display_name: item.displayName,
       code: item.code,
       barcode: item.barcode,
-      mapping_code: item.mapping_code,
-      category_id: item.category_id,
+      mapping_code: item.mappingCode,
+      category_id: item.categoryId,
       subcategory: item.subcategory,
       cost: item.cost,
       price: item.price,
       mrp: item.mrp,
       stock: item.stock,
-      image_url: item.image_url,
-      created_at: item.created_at ? new Date(item.created_at).toISOString() : new Date().toISOString(),
+      image_url: item.imageUrl,
+      hsn_code: item.hsnCode,
+      gst_rate: item.gstRate,
+      cess_rate: item.cessRate,
+      uom_id: item.uomId,
+      uom_name: item.uom?.name,
+      weight_per_unit: item.weightPerUnit,
+      volume_per_unit: item.volumePerUnit,
+      length_per_unit: item.lengthPerUnit,
+      width_per_unit: item.widthPerUnit,
+      height_per_unit: item.heightPerUnit,
+      manufacturer: item.manufacturer,
+      brand: item.brand,
+      model_number: item.modelNumber,
+      batch_number: item.batchNumber,
+      expiry_date: item.expiryDate ? item.expiryDate.toISOString().split('T')[0] : null,
+      shelf_life_days: item.shelfLifeDays,
+      min_stock_level: item.minStockLevel,
+      max_stock_level: item.maxStockLevel,
+      reorder_level: item.reorderLevel,
+      package_type: item.packageType,
+      package_quantity: item.packageQuantity,
+      is_perishable: item.isPerishable,
+      storage_conditions: item.storageConditions,
+      created_at: item.createdAt.toISOString(),
     }));
 
     // Return first item if exact match, otherwise return array
-    const exactMatch = transformedItems.find(item => item.barcode?.toLowerCase() === barcode.toLowerCase());
+    const exactMatch = transformedItems.find((item: any) => item.barcode?.toLowerCase() === barcode.toLowerCase());
     if (exactMatch) {
       res.json(exactMatch);
     } else {
@@ -336,6 +490,31 @@ router.post(
         imageUrl,
         displayName,
         display_name, // Accept snake_case from frontend
+        hsnCode,
+        hsn_code, // Accept snake_case from frontend
+        gstRate,
+        gst_rate, // Accept snake_case from frontend
+        cessRate,
+        cess_rate, // Accept snake_case from frontend
+        uomId, uom_id,
+        weightPerUnit, weight_per_unit,
+        volumePerUnit, volume_per_unit,
+        lengthPerUnit, length_per_unit,
+        widthPerUnit, width_per_unit,
+        heightPerUnit, height_per_unit,
+        manufacturer,
+        brand,
+        modelNumber, model_number,
+        batchNumber, batch_number,
+        expiryDate, expiry_date,
+        shelfLifeDays, shelf_life_days,
+        minStockLevel, min_stock_level,
+        maxStockLevel, max_stock_level,
+        reorderLevel, reorder_level,
+        packageType, package_type,
+        packageQuantity, package_quantity,
+        isPerishable, is_perishable,
+        storageConditions, storage_conditions,
       } = req.body;
 
       // Use categoryId (camelCase) or category_id (snake_case), whichever is provided
@@ -346,6 +525,34 @@ router.post(
       
       // Use mappingCode (camelCase) or mapping_code (snake_case), whichever is provided
       const finalMappingCode = mappingCode !== undefined ? (mappingCode === '' ? null : mappingCode) : (mapping_code !== undefined ? (mapping_code === '' ? null : mapping_code) : undefined);
+      
+      // Use hsnCode (camelCase) or hsn_code (snake_case), whichever is provided
+      const finalHsnCode = hsnCode !== undefined ? hsnCode : hsn_code;
+      
+      // Use gstRate (camelCase) or gst_rate (snake_case), whichever is provided
+      const finalGstRate = gstRate !== undefined ? gstRate : gst_rate;
+      
+      // Use cessRate (camelCase) or cess_rate (snake_case), whichever is provided
+      const finalCessRate = cessRate !== undefined ? cessRate : cess_rate;
+
+      // Handle new extended fields
+      const finalUomId = uomId || uom_id;
+      const finalWeightPerUnit = weightPerUnit !== undefined ? weightPerUnit : weight_per_unit;
+      const finalVolumePerUnit = volumePerUnit !== undefined ? volumePerUnit : volume_per_unit;
+      const finalLengthPerUnit = lengthPerUnit !== undefined ? lengthPerUnit : length_per_unit;
+      const finalWidthPerUnit = widthPerUnit !== undefined ? widthPerUnit : width_per_unit;
+      const finalHeightPerUnit = heightPerUnit !== undefined ? heightPerUnit : height_per_unit;
+      const finalModelNumber = modelNumber !== undefined ? modelNumber : model_number;
+      const finalBatchNumber = batchNumber !== undefined ? batchNumber : batch_number;
+      const finalExpiryDate = expiryDate !== undefined ? expiryDate : expiry_date;
+      const finalShelfLifeDays = shelfLifeDays !== undefined ? shelfLifeDays : shelf_life_days;
+      const finalMinStockLevel = minStockLevel !== undefined ? minStockLevel : min_stock_level;
+      const finalMaxStockLevel = maxStockLevel !== undefined ? maxStockLevel : max_stock_level;
+      const finalReorderLevel = reorderLevel !== undefined ? reorderLevel : reorder_level;
+      const finalPackageType = packageType !== undefined ? packageType : package_type;
+      const finalPackageQuantity = packageQuantity !== undefined ? packageQuantity : package_quantity;
+      const finalIsPerishable = isPerishable !== undefined ? isPerishable : is_perishable;
+      const finalStorageConditions = storageConditions !== undefined ? storageConditions : storage_conditions;
       
       console.log('Creating item:', {
         name,
@@ -374,7 +581,31 @@ router.post(
           mrp: mrp ? parseFloat(mrp) : null,
           stock: stock ? parseInt(stock) : 0,
           imageUrl,
+          hsnCode: finalHsnCode || null,
+          gstRate: finalGstRate ? parseFloat(finalGstRate) : 0,
+          cessRate: finalCessRate ? parseFloat(finalCessRate) : 0,
+          // New fields
+          uomId: finalUomId || null,
+          weightPerUnit: finalWeightPerUnit ? parseFloat(finalWeightPerUnit) : null,
+          volumePerUnit: finalVolumePerUnit ? parseFloat(finalVolumePerUnit) : null,
+          lengthPerUnit: finalLengthPerUnit ? parseFloat(finalLengthPerUnit) : null,
+          widthPerUnit: finalWidthPerUnit ? parseFloat(finalWidthPerUnit) : null,
+          heightPerUnit: finalHeightPerUnit ? parseFloat(finalHeightPerUnit) : null,
+          manufacturer: manufacturer || null,
+          brand: brand || null,
+          modelNumber: finalModelNumber || null,
+          batchNumber: finalBatchNumber || null,
+          expiryDate: finalExpiryDate ? new Date(finalExpiryDate) : null,
+          shelfLifeDays: finalShelfLifeDays ? parseInt(finalShelfLifeDays) : null,
+          minStockLevel: finalMinStockLevel ? parseFloat(finalMinStockLevel) : null,
+          maxStockLevel: finalMaxStockLevel ? parseFloat(finalMaxStockLevel) : null,
+          reorderLevel: finalReorderLevel ? parseFloat(finalReorderLevel) : null,
+          packageType: finalPackageType || null,
+          packageQuantity: finalPackageQuantity ? parseInt(finalPackageQuantity) : 1,
+          isPerishable: finalIsPerishable !== undefined ? finalIsPerishable : false,
+          storageConditions: finalStorageConditions || null,
         },
+        include: { uom: true }
       });
       
       console.log('Item created:', {
@@ -412,6 +643,29 @@ router.post(
         mrp: item.mrp,
         stock: item.stock,
         image_url: item.imageUrl,
+        hsn_code: item.hsnCode,
+        gst_rate: item.gstRate,
+        cess_rate: item.cessRate,
+        uom_id: item.uomId,
+        uom_name: item.uom?.name,
+        weight_per_unit: item.weightPerUnit,
+        volume_per_unit: item.volumePerUnit,
+        length_per_unit: item.lengthPerUnit,
+        width_per_unit: item.widthPerUnit,
+        height_per_unit: item.heightPerUnit,
+        manufacturer: item.manufacturer,
+        brand: item.brand,
+        model_number: item.modelNumber,
+        batch_number: item.batchNumber,
+        expiry_date: item.expiryDate ? item.expiryDate.toISOString().split('T')[0] : null,
+        shelf_life_days: item.shelfLifeDays,
+        min_stock_level: item.minStockLevel,
+        max_stock_level: item.maxStockLevel,
+        reorder_level: item.reorderLevel,
+        package_type: item.packageType,
+        package_quantity: item.packageQuantity,
+        is_perishable: item.isPerishable,
+        storage_conditions: item.storageConditions,
         created_at: item.createdAt.toISOString(),
       });
     } catch (error: any) {
@@ -455,6 +709,31 @@ router.put(
         mrp,
         stock,
         imageUrl,
+        hsnCode,
+        hsn_code, // Accept snake_case from frontend
+        gstRate,
+        gst_rate, // Accept snake_case from frontend
+        cessRate,
+        cess_rate, // Accept snake_case from frontend
+        uomId, uom_id,
+        weightPerUnit, weight_per_unit,
+        volumePerUnit, volume_per_unit,
+        lengthPerUnit, length_per_unit,
+        widthPerUnit, width_per_unit,
+        heightPerUnit, height_per_unit,
+        manufacturer,
+        brand,
+        modelNumber, model_number,
+        batchNumber, batch_number,
+        expiryDate, expiry_date,
+        shelfLifeDays, shelf_life_days,
+        minStockLevel, min_stock_level,
+        maxStockLevel, max_stock_level,
+        reorderLevel, reorder_level,
+        packageType, package_type,
+        packageQuantity, package_quantity,
+        isPerishable, is_perishable,
+        storageConditions, storage_conditions,
       } = req.body;
 
       // Use categoryId (camelCase) or category_id (snake_case), whichever is provided
@@ -463,6 +742,31 @@ router.put(
       const finalDisplayName = displayName !== undefined ? displayName : display_name;
       // Use mappingCode (camelCase) or mapping_code (snake_case), whichever is provided
       const finalMappingCode = mappingCode !== undefined ? (mappingCode === '' ? null : mappingCode) : (mapping_code !== undefined ? (mapping_code === '' ? null : mapping_code) : undefined);
+      // Use hsnCode (camelCase) or hsn_code (snake_case), whichever is provided
+      const finalHsnCode = hsnCode !== undefined ? hsnCode : hsn_code;
+      // Use gstRate (camelCase) or gst_rate (snake_case), whichever is provided
+      const finalGstRate = gstRate !== undefined ? gstRate : gst_rate;
+      // Use cessRate (camelCase) or cess_rate (snake_case), whichever is provided
+      const finalCessRate = cessRate !== undefined ? cessRate : cess_rate;
+
+      // Handle new extended fields
+      const finalUomId = uomId !== undefined ? (uomId || uom_id) : (uom_id !== undefined ? uom_id : undefined);
+      const finalWeightPerUnit = weightPerUnit !== undefined ? weightPerUnit : weight_per_unit;
+      const finalVolumePerUnit = volumePerUnit !== undefined ? volumePerUnit : volume_per_unit;
+      const finalLengthPerUnit = lengthPerUnit !== undefined ? lengthPerUnit : length_per_unit;
+      const finalWidthPerUnit = widthPerUnit !== undefined ? widthPerUnit : width_per_unit;
+      const finalHeightPerUnit = heightPerUnit !== undefined ? heightPerUnit : height_per_unit;
+      const finalModelNumber = modelNumber !== undefined ? modelNumber : model_number;
+      const finalBatchNumber = batchNumber !== undefined ? batchNumber : batch_number;
+      const finalExpiryDate = expiryDate !== undefined ? expiryDate : expiry_date;
+      const finalShelfLifeDays = shelfLifeDays !== undefined ? shelfLifeDays : shelf_life_days;
+      const finalMinStockLevel = minStockLevel !== undefined ? minStockLevel : min_stock_level;
+      const finalMaxStockLevel = maxStockLevel !== undefined ? maxStockLevel : max_stock_level;
+      const finalReorderLevel = reorderLevel !== undefined ? reorderLevel : reorder_level;
+      const finalPackageType = packageType !== undefined ? packageType : package_type;
+      const finalPackageQuantity = packageQuantity !== undefined ? packageQuantity : package_quantity;
+      const finalIsPerishable = isPerishable !== undefined ? isPerishable : is_perishable;
+      const finalStorageConditions = storageConditions !== undefined ? storageConditions : storage_conditions;
 
       // Check if item exists (shared inventory - no customerId check)
       const existing = await prisma.item.findUnique({
@@ -515,10 +819,33 @@ router.put(
       if (mrp !== undefined) updateData.mrp = mrp ? parseFloat(mrp) : null;
       if (stock !== undefined) updateData.stock = parseInt(stock);
       if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+      if (finalHsnCode !== undefined) updateData.hsnCode = finalHsnCode || null;
+      if (finalGstRate !== undefined) updateData.gstRate = finalGstRate ? parseFloat(finalGstRate) : 0;
+      if (finalCessRate !== undefined) updateData.cessRate = finalCessRate ? parseFloat(finalCessRate) : 0;
+      if (finalUomId !== undefined) updateData.uomId = finalUomId || null;
+      if (finalWeightPerUnit !== undefined) updateData.weightPerUnit = finalWeightPerUnit ? parseFloat(finalWeightPerUnit) : null;
+      if (finalVolumePerUnit !== undefined) updateData.volumePerUnit = finalVolumePerUnit ? parseFloat(finalVolumePerUnit) : null;
+      if (finalLengthPerUnit !== undefined) updateData.lengthPerUnit = finalLengthPerUnit ? parseFloat(finalLengthPerUnit) : null;
+      if (finalWidthPerUnit !== undefined) updateData.widthPerUnit = finalWidthPerUnit ? parseFloat(finalWidthPerUnit) : null;
+      if (finalHeightPerUnit !== undefined) updateData.heightPerUnit = finalHeightPerUnit ? parseFloat(finalHeightPerUnit) : null;
+      if (manufacturer !== undefined) updateData.manufacturer = manufacturer || null;
+      if (brand !== undefined) updateData.brand = brand || null;
+      if (finalModelNumber !== undefined) updateData.modelNumber = finalModelNumber || null;
+      if (finalBatchNumber !== undefined) updateData.batchNumber = finalBatchNumber || null;
+      if (finalExpiryDate !== undefined) updateData.expiryDate = finalExpiryDate ? new Date(finalExpiryDate) : null;
+      if (finalShelfLifeDays !== undefined) updateData.shelfLifeDays = finalShelfLifeDays ? parseInt(finalShelfLifeDays) : null;
+      if (finalMinStockLevel !== undefined) updateData.minStockLevel = finalMinStockLevel ? parseFloat(finalMinStockLevel) : null;
+      if (finalMaxStockLevel !== undefined) updateData.maxStockLevel = finalMaxStockLevel ? parseFloat(finalMaxStockLevel) : null;
+      if (finalReorderLevel !== undefined) updateData.reorderLevel = finalReorderLevel ? parseFloat(finalReorderLevel) : null;
+      if (finalPackageType !== undefined) updateData.packageType = finalPackageType || null;
+      if (finalPackageQuantity !== undefined) updateData.packageQuantity = finalPackageQuantity ? parseInt(finalPackageQuantity) : 1;
+      if (finalIsPerishable !== undefined) updateData.isPerishable = finalIsPerishable;
+      if (finalStorageConditions !== undefined) updateData.storageConditions = finalStorageConditions || null;
 
       const item = await prisma.item.update({
         where: { id },
         data: updateData,
+        include: { uom: true }
       });
 
       // Log activity
@@ -554,6 +881,29 @@ router.put(
         mrp: item.mrp,
         stock: item.stock,
         image_url: item.imageUrl,
+        hsn_code: item.hsnCode,
+        gst_rate: item.gstRate,
+        cess_rate: item.cessRate,
+        uom_id: item.uomId,
+        uom_name: item.uom?.name,
+        weight_per_unit: item.weightPerUnit,
+        volume_per_unit: item.volumePerUnit,
+        length_per_unit: item.lengthPerUnit,
+        width_per_unit: item.widthPerUnit,
+        height_per_unit: item.heightPerUnit,
+        manufacturer: item.manufacturer,
+        brand: item.brand,
+        model_number: item.modelNumber,
+        batch_number: item.batchNumber,
+        expiry_date: item.expiryDate ? item.expiryDate.toISOString().split('T')[0] : null,
+        shelf_life_days: item.shelfLifeDays,
+        min_stock_level: item.minStockLevel,
+        max_stock_level: item.maxStockLevel,
+        reorder_level: item.reorderLevel,
+        package_type: item.packageType,
+        package_quantity: item.packageQuantity,
+        is_perishable: item.isPerishable,
+        storage_conditions: item.storageConditions,
         created_at: item.createdAt.toISOString(),
       });
     } catch (error: any) {

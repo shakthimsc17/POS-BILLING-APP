@@ -5,6 +5,7 @@ import { storageService } from '../services/storage';
 import { formatCurrency } from '../utils/formatters';
 import { printReceipt } from '../utils/printer';
 import { SalesCustomer } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 import QuickAddItemModal from '../components/QuickAddItemModal';
 import CustomerSelectModal from '../components/CustomerSelectModal';
 
@@ -16,11 +17,16 @@ interface CartProps {
 }
 
 export default function Cart({ onNavigate }: CartProps) {
+  const { language } = useLanguage();
+  const cartStore = useCartStore();
   const {
     items,
-    removeItem,
+    addItem,
     updateQuantity,
+    removeItem,
+    clearCart,
     getTax,
+    getGST,
     getDiscount,
     getItemDiscounts,
     getActualSubtotal,
@@ -29,13 +35,12 @@ export default function Cart({ onNavigate }: CartProps) {
     setDiscount,
     taxRate,
     discount,
-    clearCart,
     paymentMethod,
     setPaymentMethod,
     saveCart,
     loadCart,
-    isLoading,
-  } = useCartStore();
+    isLoading
+  } = cartStore;
 
   const [receivedAmount, setReceivedAmount] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -269,6 +274,7 @@ export default function Cart({ onNavigate }: CartProps) {
           taxAmount: getTax(),
           discountAmount: getDiscount(),
           autoPrint,
+          language // Add language parameter
         });
       } catch (printError) {
         console.error('Print error:', printError);
@@ -312,6 +318,13 @@ export default function Cart({ onNavigate }: CartProps) {
   const change = paymentMethod === 'cash' ? received - total : 0;
   const discountAmount = change < 0 ? Math.abs(change) : 0;
   const actualChange = change > 0 ? change : 0;
+
+  console.log('🛒 Cart Component: Render state', {
+    itemsLength: items.length,
+    items: items.map(ci => ({ name: ci.item.name, quantity: ci.quantity })),
+    total,
+    isLoading
+  });
 
   if (items.length === 0) {
     return (
@@ -417,7 +430,9 @@ export default function Cart({ onNavigate }: CartProps) {
                       >
                         −
                       </button>
-                      <span className="qty-value">{cartItem.quantity}</span>
+                      <span className="qty-value">
+                        {cartItem.quantity} <span style={{ fontSize: '0.7em', color: '#666' }}>{cartItem.item.uom_name || ''}</span>
+                      </span>
                       <button
                         className="qty-btn"
                         onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity + 1)}
@@ -499,6 +514,18 @@ export default function Cart({ onNavigate }: CartProps) {
                 </div>
                 <span className="summary-value">{formatCurrency(getTax())}</span>
               </div>
+              {(() => {
+                const gstInfo = getGST();
+                if (gstInfo.gstBreakdown.length > 0) {
+                  return gstInfo.gstBreakdown.map(gst => (
+                    <div key={gst.rate} className="summary-row" style={{ fontSize: '11px', color: '#666' }}>
+                      <span>GST @ {gst.rate}%:</span>
+                      <span>{formatCurrency(gst.amount)}</span>
+                    </div>
+                  ));
+                }
+                return null;
+              })()}
               <div className="summary-row">
                 <div className="summary-label-with-input">
                   <label>Discount (₹): <span className="function-key-hint">F2</span></label>

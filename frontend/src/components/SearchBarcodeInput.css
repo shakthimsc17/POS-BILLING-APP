@@ -15,7 +15,11 @@
 .search-input-wrapper .input,
 .barcode-input-wrapper .input {
   flex: 1;
-  padding-right: 164px;
+  padding: 0.875rem 1rem;
+  padding-right: 45px;
+  height: 48px;
+  line-height: 1.5;
+  box-sizing: border-box;
 }
 
 .barcode-toggle-btn {

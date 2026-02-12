@@ -31,6 +31,16 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
   const { items, loadItems } = useInventoryStore();
   const { company, loadCompany } = useCompanyStore();
 
+  // Debug logging for cart state
+  useEffect(() => {
+    console.log('🛒 Dashboard: Cart items changed', { 
+      cartItemsCount: cartItems.length,
+      cartItems: cartItems.map(ci => ({ name: ci.item.name, quantity: ci.quantity })),
+      getTotal: getTotal(),
+      getItemCount: getItemCount()
+    });
+  }, [cartItems, getTotal, getItemCount]);
+
   // Set default search mode based on business type
   useEffect(() => {
     if (company.business_type === 'cafe') {

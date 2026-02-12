@@ -21,6 +21,8 @@
   gap: 1.5rem;
   flex-wrap: wrap;
   justify-content: space-between;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .header-actions {
@@ -131,9 +133,6 @@
   background: rgba(102, 126, 234, 0.2);
   transform: scale(1.05);
 }
-  padding: 0.75rem 1rem;
-  height: auto;
-}
 
 .search-container .input {
   margin: 0;
@@ -141,6 +140,7 @@
   width: 100%;
   border: 1px solid #d0d7de;
   padding: 0.6rem 0.9rem;
+  padding-right: 45px;
   border-radius: 6px;
   font-size: 0.95rem;
 }
