@@ -96,16 +96,16 @@ export default function Suppliers() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const url = editingSupplier ? `/api/suppliers/${editingSupplier.id}` : '/api/suppliers';
       const method = editingSupplier ? 'PUT' : 'POST';
-      
+
       const submitData = {
         ...formData,
         credit_limit: formData.credit_limit ? parseFloat(formData.credit_limit) : null,
       };
-      
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -258,7 +258,7 @@ export default function Suppliers() {
                     {supplier.is_active ? 'Active' : 'Inactive'}
                   </span>
                 </div>
-                
+
                 <div className="supplier-details">
                   <div className="contact-info">
                     {supplier.contact_person && (
@@ -267,21 +267,21 @@ export default function Suppliers() {
                         <span>{supplier.contact_person}</span>
                       </div>
                     )}
-                    
+
                     {supplier.email && (
                       <div className="info-item">
                         <strong>Email:</strong>
                         <a href={`mailto:${supplier.email}`}>{supplier.email}</a>
                       </div>
                     )}
-                    
+
                     {supplier.phone && (
                       <div className="info-item">
                         <strong>Phone:</strong>
                         <a href={`tel:${supplier.phone}`}>{supplier.phone}</a>
                       </div>
                     )}
-                    
+
                     {supplier.mobile && (
                       <div className="info-item">
                         <strong>Mobile:</strong>
@@ -289,7 +289,7 @@ export default function Suppliers() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="address-info">
                     {supplier.address && (
                       <div className="info-item">
@@ -297,14 +297,14 @@ export default function Suppliers() {
                         <span>{supplier.address}</span>
                       </div>
                     )}
-                    
+
                     {(supplier.city || supplier.state) && (
                       <div className="info-item">
                         <strong>City/State:</strong>
                         <span>{supplier.city}{supplier.city && supplier.state ? ', ' : ''}{supplier.state}</span>
                       </div>
                     )}
-                    
+
                     {supplier.pincode && (
                       <div className="info-item">
                         <strong>Pincode:</strong>
@@ -312,7 +312,7 @@ export default function Suppliers() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="business-info">
                     {supplier.gstin && (
                       <div className="info-item">
@@ -320,21 +320,21 @@ export default function Suppliers() {
                         <span>{supplier.gstin}</span>
                       </div>
                     )}
-                    
+
                     {supplier.pan_number && (
                       <div className="info-item">
                         <strong>PAN:</strong>
                         <span>{supplier.pan_number}</span>
                       </div>
                     )}
-                    
+
                     {supplier.payment_terms && (
                       <div className="info-item">
                         <strong>Payment Terms:</strong>
                         <span>{supplier.payment_terms}</span>
                       </div>
                     )}
-                    
+
                     {supplier.credit_limit && (
                       <div className="info-item">
                         <strong>Credit Limit:</strong>
@@ -361,15 +361,15 @@ export default function Suppliers() {
 
                 {canEdit('suppliers') && (
                   <div className="supplier-actions">
-                    <button 
-                      className="btn btn-secondary" 
+                    <button
+                      className="btn btn-secondary"
                       onClick={() => handleEdit(supplier)}
                     >
                       Edit
                     </button>
                     {canDelete('suppliers') && (
-                      <button 
-                        className="btn btn-danger" 
+                      <button
+                        className="btn btn-danger"
                         onClick={() => handleDelete(supplier.id)}
                       >
                         Delete
@@ -390,7 +390,7 @@ export default function Suppliers() {
               <h2>{editingSupplier ? 'Edit Supplier' : 'Add Supplier'}</h2>
               <button className="close-btn" onClick={() => setShowAddModal(false)}>×</button>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="supplier-form">
               <div className="form-row">
                 <div className="form-group">
@@ -399,19 +399,20 @@ export default function Suppliers() {
                     type="text"
                     id="name"
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                   />
                 </div>
-                
+
                 <div className="form-group">
-                  <label htmlFor="code">Supplier Code</label>
+                  <label htmlFor="code">Supplier Code *</label>
                   <input
                     type="text"
                     id="code"
                     value={formData.code}
-                    onChange={(e) => setFormData({...formData, code: e.target.value})}
-                    placeholder="Optional auto-generated code"
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    placeholder="Enter supplier code"
+                    required
                   />
                 </div>
               </div>
@@ -422,7 +423,7 @@ export default function Suppliers() {
                   type="text"
                   id="contact_person"
                   value={formData.contact_person}
-                  onChange={(e) => setFormData({...formData, contact_person: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, contact_person: e.target.value })}
                 />
               </div>
 
@@ -433,17 +434,17 @@ export default function Suppliers() {
                     type="email"
                     id="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
                 </div>
-                
+
                 <div className="form-group">
                   <label htmlFor="phone">Phone</label>
                   <input
                     type="tel"
                     id="phone"
                     value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
                 </div>
               </div>
@@ -455,17 +456,17 @@ export default function Suppliers() {
                     type="tel"
                     id="mobile"
                     value={formData.mobile}
-                    onChange={(e) => setFormData({...formData, mobile: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
                   />
                 </div>
-                
+
                 <div className="form-group">
                   <label htmlFor="gstin">GSTIN</label>
                   <input
                     type="text"
                     id="gstin"
                     value={formData.gstin}
-                    onChange={(e) => setFormData({...formData, gstin: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, gstin: e.target.value })}
                     placeholder="29ABCDE1234F1ZV"
                   />
                 </div>
@@ -476,7 +477,7 @@ export default function Suppliers() {
                 <textarea
                   id="address"
                   value={formData.address}
-                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   rows={2}
                 />
               </div>
@@ -488,17 +489,17 @@ export default function Suppliers() {
                     type="text"
                     id="city"
                     value={formData.city}
-                    onChange={(e) => setFormData({...formData, city: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   />
                 </div>
-                
+
                 <div className="form-group">
                   <label htmlFor="state">State</label>
                   <input
                     type="text"
                     id="state"
                     value={formData.state}
-                    onChange={(e) => setFormData({...formData, state: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                   />
                 </div>
               </div>
@@ -510,17 +511,17 @@ export default function Suppliers() {
                     type="text"
                     id="pincode"
                     value={formData.pincode}
-                    onChange={(e) => setFormData({...formData, pincode: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
                   />
                 </div>
-                
+
                 <div className="form-group">
                   <label htmlFor="pan_number">PAN Number</label>
                   <input
                     type="text"
                     id="pan_number"
                     value={formData.pan_number}
-                    onChange={(e) => setFormData({...formData, pan_number: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, pan_number: e.target.value })}
                     placeholder="ABCDE1234F"
                   />
                 </div>
@@ -533,18 +534,18 @@ export default function Suppliers() {
                     type="text"
                     id="payment_terms"
                     value={formData.payment_terms}
-                    onChange={(e) => setFormData({...formData, payment_terms: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, payment_terms: e.target.value })}
                     placeholder="NET 30, COD, etc."
                   />
                 </div>
-                
+
                 <div className="form-group">
                   <label htmlFor="credit_limit">Credit Limit</label>
                   <input
                     type="number"
                     id="credit_limit"
                     value={formData.credit_limit}
-                    onChange={(e) => setFormData({...formData, credit_limit: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, credit_limit: e.target.value })}
                     placeholder="0.00"
                     step="0.01"
                     min="0"
@@ -557,7 +558,7 @@ export default function Suppliers() {
                   <input
                     type="checkbox"
                     checked={formData.is_active}
-                    onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
+                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                   />
                   Active
                 </label>

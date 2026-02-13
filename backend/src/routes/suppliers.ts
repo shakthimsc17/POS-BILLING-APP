@@ -65,13 +65,13 @@ router.post(
   '/',
   [
     body('name').notEmpty().trim(),
-    body('code').optional().trim(),
-    body('email').optional().isEmail(),
-    body('phone').optional().isMobilePhone('any'),
-    body('mobile').optional().isMobilePhone('any'),
-    body('gstin').optional().matches(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/),
-    body('pan_number').optional().matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/),
-    body('credit_limit').optional().isFloat({ min: 0 }),
+    body('code').notEmpty().trim(),
+    body('email').optional({ values: 'falsy' }).isEmail(),
+    body('phone').optional({ values: 'falsy' }).isMobilePhone('any'),
+    body('mobile').optional({ values: 'falsy' }).isMobilePhone('any'),
+    body('gstin').optional({ values: 'falsy' }).matches(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/),
+    body('pan_number').optional({ values: 'falsy' }).matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/),
+    body('credit_limit').optional({ values: 'falsy' }).isFloat({ min: 0 }),
   ],
   async (req: AuthRequest, res: Response) => {
     try {
@@ -163,13 +163,13 @@ router.put(
   '/:id',
   [
     body('name').optional().notEmpty().trim(),
-    body('code').optional().trim(),
-    body('email').optional().isEmail(),
-    body('phone').optional().isMobilePhone('any'),
-    body('mobile').optional().isMobilePhone('any'),
-    body('gstin').optional().matches(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/),
-    body('pan_number').optional().matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/),
-    body('credit_limit').optional().isFloat({ min: 0 }),
+    body('code').optional().notEmpty().trim(),
+    body('email').optional({ values: 'falsy' }).isEmail(),
+    body('phone').optional({ values: 'falsy' }).isMobilePhone('any'),
+    body('mobile').optional({ values: 'falsy' }).isMobilePhone('any'),
+    body('gstin').optional({ values: 'falsy' }).matches(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/),
+    body('pan_number').optional({ values: 'falsy' }).matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/),
+    body('credit_limit').optional({ values: 'falsy' }).isFloat({ min: 0 }),
   ],
   async (req: AuthRequest, res: Response) => {
     try {

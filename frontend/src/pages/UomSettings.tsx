@@ -106,80 +106,87 @@ export default function UomSettings() {
     return (
         <div className="uom-settings-page">
             <div className="page-header">
-                <h1>Unit of Measure (UOM) Settings</h1>
+                <h1>📏 Unit of Measure (UOM) Settings</h1>
                 <button className="btn btn-primary" onClick={handleAddUom}>
                     + Add UOM
                 </button>
             </div>
 
-            <div className="uom-list" style={{ marginBottom: '2rem' }}>
-                <table className="table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Code</th>
-                            <th>Category</th>
-                            <th>Type</th>
-                            <th>Conversion</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {uoms.map(uom => (
-                            <tr key={uom.id}>
-                                <td>{uom.name}</td>
-                                <td>{uom.code}</td>
-                                <td>{uom.category}</td>
-                                <td>{uom.is_base_uom ? <span className="badge badge-success">Base Unit</span> : 'Derived Unit'}</td>
-                                <td>
-                                    {uom.is_base_uom ? '-' : `1 ${uom.code} = ${uom.conversion_factor} ${uoms.find(u => u.id === uom.base_uom_id)?.code || 'Base Unit'}`}
-                                </td>
-                                <td>
-                                    <button className="btn btn-sm btn-secondary" onClick={() => handleEditUom(uom)}>Edit</button>
-                                    <button className="btn btn-sm btn-danger" onClick={() => handleDeleteUom(uom.id)}>Delete</button>
-                                </td>
-                            </tr>
-                        ))}
-                        {uoms.length === 0 && (
+            <div className="card">
+                <div className="uom-list">
+                    <div className="uom-count">
+                        Showing {uoms.length} UOM{uoms.length !== 1 ? 's' : ''}
+                    </div>
+                    <table className="uom-table">
+                        <thead>
                             <tr>
-                                <td colSpan={6} style={{ textAlign: 'center' }}>No UOMs defined. Add one to get started.</td>
+                                <th>Name</th>
+                                <th>Code</th>
+                                <th>Category</th>
+                                <th>Type</th>
+                                <th>Conversion</th>
+                                <th>Actions</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {uoms.map(uom => (
+                                <tr key={uom.id}>
+                                    <td className="uom-name">{uom.name}</td>
+                                    <td className="uom-code">{uom.code}</td>
+                                    <td className="uom-category">{uom.category}</td>
+                                    <td>{uom.is_base_uom ? <span className="badge badge-success">Base Unit</span> : <span className="badge badge-secondary">Derived</span>}</td>
+                                    <td className="uom-conversion">
+                                        {uom.is_base_uom ? '-' : `1 ${uom.code} = ${uom.conversion_factor} ${uoms.find(u => u.id === uom.base_uom_id)?.code || 'Base Unit'}`}
+                                    </td>
+                                    <td className="uom-actions">
+                                        <button className="btn btn-secondary" onClick={() => handleEditUom(uom)}>Edit</button>
+                                        <button className="btn btn-danger" onClick={() => handleDeleteUom(uom.id)}>Delete</button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {uoms.length === 0 && (
+                                <tr>
+                                    <td colSpan={6}>📭 No UOMs defined. Add one to get started.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <h2>UOM Conversions</h2>
-            <div className="uom-list">
-                <table className="table">
-                    <thead>
-                        <tr>
-                            <th>From</th>
-                            <th>To</th>
-                            <th>Factor</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {conversions.map(conv => (
-                            <tr key={conv.id}>
-                                <td>{conv.from_uom_name || 'Unknown'}</td>
-                                <td>{conv.to_uom_name || 'Unknown'}</td>
-                                <td>{conv.conversion_factor}</td>
-                                <td>
-                                    <span style={{ color: '#666', fontSize: '0.9em' }}>
-                                        1 {conv.from_uom_name} = {conv.conversion_factor} {conv.to_uom_name}
-                                    </span>
-                                </td>
-                            </tr>
-                        ))}
-                        {conversions.length === 0 && (
+            <h2>🔄 UOM Conversions</h2>
+            <div className="card">
+                <div className="uom-list">
+                    <table className="uom-table">
+                        <thead>
                             <tr>
-                                <td colSpan={4} style={{ textAlign: 'center' }}>No additional conversions defined. (Use "Derived Unit" above to define standard conversions)</td>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Factor</th>
+                                <th>Details</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {conversions.map(conv => (
+                                <tr key={conv.id}>
+                                    <td className="uom-name">{conv.from_uom_name || 'Unknown'}</td>
+                                    <td className="uom-name">{conv.to_uom_name || 'Unknown'}</td>
+                                    <td className="uom-conversion">{conv.conversion_factor}</td>
+                                    <td>
+                                        <span className="conversion-info">
+                                            1 {conv.from_uom_name} = {conv.conversion_factor} {conv.to_uom_name}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                            {conversions.length === 0 && (
+                                <tr>
+                                    <td colSpan={4}>📭 No additional conversions defined. Use "Derived Unit" above to define standard conversions.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {isUomModalOpen && (

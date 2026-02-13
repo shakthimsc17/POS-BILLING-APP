@@ -46,9 +46,9 @@ router.post(
     body('name').notEmpty().trim(),
     body('code').optional().trim(),
     body('description').optional().trim(),
-    body('website').optional().isURL(),
-    body('contact_email').optional().isEmail(),
-    body('contact_phone').optional().isMobilePhone('any'),
+    body('website').optional({ values: 'falsy' }).isURL(),
+    body('contact_email').optional({ values: 'falsy' }).isEmail(),
+    body('contact_phone').optional({ values: 'falsy' }).isMobilePhone('any'),
   ],
   async (req: AuthRequest, res: Response) => {
     try {
@@ -118,9 +118,9 @@ router.put(
   [
     body('name').optional().notEmpty().trim(),
     body('code').optional().trim(),
-    body('website').optional().isURL(),
-    body('contact_email').optional().isEmail(),
-    body('contact_phone').optional().isMobilePhone('any'),
+    body('website').optional({ values: 'falsy' }).isURL(),
+    body('contact_email').optional({ values: 'falsy' }).isEmail(),
+    body('contact_phone').optional({ values: 'falsy' }).isMobilePhone('any'),
   ],
   async (req: AuthRequest, res: Response) => {
     try {
