@@ -21,9 +21,6 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
   const [type, setType] = useState<'goods' | 'service'>('goods');
   const [categoryId, setCategoryId] = useState('');
   const [subcategory, setSubcategory] = useState('');
-  const [brand, setBrand] = useState('');
-  const [manufacturer, setManufacturer] = useState('');
-  const [itemType, setItemType] = useState<'single' | 'variants'>('single');
   const [sku, setSku] = useState('');
   const [description, setDescription] = useState('');
 
@@ -65,14 +62,21 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
   // GST
   const [gstRate, setGstRate] = useState('');
   const [cessRate, setCessRate] = useState('');
+  const [gstMandatory, setGstMandatory] = useState(false);
+
+  // Brand and Manufacturer
+  const [brands, setBrands] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [brandId, setBrandId] = useState('');
+  const [supplierId, setSupplierId] = useState('');
+  const [brandSearchTerm, setBrandSearchTerm] = useState('');
+  const [manufacturerSearchTerm, setManufacturerSearchTerm] = useState('');
 
   // Stock
   const [stock, setStock] = useState('0');
   const [openingStock, setOpeningStock] = useState('0');
 
   // Accounts
-  const [salesAccount, setSalesAccount] = useState('Sales');
-  const [costAccount, setCostAccount] = useState('Cost of Goods Sold');
   const [inventoryAccount, setInventoryAccount] = useState('Inventory Asset');
 
   // Images
@@ -89,7 +93,6 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
   const { categories, addItem } = useInventoryStore();
   const { customer } = useAuthStore();
   const { company } = useCompanyStore();
-  const isAdmin = customer?.isAdmin || false;
 
   useEffect(() => {
     const loadData = async () => {
@@ -97,6 +100,8 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
         loadCategories(),
         loadPrefixes(),
         loadUoms(),
+        loadBrands(),
+        loadSuppliers(),
       ]);
     };
     loadData();
@@ -129,6 +134,38 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
       else if (data.length > 0) setUomId(data[0].id);
     } catch (error) {
       console.error('Error loading UOMs:', error);
+    }
+  };
+
+  const loadBrands = async () => {
+    try {
+      const response = await fetch('/api/brands', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBrands(data);
+      }
+    } catch (error) {
+      console.error('Error loading brands:', error);
+    }
+  };
+
+  const loadSuppliers = async () => {
+    try {
+      const response = await fetch('/api/suppliers', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSuppliers(data);
+      }
+    } catch (error) {
+      console.error('Error loading suppliers:', error);
     }
   };
 
@@ -194,18 +231,34 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
     setLoading(true);
 
     try {
-      // Validation
+      // Validation - only enforce NOT NULL fields without defaults
       if (!name.trim()) {
         alert('Please enter item name');
-        return;
-      }
-      if (!price || !cost) {
-        alert('Please enter both cost and selling price');
         return;
       }
       if (!code.trim()) {
         alert('Please enter item code');
         return;
+      }
+      if (!cost || parseFloat(cost) < 0) {
+        alert('Please enter a valid cost price');
+        return;
+      }
+      if (!price || parseFloat(price) < 0) {
+        alert('Please enter a valid selling price');
+        return;
+      }
+      
+      // GST validation if mandatory
+      if (gstMandatory) {
+        if (!gstRate || parseFloat(gstRate) < 0) {
+          alert('GST Rate is required when GST is mandatory');
+          return;
+        }
+        if (!hsnCode.trim()) {
+          alert('HSN Code is required when GST is mandatory');
+          return;
+        }
       }
 
       let finalCode = code.trim();
@@ -274,8 +327,10 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
         length_per_unit: lengthPerUnit ? Number(lengthPerUnit) : undefined,
         width_per_unit: widthPerUnit ? Number(widthPerUnit) : undefined,
         height_per_unit: heightPerUnit ? Number(heightPerUnit) : undefined,
-        manufacturer: manufacturer.trim() || undefined,
-        brand: brand.trim() || undefined,
+        // Brand and Manufacturer
+        brand_id: brandId || undefined,
+        supplier_id: supplierId || undefined,
+        manufacturer: supplierId ? suppliers.find(s => s.id === supplierId)?.name || manufacturerSearchTerm.trim() : (manufacturerSearchTerm.trim() || undefined),
         model_number: modelNumber.trim() || undefined,
         batch_number: batchNumber.trim() || undefined,
         expiry_date: expiryDate || undefined,
@@ -332,10 +387,10 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
       </div>
 
       <form onSubmit={handleSubmit} className="add-item-form">
-        {/* Primary Details Section */}
+        {/* Primary Details Section - 3 Column Layout */}
         <div className="form-section">
           <h2>Primary Details</h2>
-          <div className="form-grid">
+          <div className="form-grid three-columns">
             <div className="form-field">
               <label>
                 Name *:
@@ -345,6 +400,20 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter item name"
+                  required
+                />
+              </label>
+            </div>
+
+            <div className="form-field">
+              <label>
+                Code *:
+                <input
+                  type="text"
+                  className="input"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="Enter item code"
                   required
                 />
               </label>
@@ -408,40 +477,66 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
             <div className="form-field">
               <label>
                 Brand:
-                <input
-                  type="text"
-                  className="input"
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
-                  placeholder="Enter brand name"
-                />
+                <div className="searchable-dropdown">
+                  <input
+                    type="text"
+                    className="input"
+                    value={brandSearchTerm}
+                    onChange={(e) => setBrandSearchTerm(e.target.value)}
+                    placeholder="Search or select brand"
+                  />
+                  {brandSearchTerm && (
+                    <div className="dropdown-options">
+                      {brands
+                        .filter(brand => brand.name.toLowerCase().includes(brandSearchTerm.toLowerCase()))
+                        .map(brand => (
+                          <div
+                            key={brand.id}
+                            className="dropdown-option"
+                            onClick={() => {
+                              setBrandId(brand.id);
+                              setBrandSearchTerm(brand.name);
+                            }}
+                          >
+                            {brand.name}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
               </label>
             </div>
 
             <div className="form-field">
               <label>
                 Manufacturer:
-                <input
-                  type="text"
-                  className="input"
-                  value={manufacturer}
-                  onChange={(e) => setManufacturer(e.target.value)}
-                  placeholder="Enter manufacturer name"
-                />
-              </label>
-            </div>
-
-            <div className="form-field">
-              <label>
-                Item Type:
-                <select
-                  className="input"
-                  value={itemType}
-                  onChange={(e) => setItemType(e.target.value as 'single' | 'variants')}
-                >
-                  <option value="single">Single Item</option>
-                  <option value="variants">Contains Variants</option>
-                </select>
+                <div className="searchable-dropdown">
+                  <input
+                    type="text"
+                    className="input"
+                    value={manufacturerSearchTerm}
+                    onChange={(e) => setManufacturerSearchTerm(e.target.value)}
+                    placeholder="Search or select manufacturer"
+                  />
+                  {manufacturerSearchTerm && (
+                    <div className="dropdown-options">
+                      {suppliers
+                        .filter(supplier => supplier.name.toLowerCase().includes(manufacturerSearchTerm.toLowerCase()))
+                        .map(supplier => (
+                          <div
+                            key={supplier.id}
+                            className="dropdown-option"
+                            onClick={() => {
+                              setSupplierId(supplier.id);
+                              setManufacturerSearchTerm(supplier.name);
+                            }}
+                          >
+                            {supplier.name}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
               </label>
             </div>
 
@@ -471,6 +566,19 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
                   value={sku}
                   onChange={(e) => setSku(e.target.value)}
                   placeholder="Stock Keeping Unit"
+                />
+              </label>
+            </div>
+
+            <div className="form-field">
+              <label>
+                Display Name:
+                <input
+                  type="text"
+                  className="input"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Display name"
                 />
               </label>
             </div>
@@ -577,10 +685,26 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
           </div>
         </div>
 
-        {/* Sales Information Section */}
+        {/* Pricing Section - 3 Column Layout */}
         <div className="form-section">
-          <h2>Sales Information</h2>
-          <div className="form-grid">
+          <h2>Pricing & GST</h2>
+          <div className="form-grid three-columns">
+            <div className="form-field">
+              <label>
+                Cost Price *:
+                <input
+                  type="number"
+                  className="input"
+                  value={cost}
+                  onChange={(e) => setCost(e.target.value)}
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  required
+                />
+              </label>
+            </div>
+
             <div className="form-field">
               <label>
                 Selling Price *:
@@ -614,53 +738,55 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
 
             <div className="form-field">
               <label>
-                Account (Sales):
-                <select
-                  className="input"
-                  value={salesAccount}
-                  onChange={(e) => setSalesAccount(e.target.value)}
-                >
-                  <option value="Sales">Sales</option>
-                  <option value="Service Income">Service Income</option>
-                  <option value="Other Income">Other Income</option>
-                </select>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Purchase Information Section */}
-        <div className="form-section">
-          <h2>Purchase Information</h2>
-          <div className="form-grid">
-            <div className="form-field">
-              <label>
-                Cost Price *:
+                HSN Code:
                 <input
-                  type="number"
+                  type="text"
                   className="input"
-                  value={cost}
-                  onChange={(e) => setCost(e.target.value)}
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  required
+                  value={hsnCode}
+                  onChange={(e) => setHsnCode(e.target.value)}
+                  placeholder="e.g., 847120"
                 />
               </label>
             </div>
 
             <div className="form-field">
               <label>
-                Account (Cost of Goods Sold):
-                <select
+                GST Rate (%):
+                <input
+                  type="number"
                   className="input"
-                  value={costAccount}
-                  onChange={(e) => setCostAccount(e.target.value)}
-                >
-                  <option value="Cost of Goods Sold">Cost of Goods Sold</option>
-                  <option value="Direct Costs">Direct Costs</option>
-                  <option value="Expenses">Expenses</option>
-                </select>
+                  value={gstRate}
+                  onChange={(e) => setGstRate(e.target.value)}
+                  placeholder="e.g., 5, 12, 18"
+                  step="0.01"
+                  min="0"
+                />
+              </label>
+            </div>
+
+            <div className="form-field">
+              <label>
+                CESS Rate (%):
+                <input
+                  type="number"
+                  className="input"
+                  value={cessRate}
+                  onChange={(e) => setCessRate(e.target.value)}
+                  placeholder="e.g., 1, 2"
+                  step="0.01"
+                  min="0"
+                />
+              </label>
+            </div>
+
+            <div className="form-field">
+              <label style={{ flexDirection: 'row', gap: '10px', alignItems: 'center' }}>
+                <input
+                  type="checkbox"
+                  checked={gstMandatory}
+                  onChange={(e) => setGstMandatory(e.target.checked)}
+                />
+                GST Mandatory
               </label>
             </div>
           </div>

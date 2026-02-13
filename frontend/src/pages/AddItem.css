@@ -60,6 +60,24 @@
   gap: 20px;
 }
 
+.form-grid.three-columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 1200px) {
+  .form-grid.three-columns {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .form-grid.three-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
 .form-field {
   display: flex;
   flex-direction: column;
@@ -203,6 +221,57 @@
 .form-field label input[type="radio"] {
   margin-right: 8px;
   transform: scale(1.2);
+}
+
+/* Searchable Dropdown Styles */
+.searchable-dropdown {
+  position: relative;
+}
+
+.dropdown-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid #e9ecef;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-option {
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.dropdown-option:last-child {
+  border-bottom: none;
+}
+
+.dropdown-option:hover {
+  background-color: #f8f9fa;
+}
+
+.dropdown-option.selected {
+  background-color: #3498db;
+  color: white;
+}
+
+/* Required field indicator */
+.form-field label::after {
+  content: '';
+}
+
+.form-field label[required]::after {
+  content: ' *';
+  color: #e74c3c;
+  font-weight: bold;
 }
 
 /* Responsive Design */
