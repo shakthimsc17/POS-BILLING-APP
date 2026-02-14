@@ -698,7 +698,7 @@
   border-radius: 4px;
   font-size: 0.7rem;
   font-weight: 600;
-  font-family: 'Courier New', monospace;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   letter-spacing: 0.5px;
   vertical-align: middle;
   opacity: 0.8;

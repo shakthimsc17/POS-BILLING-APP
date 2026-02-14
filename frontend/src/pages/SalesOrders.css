@@ -101,6 +101,8 @@
   border-color: #3498db;
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
+
+.filter-btn {
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
@@ -127,86 +129,128 @@
 }
 
 .summary-card {
+  position: relative;
   background: white;
-  border-radius: 8px;
+  border-radius: 14px;
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e0e6ed;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  border: 1px solid #edf2f7;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  transition: all 0.2s ease;
+  gap: 1.25rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: #3498db;
+  opacity: 0.8;
 }
 
 .summary-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  border-color: #e2e8f0;
 }
 
 .summary-icon {
-  font-size: 2.5rem;
-  width: 60px;
-  height: 60px;
+  font-size: 1.75rem;
+  width: 52px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #3498db;
-  border-radius: 8px;
-  color: white;
+  background: rgba(52, 152, 219, 0.1);
+  border-radius: 12px;
+  color: #3498db;
+  flex-shrink: 0;
 }
 
 .summary-content h3 {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.875rem;
-  color: #6c757d;
+  margin: 0 0 0.25rem 0;
+  font-size: 0.8rem;
+  color: #718096;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
 }
 
 .summary-value {
   margin: 0;
   font-size: 1.5rem;
-  font-weight: 700;
-  color: #1a1a1a;
+  font-weight: 800;
+  color: #1a202c;
+  letter-spacing: -0.02em;
 }
 
 .summary-subtext {
-  margin: 0.35rem 0 0 0;
-  font-size: 0.75rem;
-  color: #6c757d;
-  font-weight: 400;
+  margin: 0.5rem 0 0 0;
+  font-size: 0.7rem;
+  color: #a0aec0;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.profit-card::before {
+  background: #2ecc71;
 }
 
 .profit-card .summary-icon {
-  background: #27ae60;
+  background: rgba(46, 204, 113, 0.1);
+  color: #2ecc71;
 }
 
 .profit-value {
-  color: #27ae60 !important;
+  color: #2ecc71 !important;
+}
+
+.loss-card::before {
+  background: #e74c3c;
 }
 
 .loss-card .summary-icon {
-  background: #e74c3c;
+  background: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
 }
 
 .loss-value {
   color: #e74c3c !important;
 }
 
-.net-card .summary-icon {
+.net-card::before {
   background: #3498db;
+}
+
+.net-card .summary-icon {
+  background: rgba(52, 152, 219, 0.1);
+  color: #3498db;
 }
 
 .net-value {
   color: #3498db !important;
 }
 
-.returns-card .summary-icon {
+.returns-card::before {
   background: #f39c12;
 }
 
+.returns-card .summary-icon {
+  background: rgba(243, 156, 18, 0.1);
+  color: #f39c12;
+}
+
 .returns-value {
-  color: #d35400 !important;
+  color: #f39c12 !important;
+}
+
+.summary-card:not([class*="-card"])::before {
+  background: #3498db;
 }
 
 .transactions-table {
@@ -219,22 +263,24 @@
 }
 
 .transactions-table thead {
-  background: #2c3e50;
-  color: white;
+  background: #f8fafc;
+  color: #4a5568;
 }
 
 .transactions-table th {
-  padding: 1rem;
+  padding: 1.25rem 1rem;
   text-align: left;
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-weight: 700;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #edf2f7;
 }
 
 .transactions-table td {
-  padding: 1rem;
-  border-bottom: 1px solid #e0e6ed;
+  padding: 1.25rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
 }
 
 .transactions-table tbody tr {
@@ -512,4 +558,3 @@
     padding: 0.75rem 0.5rem;
   }
 }
-

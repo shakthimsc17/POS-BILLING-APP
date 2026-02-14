@@ -412,7 +412,7 @@ export default function Reports() {
             @media print {
               @page { size: A4; margin: 15mm; }
             }
-            body { font-family: Arial, sans-serif; font-size: 11px; padding: 20px; }
+            body { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 11px; padding: 20px; }
             .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
             .company-name { font-size: 18px; font-weight: bold; }
             .report-title { font-size: 16px; margin: 10px 0; }
