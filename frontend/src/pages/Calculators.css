@@ -50,7 +50,7 @@
 }
 
 .calculator-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 8px;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -106,7 +106,7 @@
 }
 
 .example-box {
-  background: #fff9e6;
+  background: var(--card-bg)9e6;
   border: 1px solid #f39c12;
   border-radius: 6px;
   padding: 1rem;

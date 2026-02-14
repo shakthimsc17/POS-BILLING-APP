@@ -24,7 +24,7 @@
 }
 
 .modal-content.quick-sale-modal {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   width: 100%;
   max-width: 700px;
@@ -189,7 +189,7 @@
   border-radius: 6px;
   font-size: 1rem;
   transition: all 0.2s ease;
-  background: #ffffff;
+  background: var(--card-bg);
   color: #1a1a1a;
   box-sizing: border-box;
   text-align: left;
@@ -205,7 +205,7 @@
 
 .quick-sale-input.error {
   border-color: #e74c3c;
-  background: #fff5f5;
+  background: var(--card-bg)5f5;
 }
 
 .modal-content.quick-sale-modal .error-message {

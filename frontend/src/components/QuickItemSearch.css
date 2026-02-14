@@ -20,7 +20,7 @@
   border: 2px solid #667eea;
   border-radius: 8px;
   font-size: 1rem;
-  background: white;
+  background: var(--card-bg);
   transition: all 0.2s ease;
   box-sizing: border-box;
   width: 100%;
@@ -36,7 +36,7 @@
 
 .quick-item-search-input.searching {
   border-color: #f39c12;
-  background: #fffbf0;
+  background: var(--card-bg)bf0;
   opacity: 0.7;
   cursor: wait;
 }

@@ -13,7 +13,7 @@
 }
 
 .entry-form-modal {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   width: 100%;
   max-width: 500px;
@@ -63,7 +63,7 @@
 }
 
 .entry-form-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 2rem;
   display: flex;

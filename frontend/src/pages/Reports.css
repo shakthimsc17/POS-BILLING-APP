@@ -17,7 +17,7 @@
   align-items: center;
   justify-content: center;
   padding: 0.5rem;
-  background: #ffffff;
+  background: var(--card-bg);
   border-radius: 8px;
   border: 1px solid #e0e6ed;
 }
@@ -44,7 +44,7 @@
 .btn-icon {
   padding: 0.5rem 1rem;
   border: 1px solid #d0d7de;
-  background: #ffffff;
+  background: var(--card-bg);
   color: #1a1a1a;
   border-radius: 8px;
   cursor: pointer;
@@ -117,7 +117,7 @@
 }
 
 .stat-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
   padding: 1.5rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -197,7 +197,7 @@
 .reports-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: var(--card-bg);
 }
 
 .reports-table thead {
@@ -269,7 +269,7 @@
 }
 
 .payment-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -328,7 +328,7 @@
 }
 
 .card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   overflow: hidden;

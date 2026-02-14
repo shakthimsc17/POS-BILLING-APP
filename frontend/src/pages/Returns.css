@@ -42,7 +42,7 @@
 }
 
 .stat-card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -68,7 +68,7 @@
 }
 
 .stat-card.pending .stat-icon {
-  background: #fff3cd;
+  background: var(--card-bg)3cd;
   color: #f39c12;
 }
 
@@ -102,7 +102,7 @@
 }
 
 .returns-table-container {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);

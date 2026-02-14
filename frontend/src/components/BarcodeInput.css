@@ -13,7 +13,7 @@
   border-radius: 8px;
   outline: none;
   transition: all 0.2s;
-  background: white;
+  background: var(--card-bg);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -24,7 +24,7 @@
 
 .barcode-input.searching {
   border-color: #f39c12;
-  background: #fffbf0;
+  background: var(--card-bg)bf0;
 }
 
 .barcode-input:disabled {

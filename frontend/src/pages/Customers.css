@@ -39,7 +39,7 @@
 }
 
 .customer-type-badge.manager {
-  background: #fff3e0;
+  background: var(--card-bg)3e0;
   color: #f57c00;
 }
 
@@ -162,7 +162,7 @@ textarea.input {
 }
 
 .modal-content.customers-modal {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   width: 100%;
   max-width: 700px;

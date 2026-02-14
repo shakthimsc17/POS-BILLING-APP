@@ -52,7 +52,7 @@
   padding: 0.4rem 0.75rem;
   border: 1px solid #e0e6ed;
   border-radius: 6px;
-  background: white;
+  background: var(--card-bg);
   font-size: 0.9rem;
   min-width: 140px;
 }
@@ -112,7 +112,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  background: white;
+  background: var(--card-bg);
   border: 1px solid #e0e6ed;
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -165,7 +165,7 @@
 }
 
 .barcode-gen-form-card {
-  background: white;
+  background: var(--card-bg);
   border: 1px solid #e0e6ed;
   border-radius: 8px;
   padding: 1.25rem;
@@ -201,7 +201,7 @@
 }
 
 .barcode-gen-preview-card {
-  background: white;
+  background: var(--card-bg);
   border: 1px solid #e0e6ed;
   border-radius: 8px;
   padding: 1rem;
@@ -233,7 +233,7 @@
   overflow: hidden;
   border: 1px solid #b4d4f0;
   border-radius: 4px;
-  background: #fff;
+  background: var(--card-bg);
 }
 
 .barcode-gen-preview-card--sample .preview-label-name {
@@ -425,7 +425,7 @@
   flex-wrap: wrap;
   gap: 1rem;
   padding: 0.75rem 1rem;
-  background: #fffbe6;
+  background: var(--card-bg)be6;
   border: 1px solid #ffe58f;
   border-radius: 6px;
   margin-bottom: 1rem;
@@ -515,7 +515,7 @@
   justify-content: space-between;
   padding: 1rem 1.25rem;
   border-bottom: 1px solid #e0e6ed;
-  background: white;
+  background: var(--card-bg);
   border-radius: 8px 8px 0 0;
 }
 
@@ -553,7 +553,7 @@
 /* A4 page (210mm × 297mm) – real size so preview matches print */
 .barcode-preview-a4-page {
   position: relative;
-  background: white;
+  background: var(--card-bg);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   flex-shrink: 0;
 }
@@ -572,7 +572,7 @@
   border: 1px solid #b4d4f0;
   border-radius: 2px;
   overflow: hidden;
-  background: #fff;
+  background: var(--card-bg);
   padding: 0.5mm;
 }
 

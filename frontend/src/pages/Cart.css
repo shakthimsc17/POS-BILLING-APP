@@ -68,7 +68,7 @@
   overflow: hidden;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-  background: white;
+  background: var(--card-bg);
   border: 1px solid rgba(224, 230, 237, 0.8);
 }
 
@@ -230,7 +230,7 @@
 }
 
 .price-input-inline:focus {
-  background: white;
+  background: var(--card-bg);
   border-color: #3182ce;
   box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
   outline: none;
@@ -239,7 +239,7 @@
 .price-input-inline.custom-price {
   color: #d69e2e;
   border-color: #fbd38d;
-  background: #fffaf0;
+  background: var(--card-bg)af0;
 }
 
 .custom-price-badge {
@@ -269,7 +269,7 @@
   width: 32px;
   height: 32px;
   border: none;
-  background: white;
+  background: var(--card-bg);
   border-radius: 8px;
   color: #4a5568;
   font-size: 1.25rem;
@@ -331,7 +331,7 @@
 .cart-checkout-summary {
   display: flex;
   flex-direction: column;
-  background: white;
+  background: var(--card-bg);
   border-radius: 20px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(226, 232, 240, 0.8);
@@ -424,7 +424,7 @@
 
 .summary-row .input-sm:focus {
   border-color: #3182ce;
-  background: white;
+  background: var(--card-bg);
   outline: none;
 }
 
@@ -499,7 +499,7 @@
 }
 
 .payment-option {
-  background: white;
+  background: var(--card-bg);
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 0.75rem 0.5rem;
@@ -593,7 +593,7 @@
   padding: 4px;
   font-size: 0.7rem;
   font-weight: 700;
-  background: white;
+  background: var(--card-bg);
   border: 1px solid #e2e8f0;
   border-radius: 4px;
   cursor: pointer;
@@ -620,7 +620,7 @@
 }
 
 .change-box.discount {
-  background: #fff5f5;
+  background: var(--card-bg)5f5;
   border-color: #e53e3e;
 }
 
@@ -679,7 +679,7 @@
 /* Actions at the bottom */
 .cart-actions {
   padding: 1.75rem;
-  background: white;
+  background: var(--card-bg);
   border-top: 1px solid #edf2f7;
   flex-shrink: 0;
 }

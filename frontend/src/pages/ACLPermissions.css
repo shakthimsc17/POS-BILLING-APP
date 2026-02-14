@@ -34,7 +34,7 @@
   border: 1px solid #d0d7de;
   border-radius: 6px;
   font-size: 0.95rem;
-  background: white;
+  background: var(--card-bg);
 }
 
 .permissions-tree {
@@ -46,7 +46,7 @@
   border: 1px solid #e1e4e8;
   border-radius: 8px;
   overflow: hidden;
-  background: white;
+  background: var(--card-bg);
 }
 
 .category-header {

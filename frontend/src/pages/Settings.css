@@ -17,7 +17,7 @@
   align-items: center;
   justify-content: center;
   padding: 0.5rem;
-  background: #ffffff;
+  background: var(--card-bg);
   border-radius: 8px;
   border: 1px solid #e0e6ed;
 }
@@ -73,7 +73,7 @@
 .settings-table table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: var(--card-bg);
 }
 
 .settings-table thead {
@@ -146,7 +146,7 @@
   width: 18px;
   left: 3px;
   bottom: 3px;
-  background-color: white;
+  background-color: var(--card-bg);
   transition: 0.3s;
   border-radius: 50%;
 }

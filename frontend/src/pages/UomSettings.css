@@ -33,7 +33,7 @@
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     margin-bottom: 2rem;
-    background: white;
+    background: var(--card-bg);
 }
 
 /* Table Styles - matching Items page */
@@ -177,7 +177,7 @@
 }
 
 .uom-settings-page .modal-content {
-    background: white;
+    background: var(--card-bg);
     border-radius: 16px;
     max-width: 600px;
     width: 95%;
@@ -224,7 +224,7 @@
     border-radius: 8px;
     font-size: 0.95rem;
     box-sizing: border-box;
-    background: #ffffff;
+    background: var(--card-bg);
     transition: all 0.3s ease;
     font-family: inherit;
 }
@@ -233,7 +233,7 @@
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    background: #ffffff;
+    background: var(--card-bg);
     transform: translateY(-1px);
 }
 
@@ -331,7 +331,7 @@
     .uom-settings-page .uom-table td:first-child {
         position: sticky;
         left: 0;
-        background: white;
+        background: var(--card-bg);
         z-index: 1;
     }
 

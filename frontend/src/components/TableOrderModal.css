@@ -1,5 +1,5 @@
 .table-order-modal {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   width: 98%;
@@ -185,7 +185,7 @@
   padding-top: 1rem;
   border-top: 1px solid #e0e6ed;
   flex-shrink: 0;
-  background: white;
+  background: var(--card-bg);
   margin-top: auto;
 }
 
@@ -193,7 +193,7 @@
   margin-top: 1rem;
   position: sticky;
   bottom: 0;
-  background: white;
+  background: var(--card-bg);
   padding: 1rem;
   border-radius: 8px;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
@@ -258,7 +258,7 @@
   padding: 0.75rem;
   border: 2px solid #e0e6ed;
   border-radius: 8px;
-  background: white;
+  background: var(--card-bg);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -306,7 +306,7 @@
   border-color: #3498db;
   outline: none;
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-  background: white;
+  background: var(--card-bg);
 }
 
 .balance-display {

@@ -11,7 +11,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
-  background: white;
+  background: var(--card-bg);
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -41,7 +41,7 @@
 }
 
 .item-details-container {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -209,7 +209,7 @@
   border-radius: 8px;
   font-size: 14px;
   transition: all 0.3s ease;
-  background: white;
+  background: var(--card-bg);
 }
 
 .form-field .input:focus {
@@ -415,7 +415,7 @@
   justify-content: center;
   min-height: 400px;
   text-align: center;
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
