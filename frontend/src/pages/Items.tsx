@@ -15,6 +15,8 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
   const [modalVisible, setModalVisible] = useState(false);
   const [deleteAllModalVisible, setDeleteAllModalVisible] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
+  const [deleteItemModalVisible, setDeleteItemModalVisible] = useState(false);
+  const [deletingItemTarget, setDeletingItemTarget] = useState<Item | null>(null);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [name, setName] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -329,8 +331,19 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
   };
 
   const handleDelete = (item: Item) => {
-    if (confirm(`Are you sure you want to delete "${item.name}"?`)) {
-      deleteItem(item.id);
+    setDeletingItemTarget(item);
+    setDeleteItemModalVisible(true);
+  };
+
+  const confirmDeleteItem = async () => {
+    if (!deletingItemTarget) return;
+    try {
+      await deleteItem(deletingItemTarget.id);
+      setDeleteItemModalVisible(false);
+      setDeletingItemTarget(null);
+    } catch (error: any) {
+      console.error('Error deleting item:', error);
+      alert(error.message || 'Failed to delete item');
     }
   };
 
@@ -513,7 +526,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
             <button
               className="btn btn-danger"
               onClick={() => setDeleteAllModalVisible(true)}
-              style={{ marginRight: '10px' }}
+              style={{ marginRight: '4px' }}
             >
               🗑️ Delete All
             </button>
@@ -536,10 +549,10 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
       </div>
 
       {/* Filters */}
-      <div className="card filters-card">
+      <div className="filters-card">
         <div className="filters-row">
-          <div className="filter-group">
-            <label>Search:</label>
+          <div className="filter-group" style={{ flex: 2 }}>
+            <label>Search</label>
             <input
               type="text"
               className="input"
@@ -549,7 +562,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
             />
           </div>
           <div className="filter-group">
-            <label>Category:</label>
+            <label>Category</label>
             <select
               className="input"
               value={filterCategory}
@@ -568,7 +581,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
           </div>
           {filterCategory && getFilterSubcategories().length > 0 && (
             <div className="filter-group">
-              <label>Subcategory:</label>
+              <label>Subcategory</label>
               <select
                 className="input"
                 value={filterSubcategory}
@@ -584,7 +597,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
             </div>
           )}
           <div className="filter-group">
-            <label>Stock:</label>
+            <label>Stock</label>
             <select
               className="input"
               value={filterStock}
@@ -604,77 +617,66 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                 setFilterSubcategory('');
                 setFilterStock('all');
               }}
+              style={{ alignSelf: 'flex-end', whiteSpace: 'nowrap' }}
             >
-              Clear Filters
+              ✕ Clear
             </button>
           )}
         </div>
       </div>
 
-      <div className="card">
+      <div className="items-list-card">
         {filteredItems.length > 0 ? (
-          <div className="items-table">
+          <div className="items-table-wrapper">
             <div className="items-count">
-              Showing {displayedItems.length} of {filteredItems.length} filtered items ({items.length} total)
+              <span className="count-badge">{filteredItems.length}</span>
+              Showing {displayedItems.length} of {filteredItems.length} items
+              <span className="total-count">({items.length} total)</span>
             </div>
-            <table>
+            <table className="items-table-modern">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Code</th>
-                  {company?.business_type === 'cafe' && <th>Mapping Code</th>}
-                  <th>Category</th>
-                  <th>HSN Code</th>
-                  <th>GST Rate</th>
-                  {isAdmin && <th>Cost</th>}
-                  <th>Sale Price</th>
-                  <th>MRP</th>
-                  {isAdmin && <th>GM %</th>}
-                  <th>Stock</th>
-                  <th>Actions</th>
+                  <th className="th-name">Name</th>
+                  <th className="th-code">Code</th>
+                  {company?.business_type === 'cafe' && <th className="th-mapping">Mapping Code</th>}
+                  <th className="th-category">Category</th>
+                  <th className="th-hsn">HSN</th>
+                  <th className="th-gst">GST</th>
+                  {isAdmin && <th className="th-cost">Cost</th>}
+                  <th className="th-price">Price</th>
+                  <th className="th-mrp">MRP</th>
+                  {isAdmin && <th className="th-gm">GM%</th>}
+                  <th className="th-stock">Stock</th>
+                  <th className="th-actions">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {displayedItems.map((item) => {
-                  // Find category by matching category_id - always show category name
                   let categoryName = '-';
 
                   if (item.category_id) {
                     if (categories.length === 0) {
-                      // Categories not loaded yet
                       categoryName = 'Loading...';
                     } else {
-                      // Try to find category by ID
                       const category = categories.find(c => c.id === item.category_id);
-
                       if (category) {
-                        // Show category name with subcategory if available
                         categoryName = category.name;
                         if (item.subcategory) {
                           categoryName += ` / ${item.subcategory}`;
                         }
-                      } else {
-                        // Category ID exists but category not found
-                        console.warn('Category not found for item:', {
-                          itemName: item.name,
-                          itemCategoryId: item.category_id,
-                          itemCategoryIdType: typeof item.category_id,
-                          availableCategoryIds: categories.map(c => ({ id: c.id, name: c.name })),
-                          totalCategories: categories.length,
-                        });
-                        categoryName = '-';
                       }
                     }
                   }
-                  // Calculate GM percentage: ((price - cost) / price) * 100
                   const priceValue = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
                   const costValue = typeof item.cost === 'string' ? parseFloat(item.cost) : item.cost;
                   const gmPercentage = priceValue > 0 && costValue > 0
                     ? ((priceValue - costValue) / priceValue) * 100
                     : 0;
                   return (
-                    <tr key={item.id}>
-                      <td className="item-name">{item.name}</td>
+                    <tr key={item.id} className="item-row">
+                      <td className="item-name">
+                        <span className="name-text">{item.name}</span>
+                      </td>
                       <td className="item-code">{item.code}</td>
                       {company?.business_type === 'cafe' && (
                         <td className="item-mapping-code">
@@ -728,7 +730,9 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                           )}
                         </td>
                       )}
-                      <td className="item-category">{categoryName}</td>
+                      <td className="item-category">
+                        <span className="category-badge">{categoryName}</span>
+                      </td>
                       <td className="item-hsn">{item.hsn_code || '-'}</td>
                       <td className="item-gst-rate">{item.gst_rate ? `${item.gst_rate}%` : '-'}</td>
                       {isAdmin && (
@@ -743,32 +747,42 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                       {isAdmin && (
                         <td className="item-gm">
                           {gmPercentage > 0 ? (
-                            <span className={gmPercentage >= 30 ? 'gm-high' : gmPercentage >= 15 ? 'gm-medium' : 'gm-low'}>
+                            <span className={`gm-pill ${gmPercentage >= 30 ? 'gm-high' : gmPercentage >= 15 ? 'gm-medium' : 'gm-low'}`}>
                               {gmPercentage.toFixed(1)}%
                             </span>
                           ) : '-'}
                         </td>
                       )}
-                      <td className="item-stock">{item.stock} <span style={{ fontSize: '0.8em', color: '#666' }}>{item.uom_name || ''}</span></td>
+                      <td className="item-stock">
+                        <span className={`stock-badge ${Number(item.stock) <= 0 ? 'out' : Number(item.stock) <= 5 ? 'low' : ''}`}>
+                          {item.stock}
+                        </span>
+                        {item.uom_name && <span className="uom-label">{item.uom_name}</span>}
+                      </td>
                       <td className="item-actions">
-                        <button
-                          className="btn btn-primary"
-                          onClick={() => handleViewItem(item)}
-                        >
-                          View
-                        </button>
-                        <button
-                          className="btn btn-secondary"
-                          onClick={() => handleEdit(item)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="btn btn-danger"
-                          onClick={() => handleDelete(item)}
-                        >
-                          Delete
-                        </button>
+                        <div className="action-buttons">
+                          <button
+                            className="action-btn view-btn"
+                            onClick={() => handleViewItem(item)}
+                            title="View Item"
+                          >
+                            👁️
+                          </button>
+                          <button
+                            className="action-btn edit-btn"
+                            onClick={() => handleEdit(item)}
+                            title="Edit Item"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            className="action-btn delete-btn"
+                            onClick={() => handleDelete(item)}
+                            title="Delete Item"
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -777,19 +791,22 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
             </table>
             {hasMoreItems && (
               <div className="load-more-indicator">
+                <div className="load-more-pulse"></div>
                 <p>Scroll down to load more items...</p>
               </div>
             )}
           </div>
         ) : items.length > 0 ? (
           <div className="empty-state">
-            <p>📭 No items match the filters</p>
+            <div className="empty-icon">🔍</div>
+            <p>No items match your filters</p>
             <p className="empty-subtext">Try adjusting your search or filters</p>
           </div>
         ) : (
           <div className="empty-state">
-            <p>📭 No items yet</p>
-            <p className="empty-subtext">Add an item to get started</p>
+            <div className="empty-icon">📦</div>
+            <p>No items yet</p>
+            <p className="empty-subtext">Add your first item to get started</p>
           </div>
         )}
       </div>
@@ -1354,6 +1371,35 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                 disabled={deletingAll}
               >
                 {deletingAll ? 'Deleting...' : 'Delete All'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Single Item Delete Confirmation Modal */}
+      {deleteItemModalVisible && deletingItemTarget && (
+        <div className="modal-overlay" onClick={() => { setDeleteItemModalVisible(false); setDeletingItemTarget(null); }}>
+          <div className="modal-content" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
+            <h2>🗑️ Delete Item</h2>
+            <div className="modal-body-simple">
+              <p>
+                Are you sure you want to delete <strong>"{deletingItemTarget.name}"</strong>?
+                This action cannot be undone.
+              </p>
+            </div>
+            <div className="modal-actions">
+              <button
+                className="btn btn-secondary"
+                onClick={() => { setDeleteItemModalVisible(false); setDeletingItemTarget(null); }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={confirmDeleteItem}
+              >
+                Delete
               </button>
             </div>
           </div>

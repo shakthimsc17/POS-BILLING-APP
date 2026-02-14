@@ -88,16 +88,16 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
 
     try {
       if (editingCategory) {
-        await updateCategory(editingCategory.id, { 
-          name, 
-          subcategory: subcategory || undefined, 
-          brand: brand || undefined 
+        await updateCategory(editingCategory.id, {
+          name,
+          subcategory: subcategory || undefined,
+          brand: brand || undefined
         });
       } else {
-        await addCategory({ 
-          name, 
-          subcategory: subcategory || undefined, 
-          brand: brand || undefined 
+        await addCategory({
+          name,
+          subcategory: subcategory || undefined,
+          brand: brand || undefined
         });
       }
       setModalVisible(false);
@@ -153,7 +153,7 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       if (!category.name.toLowerCase().includes(query) &&
-          !(category.subcategory && category.subcategory.toLowerCase().includes(query))) {
+        !(category.subcategory && category.subcategory.toLowerCase().includes(query))) {
         return false;
       }
     }
@@ -236,9 +236,9 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
       <div className="categories-header">
         {company.logo && (
           <div className="page-logo-container">
-            <img 
-              src={company.logo} 
-              alt={company.name || 'Company Logo'} 
+            <img
+              src={company.logo}
+              alt={company.name || 'Company Logo'}
               className="page-logo"
             />
           </div>
@@ -248,8 +248,8 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
         </div>
         <div className="header-actions">
           {categories.length > 0 && isAdmin && (
-            <button 
-              className="btn btn-danger" 
+            <button
+              className="btn btn-danger"
               onClick={() => setDeleteAllModalVisible(true)}
               style={{ marginRight: '10px' }}
             >
@@ -261,8 +261,8 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
               + Add Category
             </button>
             {onNavigate && (
-              <button 
-                className="btn btn-secondary" 
+              <button
+                className="btn btn-secondary"
                 onClick={() => onNavigate('bulk-operations')}
                 title="Bulk Create Categories"
               >
@@ -323,9 +323,9 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
             {Object.entries(groupedCategories).map(([mainCategoryName, categoryGroup]) => {
               const mainCategory = categoryGroup.find(c => !c.subcategory) || categoryGroup[0];
               const subcategories = categoryGroup.filter(c => c.subcategory);
-              
+
               const isExpanded = isMainCategoryExpanded(mainCategoryName);
-              
+
               return (
                 <div key={mainCategoryName} className="category-group">
                   <div className="main-category">
@@ -369,7 +369,7 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
                       </button>
                     </div>
                   </div>
-                  
+
                   {isExpanded && subcategories.length > 0 && (
                     <div className="subcategories-list">
                       {subcategories.map((subcategory) => (
@@ -433,9 +433,9 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
             }}
           >
             <h2>
-              {isAddingSubcategory 
-                ? 'Add Subcategory' 
-                : editingCategory 
+              {isAddingSubcategory
+                ? 'Add Subcategory'
+                : editingCategory
                   ? (isEditingSubcategory ? 'Edit Subcategory' : 'Edit Category')
                   : 'Add Category'}
             </h2>
@@ -450,16 +450,16 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
                 readOnly={isMainCategoryReadOnly}
                 disabled={isMainCategoryReadOnly}
                 required
-                style={isMainCategoryReadOnly ? { 
-                  backgroundColor: '#f5f5f5', 
+                style={isMainCategoryReadOnly ? {
+                  backgroundColor: '#f5f5f5',
                   cursor: 'not-allowed',
                   opacity: 0.7
                 } : {}}
               />
               {isMainCategoryReadOnly && (
                 <small style={{ color: '#666', fontSize: '0.85rem', display: 'block', marginTop: '0.25rem' }}>
-                  {isAddingSubcategory 
-                    ? 'Main category is locked when adding a subcategory' 
+                  {isAddingSubcategory
+                    ? 'Main category is locked when adding a subcategory'
                     : 'Main category cannot be changed when editing subcategory'}
                 </small>
               )}
@@ -482,13 +482,13 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
             </label>
             <label>
               Brand (Optional):
-                <input
-                  type="text"
-                  className="input"
+              <input
+                type="text"
+                className="input"
                 placeholder="Brand"
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
-                />
+              />
             </label>
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => {
@@ -513,7 +513,7 @@ export default function Categories({ onNavigate }: CategoriesProps = {}) {
               <h2>Delete All Categories</h2>
               <button className="modal-close" onClick={() => setDeleteAllModalVisible(false)}>×</button>
             </div>
-            <div className="modal-body">
+            <div className="modal-body-simple">
               <p>
                 Are you sure you want to delete <strong>all {categories.length} categor{categories.length === 1 ? 'y' : 'ies'}</strong>?
                 This action cannot be undone.
