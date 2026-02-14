@@ -1,0 +1,216 @@
+/* POS Thermal Receipt - 3-inch (80mm) Layout */
+.pos-receipt {
+  width: 576px;
+  max-width: 576px;
+  font-family: "Courier New", monospace;
+  font-size: 9pt;
+  line-height: 1.2;
+  margin: 0 auto;
+  padding: 20px;
+  background: white;
+  color: black;
+}
+
+/* Header Section */
+.receipt-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.store-name {
+  font-size: 15pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.store-address {
+  font-size: 8pt;
+  margin-bottom: 4px;
+  line-height: 1.1;
+  text-transform: capitalize;
+}
+
+.gst-details {
+  font-size: 8pt;
+  margin-bottom: 8px;
+  line-height: 1.1;
+  text-transform: capitalize;
+}
+
+/* Order Info */
+.order-info {
+  margin-bottom: 20px;
+  font-size: 9pt;
+}
+
+.order-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+/* Items Table */
+.items-table {
+  margin-bottom: 20px;
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #000;
+  padding-bottom: 4px;
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  line-height: 1.1;
+}
+
+.item-name {
+  flex: 1;
+  text-transform: capitalize;
+  padding-right: 10px;
+  word-wrap: break-word;
+  font-size: 10pt;
+}
+
+.item-details {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  text-align: right;
+  min-width: 180px;
+}
+
+.item-qty {
+  width: 40px;
+  text-align: center;
+  font-size: 9pt;
+}
+
+.item-rate {
+  width: 60px;
+  text-align: right;
+  font-size: 9pt;
+}
+
+.item-total {
+  width: 70px;
+  text-align: right;
+  font-weight: bold;
+  font-size: 9pt;
+}
+
+/* Summary Section */
+.summary-section {
+  margin-bottom: 20px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  font-size: 9pt;
+}
+
+.summary-label {
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.summary-row.total {
+  font-size: 13pt;
+  font-weight: bold;
+  border-top: 2px solid #000;
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+/* Payment Section */
+.payment-section {
+  margin-bottom: 20px;
+}
+
+.payment-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  font-size: 9pt;
+}
+
+/* Footer */
+.receipt-footer {
+  text-align: center;
+  font-size: 8pt;
+  margin-top: 20px;
+  border-top: 1px solid #000;
+  padding-top: 16px;
+  text-transform: none;
+}
+
+.footer-line {
+  margin-bottom: 4px;
+  line-height: 1.1;
+  text-transform: none;
+}
+
+/* Separator */
+.separator {
+  text-align: center;
+  margin: 16px 0;
+  font-size: 9pt;
+  letter-spacing: 2px;
+}
+
+.separator-line {
+  border: none;
+  border-top: 1px dashed #000;
+  margin: 12px 0;
+}
+
+/* Print optimizations */
+@media print {
+  .pos-receipt {
+    width: auto;
+    max-width: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .separator-line {
+    border-top: 1px solid #000;
+  }
+}
+
+/* Thermal printer specific */
+.thermal-print {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Quantity formatting */
+.qty-badge {
+  background: #f0f0f0;
+  padding: 2px 4px;
+  border-radius: 2px;
+  font-size: 8pt;
+  border: 1px solid #ccc;
+}
+
+/* Tax breakdown */
+.tax-breakdown {
+  font-size: 8pt;
+  margin-bottom: 8px;
+}
+
+.tax-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}

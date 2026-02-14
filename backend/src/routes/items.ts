@@ -503,7 +503,7 @@ router.post(
         widthPerUnit, width_per_unit,
         heightPerUnit, height_per_unit,
         manufacturer,
-        brand,
+        brandId, brand_id, brand, // Accept both brandId and brand for compatibility
         modelNumber, model_number,
         batchNumber, batch_number,
         expiryDate, expiry_date,
@@ -542,6 +542,7 @@ router.post(
       const finalLengthPerUnit = lengthPerUnit !== undefined ? lengthPerUnit : length_per_unit;
       const finalWidthPerUnit = widthPerUnit !== undefined ? widthPerUnit : width_per_unit;
       const finalHeightPerUnit = heightPerUnit !== undefined ? heightPerUnit : height_per_unit;
+      const finalBrandId = brandId !== undefined ? brandId : brand_id;
       const finalModelNumber = modelNumber !== undefined ? modelNumber : model_number;
       const finalBatchNumber = batchNumber !== undefined ? batchNumber : batch_number;
       const finalExpiryDate = expiryDate !== undefined ? expiryDate : expiry_date;
@@ -592,7 +593,7 @@ router.post(
           widthPerUnit: finalWidthPerUnit ? parseFloat(finalWidthPerUnit) : null,
           heightPerUnit: finalHeightPerUnit ? parseFloat(finalHeightPerUnit) : null,
           manufacturer: manufacturer || null,
-          brand: brand || null,
+          brandId: finalBrandId || null,
           modelNumber: finalModelNumber || null,
           batchNumber: finalBatchNumber || null,
           expiryDate: finalExpiryDate ? new Date(finalExpiryDate) : null,
@@ -722,7 +723,7 @@ router.put(
         widthPerUnit, width_per_unit,
         heightPerUnit, height_per_unit,
         manufacturer,
-        brand,
+        brandId, brand_id, brand, // Accept both brandId and brand for compatibility
         modelNumber, model_number,
         batchNumber, batch_number,
         expiryDate, expiry_date,
@@ -756,6 +757,7 @@ router.put(
       const finalLengthPerUnit = lengthPerUnit !== undefined ? lengthPerUnit : length_per_unit;
       const finalWidthPerUnit = widthPerUnit !== undefined ? widthPerUnit : width_per_unit;
       const finalHeightPerUnit = heightPerUnit !== undefined ? heightPerUnit : height_per_unit;
+      const finalBrandId = brandId !== undefined ? brandId : brand_id;
       const finalModelNumber = modelNumber !== undefined ? modelNumber : model_number;
       const finalBatchNumber = batchNumber !== undefined ? batchNumber : batch_number;
       const finalExpiryDate = expiryDate !== undefined ? expiryDate : expiry_date;
@@ -829,7 +831,7 @@ router.put(
       if (finalWidthPerUnit !== undefined) updateData.widthPerUnit = finalWidthPerUnit ? parseFloat(finalWidthPerUnit) : null;
       if (finalHeightPerUnit !== undefined) updateData.heightPerUnit = finalHeightPerUnit ? parseFloat(finalHeightPerUnit) : null;
       if (manufacturer !== undefined) updateData.manufacturer = manufacturer || null;
-      if (brand !== undefined) updateData.brand = brand || null;
+      if (finalBrandId !== undefined) updateData.brandId = finalBrandId || null;
       if (finalModelNumber !== undefined) updateData.modelNumber = finalModelNumber || null;
       if (finalBatchNumber !== undefined) updateData.batchNumber = finalBatchNumber || null;
       if (finalExpiryDate !== undefined) updateData.expiryDate = finalExpiryDate ? new Date(finalExpiryDate) : null;

@@ -115,9 +115,9 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
   }, [name]);
 
   const handleAdd = async () => {
-    // Navigate to add item page instead of opening modal
+    // Navigate to multi-stage add item page instead of opening modal
     if (onNavigate) {
-      onNavigate('add-item');
+      onNavigate('add-item-multistage');
       return;
     }
 
@@ -144,13 +144,13 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
 
   const handleViewItem = (item: Item) => {
     if (onNavigate) {
-      onNavigate('view-item', item.id);
+      onNavigate('view-item-multistage', item.id);
     }
   };
 
   const handleEdit = async (item: Item) => {
     if (onNavigate) {
-      onNavigate('view-item', item.id);
+      onNavigate('view-item-multistage', item.id);
       return;
     }
     // Ensure categories are loaded before opening modal

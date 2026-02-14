@@ -18,7 +18,9 @@ const Cart = lazy(() => import('./pages/Cart'));
 const Categories = lazy(() => import('./pages/Categories'));
 const Items = lazy(() => import('./pages/Items'));
 const AddItem = lazy(() => import('./pages/AddItem'));
+const AddItemMultiStage = lazy(() => import('./pages/AddItemMultiStage'));
 const ViewItem = lazy(() => import('./pages/ViewItem'));
+const ViewItemMultiStage = lazy(() => import('./pages/ViewItemMultiStage'));
 const SalesOrders = lazy(() => import('./pages/SalesOrders'));
 const Customers = lazy(() => import('./pages/Customers'));
 const Import = lazy(() => import('./pages/Import'));
@@ -43,7 +45,7 @@ const UomSettings = lazy(() => import('./pages/UomSettings'));
 const Brands = lazy(() => import('./pages/Brands'));
 const Suppliers = lazy(() => import('./pages/Suppliers'));
 
-type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'add-item' | 'view-item' | 'sales' | 'sales-performance' | 'customers' | 'import' | 'reports' | 'export' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items' | 'quick-item-sales' | 'cash-flow' | 'acl-permissions' | 'order-details' | 'tables' | 'table-orders' | 'barcode-generator' | 'returns' | 'uom-settings' | 'brands' | 'suppliers';
+type Page = 'dashboard' | 'cart' | 'categories' | 'items' | 'add-item' | 'add-item-multistage' | 'view-item' | 'view-item-multistage' | 'sales' | 'sales-performance' | 'customers' | 'import' | 'reports' | 'export' | 'calculators' | 'company' | 'settings' | 'activity-logs' | 'bulk-operations' | 'quick-sale-items' | 'quick-item-sales' | 'cash-flow' | 'acl-permissions' | 'order-details' | 'tables' | 'table-orders' | 'barcode-generator' | 'returns' | 'uom-settings' | 'brands' | 'suppliers';
 type AuthPage = 'signin' | 'signup';
 
 function App() {
@@ -414,9 +416,11 @@ function App() {
                 {currentPage === 'dashboard' && (canView('dashboard') && !isHidden('dashboard') ? <Dashboard onNavigate={(page) => setCurrentPage(page as Page)} /> : <AccessDenied />)}
                 {currentPage === 'cart' && (canView('cart') && !isHidden('cart') ? <Cart onNavigate={(page) => setCurrentPage(page as Page)} /> : <AccessDenied />)}
                 {currentPage === 'categories' && (canView('categories') && !isHidden('categories') ? <Categories /> : <AccessDenied />)}
-                {currentPage === 'items' && (canView('items') && !isHidden('items') ? <Items onNavigate={(page: string, itemId?: string) => { if (page === 'add-item') { setCurrentPage('add-item'); } else if (page === 'view-item' && itemId) { setSelectedItemId(itemId); setCurrentPage('view-item'); } }} /> : <AccessDenied />)}
+                {currentPage === 'items' && (canView('items') && !isHidden('items') ? <Items onNavigate={(page: string, itemId?: string) => { if (page === 'add-item') { setCurrentPage('add-item'); } else if (page === 'add-item-multistage') { setCurrentPage('add-item-multistage'); } else if (page === 'view-item' && itemId) { setSelectedItemId(itemId); setCurrentPage('view-item'); } else if (page === 'view-item-multistage' && itemId) { setSelectedItemId(itemId); setCurrentPage('view-item-multistage'); } }} /> : <AccessDenied />)}
                 {currentPage === 'add-item' && (canView('items') && !isHidden('items') ? <AddItem onNavigate={(page) => setCurrentPage(page as Page)} /> : <AccessDenied />)}
+                {currentPage === 'add-item-multistage' && (canView('items') && !isHidden('items') ? <AddItemMultiStage onNavigate={(page) => setCurrentPage(page as Page)} /> : <AccessDenied />)}
                 {currentPage === 'view-item' && selectedItemId && (canView('items') && !isHidden('items') ? <ViewItem itemId={selectedItemId} onNavigate={(page) => setCurrentPage(page as Page)} onBack={() => { setSelectedItemId(null); setCurrentPage('items'); }} /> : <AccessDenied />)}
+                {currentPage === 'view-item-multistage' && selectedItemId && (canView('items') && !isHidden('items') ? <ViewItemMultiStage itemId={selectedItemId} onNavigate={(page) => setCurrentPage(page as Page)} onBack={() => { setSelectedItemId(null); setCurrentPage('items'); }} /> : <AccessDenied />)}
                 {currentPage === 'sales' && (canView('sales') && !isHidden('sales') ? <SalesOrders onNavigate={(page, orderId) => { if (page === 'order-details' && orderId) { setSelectedOrderId(orderId); setCurrentPage('order-details'); } }} /> : <AccessDenied />)}
                 {currentPage === 'order-details' && selectedOrderId && (canView('sales') && !isHidden('sales') ? <OrderDetails orderId={selectedOrderId} onBack={() => { setCurrentPage('sales'); setSelectedOrderId(null); }} /> : <AccessDenied />)}
                 {currentPage === 'sales-performance' && (canView('sales-performance') && !isHidden('sales-performance') ? <SalesPerformance /> : <AccessDenied />)}
