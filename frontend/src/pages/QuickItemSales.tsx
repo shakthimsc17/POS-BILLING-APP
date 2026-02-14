@@ -4,6 +4,7 @@ import { useCompanyStore } from '../store/companyStore';
 import { Item, Category } from '../types';
 import { storageService } from '../services/storage';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { formatCurrency } from '../utils/formatters';
 import './QuickItemSales.css';
 
 interface ItemWithMappingCode extends Item {
@@ -15,14 +16,25 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
   const [displayItems, setDisplayItems] = useState<ItemWithMappingCode[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
+
+  // Filters
   const [selectedMainCategory, setSelectedMainCategory] = useState<string>('');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isGlobalEditMode, setIsGlobalEditMode] = useState(false); // Renamed for clarity
   const [saving, setSaving] = useState(false);
+
+  // Single Item Edit State
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [singleEditCode, setSingleEditCode] = useState('');
+
   const observerTarget = useRef<HTMLDivElement>(null);
   const { company, loadCompany } = useCompanyStore();
   const { updateItem, loadItems: reloadItemsFromStore } = useInventoryStore();
@@ -37,7 +49,7 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
 
   useEffect(() => {
     filterItems();
-  }, [selectedMainCategory, selectedSubcategory, items]);
+  }, [selectedMainCategory, selectedSubcategory, searchQuery, minPrice, maxPrice, items]);
 
   // Lazy loading with Intersection Observer
   useEffect(() => {
@@ -78,12 +90,9 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
   const loadItemsData = async () => {
     setLoading(true);
     try {
-      // First reload from store to ensure we have latest data
       await reloadItemsFromStore();
-      // Then fetch fresh data from API
       const response = await storageService.getItems();
       const itemsArray = Array.isArray(response) ? response : [];
-      // Ensure mapping_code is included in items
       const itemsWithMappingCode = itemsArray.map(item => ({
         ...item,
         mapping_code: item.mapping_code || null,
@@ -104,10 +113,9 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
 
     setLoadingMore(true);
     try {
-      await reloadItemsFromStore(); // Refresh from store first
+      await reloadItemsFromStore();
       const response = await storageService.getItems();
       const itemsArray = Array.isArray(response) ? response : [];
-      // Ensure mapping_code is included
       const itemsWithMappingCode = itemsArray.map(item => ({
         ...item,
         mapping_code: item.mapping_code || null,
@@ -116,7 +124,7 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
       const startIndex = 0;
       const endIndex = nextPage * ITEMS_PER_PAGE;
       const newItems = itemsWithMappingCode.slice(startIndex, endIndex);
-      
+
       setItems(newItems);
       setPage(nextPage);
       setHasMore(endIndex < itemsArray.length);
@@ -127,19 +135,14 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
     }
   };
 
-  // Get unique main categories
   const getUniqueMainCategories = (): Category[] => {
     const unique = new Map<string, Category>();
-    
     allCategories.forEach(cat => {
       if (!cat.subcategory) {
         const categoryName = cat.name.toLowerCase();
-        if (!unique.has(categoryName)) {
-          unique.set(categoryName, cat);
-        }
+        if (!unique.has(categoryName)) unique.set(categoryName, cat);
       }
     });
-    
     allCategories.forEach(cat => {
       if (cat.subcategory) {
         const categoryName = cat.name.toLowerCase();
@@ -155,31 +158,24 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
         }
       }
     });
-    
     return Array.from(unique.values()).sort((a, b) => a.name.localeCompare(b.name));
   };
 
-  // Get subcategories for selected main category
   const getSubcategoriesForMainCategory = (): string[] => {
     if (!selectedMainCategory) return [];
-    
     const mainCategory = allCategories.find(c => c.id === selectedMainCategory);
     if (!mainCategory) return [];
-    
     const categoryName = mainCategory.name;
-    const subcategories = allCategories
+    return allCategories
       .filter(c => c.name === categoryName && c.subcategory)
       .map(c => c.subcategory!)
       .filter((v, i, a) => a.indexOf(v) === i)
       .sort();
-    
-    return subcategories;
   };
 
   const filterItems = () => {
     let filtered: ItemWithMappingCode[] = [...items];
 
-    // Filter by main category
     if (selectedMainCategory) {
       const mainCategory = allCategories.find(c => c.id === selectedMainCategory);
       if (mainCategory) {
@@ -187,27 +183,42 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
         const categoryIds = allCategories
           .filter(c => c.name === categoryName)
           .map(c => c.id);
-        
-        filtered = filtered.filter(item => 
+
+        filtered = filtered.filter(item =>
           item.category_id && categoryIds.includes(item.category_id)
         );
 
-        // Filter by subcategory if selected
         if (selectedSubcategory) {
-          filtered = filtered.filter(item => 
+          filtered = filtered.filter(item =>
             item.subcategory === selectedSubcategory
           );
         }
       }
     }
 
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(item =>
+        (item.name && item.name.toLowerCase().includes(query)) ||
+        (item.code && item.code.toLowerCase().includes(query))
+      );
+    }
+
+    if (minPrice) {
+      filtered = filtered.filter(item => Number(item.price) >= Number(minPrice));
+    }
+    if (maxPrice) {
+      filtered = filtered.filter(item => Number(item.price) <= Number(maxPrice));
+    }
+
     setDisplayItems(filtered);
   };
 
-  const handleMappingCodeChange = (itemId: string, value: string) => {
-    setDisplayItems(prev => 
-      prev.map(item => 
-        item.id === itemId 
+  // Global Edit Handlers
+  const handleGlobalMappingCodeChange = (itemId: string, value: string) => {
+    setDisplayItems(prev =>
+      prev.map(item =>
+        item.id === itemId
           ? { ...item, editingMappingCode: value }
           : item
       )
@@ -217,7 +228,6 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
   const handleGlobalSave = async () => {
     setSaving(true);
     try {
-      // Get all items that have been edited (editingMappingCode is defined)
       const updates = displayItems
         .filter(item => item.editingMappingCode !== undefined)
         .map(item => {
@@ -229,37 +239,26 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
         });
 
       if (updates.length === 0) {
-        setIsEditMode(false);
+        setIsGlobalEditMode(false);
         return;
       }
 
-      // Update all items
       await Promise.all(
-        updates.map(update => 
+        updates.map(update =>
           updateItem(update.id, { mapping_code: update.mappingCode })
         )
       );
 
-      // Reload items to get latest data from database
-      // updateItem already calls loadItems in store, but we need to refresh local state
-      await reloadItemsFromStore(); // Refresh store (this calls loadItems internally)
-      // Delay to ensure backend has processed all updates
+      await reloadItemsFromStore();
       await new Promise(resolve => setTimeout(resolve, 800));
-      // Reload local items with fresh data from API
-      await loadItemsData(); // Reload local items
-      
-      // Reset edit mode
-      setIsEditMode(false);
-      setDisplayItems(prev => 
+      await loadItemsData();
+
+      setIsGlobalEditMode(false);
+      setDisplayItems(prev =>
         prev.map(item => ({ ...item, editingMappingCode: undefined }))
       );
 
-      // Show success notification
-      const notification = document.createElement('div');
-      notification.className = 'notification';
-      notification.textContent = `Successfully updated ${updates.length} item(s)`;
-      document.body.appendChild(notification);
-      setTimeout(() => notification.remove(), 3000);
+      showNotification(`Successfully updated ${updates.length} item(s)`);
     } catch (error: any) {
       alert(error.message || 'Failed to save mapping codes');
     } finally {
@@ -268,29 +267,64 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
   };
 
   const handleGlobalEdit = () => {
-    // Initialize editing values with current mapping codes
-    setDisplayItems(prev => 
+    setDisplayItems(prev =>
       prev.map(item => ({
         ...item,
         editingMappingCode: item.mapping_code || '',
       }))
     );
-    setIsEditMode(true);
+    setIsGlobalEditMode(true);
+    setEditingId(null); // Cancel any single edit
   };
 
-  const handleCancelEdit = () => {
-    setDisplayItems(prev => 
+  const handleCancelGlobalEdit = () => {
+    setDisplayItems(prev =>
       prev.map(item => ({ ...item, editingMappingCode: undefined }))
     );
-    setIsEditMode(false);
+    setIsGlobalEditMode(false);
   };
 
-  const handleEditItem = (item: Item) => {
-    if (onNavigate) {
-      onNavigate('items');
-      // Note: User will need to find and edit the item manually in Items page
-      // For better UX, you could store the item ID and scroll to it
+  // Single Item Edit Handlers
+  const handleEditSingleItem = (item: Item) => {
+    if (isGlobalEditMode) return; // Prevent conflicts
+    setEditingId(item.id);
+    setSingleEditCode(item.mapping_code || '');
+  };
+
+  const handleCancelSingleEdit = () => {
+    setEditingId(null);
+    setSingleEditCode('');
+  };
+
+  const handleSaveSingleItem = async (itemId: string) => {
+    setSaving(true);
+    try {
+      const trimmedValue = singleEditCode.trim();
+      const codeToSave = trimmedValue === '' ? undefined : trimmedValue;
+
+      await updateItem(itemId, { mapping_code: codeToSave });
+
+      await reloadItemsFromStore();
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await loadItemsData();
+
+      setEditingId(null);
+      setSingleEditCode('');
+      showNotification('Mapping code updated successfully');
+    } catch (error: any) {
+      alert('Failed to update mapping code');
+      console.error(error);
+    } finally {
+      setSaving(false);
     }
+  };
+
+  const showNotification = (message: string) => {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
   };
 
   if (loading) {
@@ -314,17 +348,51 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
         )}
         <div className="header-content">
           <h1>{company.logo ? '' : '⚡ '}Quick Item Sales</h1>
-          <p>View items with mapping codes</p>
+          <p>Manage quick sales items and mapping codes</p>
         </div>
       </div>
 
-      {/* Category Filters */}
-      <div className="card filters-card">
+      {/* Filter Section */}
+      <div className="filters-card">
         <div className="filters-row">
+          <div className="filter-group" style={{ flex: 2, minWidth: '300px' }}>
+            <label>Search Items:</label>
+            <input
+              type="text"
+              className="filter-input"
+              placeholder="🔍 Search by Item Name or Code..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="filter-group">
+            <label>Price Range:</label>
+            <div className="price-range-group">
+              <input
+                type="number"
+                className="filter-input"
+                placeholder="Min"
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
+                min="0"
+              />
+              <span style={{ color: '#aaa' }}>-</span>
+              <input
+                type="number"
+                className="filter-input"
+                placeholder="Max"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                min="0"
+              />
+            </div>
+          </div>
+
           <div className="filter-group">
             <label>Main Category:</label>
             <select
-              className="input"
+              className="filter-select"
               value={selectedMainCategory}
               onChange={(e) => {
                 setSelectedMainCategory(e.target.value);
@@ -339,15 +407,16 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
               ))}
             </select>
           </div>
+
           {selectedMainCategory && subcategories.length > 0 && (
             <div className="filter-group">
               <label>Subcategory:</label>
               <select
-                className="input"
+                className="filter-select"
                 value={selectedSubcategory}
                 onChange={(e) => setSelectedSubcategory(e.target.value)}
               >
-                <option value="">All Subcategories</option>
+                <option value="">All</option>
                 {subcategories.map((subcat, idx) => (
                   <option key={idx} value={subcat}>
                     {subcat}
@@ -363,7 +432,7 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
       <div className="card">
         <div className="table-header-actions">
           <h2>Items ({displayItems.length})</h2>
-          {!isEditMode ? (
+          {!isGlobalEditMode && !editingId ? (
             <button
               className="btn btn-primary"
               onClick={handleGlobalEdit}
@@ -371,7 +440,7 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
             >
               ✏️ Edit All Mapping Codes
             </button>
-          ) : (
+          ) : isGlobalEditMode ? (
             <div className="edit-mode-actions">
               <button
                 className="btn btn-success"
@@ -382,17 +451,21 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
               </button>
               <button
                 className="btn btn-secondary"
-                onClick={handleCancelEdit}
+                onClick={handleCancelGlobalEdit}
                 disabled={saving}
               >
                 Cancel
               </button>
             </div>
+          ) : (
+            // Single edit active, hide global button (optional, or just disable)
+            <span style={{ color: '#64748b', fontSize: '0.9rem' }}>Editing Item...</span>
           )}
         </div>
+
         {displayItems.length === 0 ? (
           <div className="empty-state">
-            <p>📭 No items found</p>
+            <p>📭 No items found matching criteria</p>
           </div>
         ) : (
           <>
@@ -400,43 +473,84 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
               <table className="quick-item-sales-table">
                 <thead>
                   <tr>
-                    <th>Item Name</th>
-                    <th>Item Code</th>
-                    <th>Mapping Code</th>
-                    <th>Actions</th>
+                    <th style={{ width: '30%' }}>Item Name</th>
+                    <th style={{ width: '15%' }}>Code</th>
+                    <th style={{ width: '15%' }}>Price</th>
+                    <th style={{ width: '25%' }}>Mapping Code</th>
+                    <th style={{ width: '15%' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {displayItems.map((item) => (
-                    <tr key={item.id}>
-                      <td className="item-name">{item.display_name || item.name}</td>
-                      <td className="item-code">{item.code}</td>
-                      <td className="mapping-code-cell">
-                        {isEditMode ? (
-                          <input
-                            type="text"
-                            className="input mapping-code-input"
-                            value={item.editingMappingCode || ''}
-                            onChange={(e) => handleMappingCodeChange(item.id, e.target.value)}
-                            placeholder="Enter mapping code"
-                          />
-                        ) : (
-                          <span className={item.mapping_code ? 'mapping-code-value' : 'mapping-code-empty'}>
-                            {item.mapping_code || '-'}
-                          </span>
-                        )}
-                      </td>
-                      <td className="item-actions">
-                        <button
-                          className="btn btn-sm btn-secondary"
-                          onClick={() => handleEditItem(item)}
-                          title="Edit item details"
-                        >
-                          Edit Item
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {displayItems.map((item) => {
+                    const isSingleEditing = editingId === item.id;
+                    return (
+                      <tr key={item.id} style={isSingleEditing ? { background: '#fffbeb' } : {}}>
+                        <td className="item-name">{item.display_name || item.name}</td>
+                        <td>
+                          <span className="item-code">{item.code}</span>
+                        </td>
+                        <td className="item-price">
+                          {formatCurrency(Number(item.price) || 0)}
+                        </td>
+                        <td className="mapping-code-cell">
+                          {isGlobalEditMode ? (
+                            <input
+                              type="text"
+                              className="mapping-code-input"
+                              value={item.editingMappingCode || ''}
+                              onChange={(e) => handleGlobalMappingCodeChange(item.id, e.target.value)}
+                              placeholder="Code"
+                            />
+                          ) : isSingleEditing ? (
+                            <input
+                              type="text"
+                              className="mapping-code-input"
+                              value={singleEditCode}
+                              onChange={(e) => setSingleEditCode(e.target.value)}
+                              placeholder="Code"
+                              autoFocus
+                            />
+                          ) : (
+                            <span className={item.mapping_code ? 'mapping-code-value' : 'mapping-code-empty'}>
+                              {item.mapping_code || '-'}
+                            </span>
+                          )}
+                        </td>
+                        <td className="item-actions">
+                          {isGlobalEditMode ? (
+                            <span style={{ color: '#ccc' }}>-</span>
+                          ) : isSingleEditing ? (
+                            <div className="edit-mode-actions" style={{ gap: '0.5rem' }}>
+                              <button
+                                className="btn btn-sm btn-success"
+                                onClick={() => handleSaveSingleItem(item.id)}
+                                disabled={saving}
+                                title="Save"
+                              >
+                                {saving ? '...' : 'Save'}
+                              </button>
+                              <button
+                                className="btn btn-sm btn-secondary"
+                                onClick={handleCancelSingleEdit}
+                                disabled={saving}
+                                title="Cancel"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              className="btn btn-sm btn-secondary"
+                              onClick={() => handleEditSingleItem(item)}
+                              title="Edit Mapping Code"
+                            >
+                              Edit
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

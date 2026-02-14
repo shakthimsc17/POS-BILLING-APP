@@ -20,21 +20,63 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
   const [currentStage, setCurrentStage] = useState(1);
   const [editData, setEditData] = useState<any>({});
   const [uoms, setUoms] = useState<UomMaster[]>([]);
+  const [brands, setBrands] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [brandSearchTerm, setBrandSearchTerm] = useState('');
+  const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
+  const [showBrandDropdown, setShowBrandDropdown] = useState(false);
+  const [showSupplierDropdown, setShowSupplierDropdown] = useState(false);
 
   const { items, categories, updateItem } = useInventoryStore();
   const totalStages = 5;
 
   useEffect(() => {
-    const loadUoms = async () => {
-      try {
-        const data = await uomService.getUoms();
-        setUoms(data);
-      } catch (error) {
-        console.error('Error loading UOMs:', error);
-      }
+    const loadData = async () => {
+      await Promise.all([
+        loadUoms(),
+        loadBrands(),
+        loadSuppliers()
+      ]);
     };
-    loadUoms();
+    loadData();
   }, []);
+
+  const loadUoms = async () => {
+    try {
+      const data = await uomService.getUoms();
+      setUoms(data);
+    } catch (error) {
+      console.error('Error loading UOMs:', error);
+    }
+  };
+
+  const loadBrands = async () => {
+    try {
+      const response = await fetch('/api/brands', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('pos_token')}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBrands(data);
+      }
+    } catch (error) {
+      console.error('Error loading brands:', error);
+    }
+  };
+
+  const loadSuppliers = async () => {
+    try {
+      const response = await fetch('/api/suppliers', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('pos_token')}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSuppliers(data);
+      }
+    } catch (error) {
+      console.error('Error loading suppliers:', error);
+    }
+  };
 
   useEffect(() => {
     if (itemId) {
@@ -66,9 +108,24 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
     }
   };
 
+  // Helper to get unique categories by name
+  const getUniqueCategories = () => {
+    if (!categories) return [];
+    const unique = new Map();
+    categories.forEach(c => {
+      if (!unique.has(c.name)) {
+        unique.set(c.name, c);
+      }
+    });
+    return Array.from(unique.values());
+  };
+
   const handleEdit = () => {
     setEditing(true);
     setEditData({ ...item });
+    setBrandSearchTerm(item.brand?.name || '');
+    const supplier = suppliers.find(s => s.id === item.supplier_id);
+    setSupplierSearchTerm(supplier?.name || item.supplier_name || item.manufacturer || '');
     setCurrentStage(1);
   };
 
@@ -126,7 +183,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Item Name{editing && <span className="required-asterisk">*</span>}:</label>
                 {editing ? (
-                  <input className="input" value={editData.name || ''} onChange={(e) => setEditData({...editData, name: e.target.value})} />
+                  <input className="input" value={editData.name || ''} onChange={(e) => setEditData({ ...editData, name: e.target.value })} />
                 ) : (
                   <div className="value">{item.name}</div>
                 )}
@@ -134,7 +191,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Item Code{editing && <span className="required-asterisk">*</span>}:</label>
                 {editing ? (
-                  <input className="input" value={editData.code || ''} onChange={(e) => setEditData({...editData, code: e.target.value})} />
+                  <input className="input" value={editData.code || ''} onChange={(e) => setEditData({ ...editData, code: e.target.value })} />
                 ) : (
                   <div className="value">{item.code}</div>
                 )}
@@ -142,7 +199,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Type{editing && <span className="required-asterisk">*</span>}:</label>
                 {editing ? (
-                  <select className="input" value={editData.type || 'goods'} onChange={(e) => setEditData({...editData, type: e.target.value})}>
+                  <select className="input" value={editData.type || 'goods'} onChange={(e) => setEditData({ ...editData, type: e.target.value })}>
                     <option value="goods">Goods</option>
                     <option value="service">Service</option>
                   </select>
@@ -153,9 +210,9 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Category:</label>
                 {editing ? (
-                  <select className="input" value={editData.category_id || ''} onChange={(e) => setEditData({...editData, category_id: e.target.value})}>
+                  <select className="input" value={editData.category_id || ''} onChange={(e) => setEditData({ ...editData, category_id: e.target.value })}>
                     <option value="">Select Category</option>
-                    {categories?.map(cat => (
+                    {getUniqueCategories().map(cat => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
                   </select>
@@ -166,7 +223,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Subcategory:</label>
                 {editing ? (
-                  <input className="input" value={editData.subcategory || ''} onChange={(e) => setEditData({...editData, subcategory: e.target.value})} />
+                  <input className="input" value={editData.subcategory || ''} onChange={(e) => setEditData({ ...editData, subcategory: e.target.value })} />
                 ) : (
                   <div className="value">{item.subcategory || '-'}</div>
                 )}
@@ -174,7 +231,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>SKU:</label>
                 {editing ? (
-                  <input className="input" value={editData.sku || ''} onChange={(e) => setEditData({...editData, sku: e.target.value})} />
+                  <input className="input" value={editData.sku || ''} onChange={(e) => setEditData({ ...editData, sku: e.target.value })} />
                 ) : (
                   <div className="value">{item.sku || '-'}</div>
                 )}
@@ -182,15 +239,23 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Display Name:</label>
                 {editing ? (
-                  <input className="input" value={editData.display_name || ''} onChange={(e) => setEditData({...editData, display_name: e.target.value})} />
+                  <input className="input" value={editData.display_name || ''} onChange={(e) => setEditData({ ...editData, display_name: e.target.value })} />
                 ) : (
                   <div className="value">{item.display_name || '-'}</div>
+                )}
+              </div>
+              <div className="form-field">
+                <label>Display Name (Tamil):</label>
+                {editing ? (
+                  <input className="input" value={editData.display_name_tamil || ''} onChange={(e) => setEditData({ ...editData, display_name_tamil: e.target.value })} />
+                ) : (
+                  <div className="value">{item.display_name_tamil || '-'}</div>
                 )}
               </div>
               <div className="form-field full-width">
                 <label>Description:</label>
                 {editing ? (
-                  <textarea className="input" value={editData.description || ''} onChange={(e) => setEditData({...editData, description: e.target.value})} rows={3} />
+                  <textarea className="input" value={editData.description || ''} onChange={(e) => setEditData({ ...editData, description: e.target.value })} rows={3} />
                 ) : (
                   <div className="value">{item.description || '-'}</div>
                 )}
@@ -207,7 +272,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Barcode:</label>
                 {editing ? (
-                  <input className="input" value={editData.barcode || ''} onChange={(e) => setEditData({...editData, barcode: e.target.value})} />
+                  <input className="input" value={editData.barcode || ''} onChange={(e) => setEditData({ ...editData, barcode: e.target.value })} />
                 ) : (
                   <div className="value">{item.barcode || '-'}</div>
                 )}
@@ -215,7 +280,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Mapping Code:</label>
                 {editing ? (
-                  <input className="input" value={editData.mapping_code || ''} onChange={(e) => setEditData({...editData, mapping_code: e.target.value})} />
+                  <input className="input" value={editData.mapping_code || ''} onChange={(e) => setEditData({ ...editData, mapping_code: e.target.value })} />
                 ) : (
                   <div className="value">{item.mapping_code || '-'}</div>
                 )}
@@ -223,7 +288,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>HSN Code:</label>
                 {editing ? (
-                  <input className="input" value={editData.hsn_code || ''} onChange={(e) => setEditData({...editData, hsn_code: e.target.value})} />
+                  <input className="input" value={editData.hsn_code || ''} onChange={(e) => setEditData({ ...editData, hsn_code: e.target.value })} />
                 ) : (
                   <div className="value">{item.hsn_code || '-'}</div>
                 )}
@@ -231,17 +296,92 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Brand:</label>
                 {editing ? (
-                  <input className="input" value={editData.brand?.name || ''} onChange={(e) => setEditData({...editData, brand: { name: e.target.value }})} />
+                  <div className="searchable-dropdown">
+                    <input
+                      type="text"
+                      className="input"
+                      value={brandSearchTerm}
+                      onChange={(e) => {
+                        setBrandSearchTerm(e.target.value);
+                        if (!showBrandDropdown) setShowBrandDropdown(true);
+                        if (!e.target.value) setEditData({ ...editData, brand_id: null });
+                      }}
+                      onFocus={() => setShowBrandDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowBrandDropdown(false), 200)}
+                      placeholder="Search or select brand"
+                    />
+                    {showBrandDropdown && (brandSearchTerm || brands.length > 0) && (
+                      <div className="dropdown-options">
+                        {brands
+                          .filter(brand => brand.name.toLowerCase().includes(brandSearchTerm.toLowerCase()))
+                          .map(brand => (
+                            <div
+                              key={brand.id}
+                              className="dropdown-option"
+                              onClick={() => {
+                                setEditData({ ...editData, brand_id: brand.id });
+                                setBrandSearchTerm(brand.name);
+                              }}
+                            >
+                              {brand.name}
+                            </div>
+                          ))}
+                        {brands.length === 0 && <div className="dropdown-option disabled">No brands found</div>}
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div className="value">{item.brand?.name || '-'}</div>
                 )}
               </div>
               <div className="form-field">
-                <label>Manufacturer:</label>
+                <label>Supplier:</label>
                 {editing ? (
-                  <input className="input" value={editData.manufacturer || ''} onChange={(e) => setEditData({...editData, manufacturer: e.target.value})} />
+                  <div className="searchable-dropdown">
+                    <input
+                      type="text"
+                      className="input"
+                      value={supplierSearchTerm}
+                      onChange={(e) => {
+                        setSupplierSearchTerm(e.target.value);
+                        if (!showSupplierDropdown) setShowSupplierDropdown(true);
+                        if (!e.target.value) {
+                          setEditData({ ...editData, supplier_id: null, supplier_name: null, supplier_code: null });
+                        } else {
+                          setEditData({ ...editData, supplier_name: e.target.value });
+                        }
+                      }}
+                      onFocus={() => setShowSupplierDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowSupplierDropdown(false), 200)}
+                      placeholder="Search or select supplier"
+                    />
+                    {showSupplierDropdown && (supplierSearchTerm || suppliers.length > 0) && (
+                      <div className="dropdown-options">
+                        {suppliers
+                          .filter(supplier => supplier.name.toLowerCase().includes(supplierSearchTerm.toLowerCase()))
+                          .map(supplier => (
+                            <div
+                              key={supplier.id}
+                              className="dropdown-option"
+                              onClick={() => {
+                                setEditData({
+                                  ...editData,
+                                  supplier_id: supplier.id,
+                                  supplier_name: supplier.name,
+                                  supplier_code: supplier.code
+                                });
+                                setSupplierSearchTerm(supplier.name);
+                              }}
+                            >
+                              {supplier.name}
+                            </div>
+                          ))}
+                        {suppliers.length === 0 && <div className="dropdown-option disabled">No suppliers found</div>}
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <div className="value">{item.manufacturer || '-'}</div>
+                  <div className="value">{item.supplier_name || item.manufacturer || '-'}</div>
                 )}
               </div>
             </div>
@@ -256,7 +396,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Cost Price{editing && <span className="required-asterisk">*</span>}:</label>
                 {editing ? (
-                  <input type="number" className="input" value={editData.cost || ''} onChange={(e) => setEditData({...editData, cost: e.target.value})} step="0.01" />
+                  <input type="number" className="input" value={editData.cost || ''} onChange={(e) => setEditData({ ...editData, cost: e.target.value })} step="0.01" />
                 ) : (
                   <div className="value">{formatCurrency(item.cost)}</div>
                 )}
@@ -264,7 +404,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Selling Price{editing && <span className="required-asterisk">*</span>}:</label>
                 {editing ? (
-                  <input type="number" className="input" value={editData.price || ''} onChange={(e) => setEditData({...editData, price: e.target.value})} step="0.01" />
+                  <input type="number" className="input" value={editData.price || ''} onChange={(e) => setEditData({ ...editData, price: e.target.value })} step="0.01" />
                 ) : (
                   <div className="value">{formatCurrency(item.price)}</div>
                 )}
@@ -272,7 +412,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>MRP:</label>
                 {editing ? (
-                  <input type="number" className="input" value={editData.mrp || ''} onChange={(e) => setEditData({...editData, mrp: e.target.value})} step="0.01" />
+                  <input type="number" className="input" value={editData.mrp || ''} onChange={(e) => setEditData({ ...editData, mrp: e.target.value })} step="0.01" />
                 ) : (
                   <div className="value">{item.mrp ? formatCurrency(item.mrp) : '-'}</div>
                 )}
@@ -280,7 +420,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>GST Rate (%):</label>
                 {editing ? (
-                  <input type="number" className="input" value={editData.gst_rate || ''} onChange={(e) => setEditData({...editData, gst_rate: e.target.value})} step="0.01" />
+                  <input type="number" className="input" value={editData.gst_rate || ''} onChange={(e) => setEditData({ ...editData, gst_rate: e.target.value })} step="0.01" />
                 ) : (
                   <div className="value">{item.gst_rate || '-'}%</div>
                 )}
@@ -288,7 +428,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>CESS Rate (%):</label>
                 {editing ? (
-                  <input type="number" className="input" value={editData.cess_rate || ''} onChange={(e) => setEditData({...editData, cess_rate: e.target.value})} step="0.01" />
+                  <input type="number" className="input" value={editData.cess_rate || ''} onChange={(e) => setEditData({ ...editData, cess_rate: e.target.value })} step="0.01" />
                 ) : (
                   <div className="value">{item.cess_rate || '-'}%</div>
                 )}
@@ -296,7 +436,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Stock Quantity:</label>
                 {editing ? (
-                  <input type="number" className="input" value={editData.stock || ''} onChange={(e) => setEditData({...editData, stock: e.target.value})} />
+                  <input type="number" className="input" value={editData.stock || ''} onChange={(e) => setEditData({ ...editData, stock: e.target.value })} />
                 ) : (
                   <div className="value">{item.stock || 0}</div>
                 )}
@@ -313,7 +453,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>UOM:</label>
                 {editing ? (
-                  <select className="input" value={editData.uom_id || ''} onChange={(e) => setEditData({...editData, uom_id: e.target.value})}>
+                  <select className="input" value={editData.uom_id || ''} onChange={(e) => setEditData({ ...editData, uom_id: e.target.value })}>
                     <option value="">Select UOM</option>
                     {uoms.map(uom => (
                       <option key={uom.id} value={uom.id}>{uom.name} ({uom.code})</option>
@@ -326,7 +466,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Weight per Unit:</label>
                 {editing ? (
-                  <input type="number" className="input" value={editData.weight_per_unit || ''} onChange={(e) => setEditData({...editData, weight_per_unit: e.target.value})} step="0.01" />
+                  <input type="number" className="input" value={editData.weight_per_unit || ''} onChange={(e) => setEditData({ ...editData, weight_per_unit: e.target.value })} step="0.01" />
                 ) : (
                   <div className="value">{item.weight_per_unit || '-'} {item.weight_per_unit ? 'kg' : ''}</div>
                 )}
@@ -334,7 +474,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Volume per Unit:</label>
                 {editing ? (
-                  <input type="number" className="input" value={editData.volume_per_unit || ''} onChange={(e) => setEditData({...editData, volume_per_unit: e.target.value})} step="0.01" />
+                  <input type="number" className="input" value={editData.volume_per_unit || ''} onChange={(e) => setEditData({ ...editData, volume_per_unit: e.target.value })} step="0.01" />
                 ) : (
                   <div className="value">{item.volume_per_unit || '-'} {item.volume_per_unit ? 'L' : ''}</div>
                 )}
@@ -342,7 +482,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Length:</label>
                 {editing ? (
-                  <input type="number" className="input" value={editData.length_per_unit || ''} onChange={(e) => setEditData({...editData, length_per_unit: e.target.value})} step="0.01" />
+                  <input type="number" className="input" value={editData.length_per_unit || ''} onChange={(e) => setEditData({ ...editData, length_per_unit: e.target.value })} step="0.01" />
                 ) : (
                   <div className="value">{item.length_per_unit || '-'} {item.length_per_unit ? 'cm' : ''}</div>
                 )}
@@ -350,7 +490,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Width:</label>
                 {editing ? (
-                  <input type="number" className="input" value={editData.width_per_unit || ''} onChange={(e) => setEditData({...editData, width_per_unit: e.target.value})} step="0.01" />
+                  <input type="number" className="input" value={editData.width_per_unit || ''} onChange={(e) => setEditData({ ...editData, width_per_unit: e.target.value })} step="0.01" />
                 ) : (
                   <div className="value">{item.width_per_unit || '-'} {item.width_per_unit ? 'cm' : ''}</div>
                 )}
@@ -358,7 +498,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Height:</label>
                 {editing ? (
-                  <input type="number" className="input" value={editData.height_per_unit || ''} onChange={(e) => setEditData({...editData, height_per_unit: e.target.value})} step="0.01" />
+                  <input type="number" className="input" value={editData.height_per_unit || ''} onChange={(e) => setEditData({ ...editData, height_per_unit: e.target.value })} step="0.01" />
                 ) : (
                   <div className="value">{item.height_per_unit || '-'} {item.height_per_unit ? 'cm' : ''}</div>
                 )}
@@ -366,7 +506,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Package Type:</label>
                 {editing ? (
-                  <input className="input" value={editData.package_type || ''} onChange={(e) => setEditData({...editData, package_type: e.target.value})} />
+                  <input className="input" value={editData.package_type || ''} onChange={(e) => setEditData({ ...editData, package_type: e.target.value })} />
                 ) : (
                   <div className="value">{item.package_type || '-'}</div>
                 )}
@@ -374,7 +514,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Package Quantity:</label>
                 {editing ? (
-                  <input type="number" className="input" value={editData.package_quantity || '1'} onChange={(e) => setEditData({...editData, package_quantity: e.target.value})} min="1" />
+                  <input type="number" className="input" value={editData.package_quantity || '1'} onChange={(e) => setEditData({ ...editData, package_quantity: e.target.value })} min="1" />
                 ) : (
                   <div className="value">{item.package_quantity || 1}</div>
                 )}
@@ -383,7 +523,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
                 <label>Is Perishable:</label>
                 {editing ? (
                   <label style={{ flexDirection: 'row', gap: '10px', alignItems: 'center' }}>
-                    <input type="checkbox" checked={editData.is_perishable || false} onChange={(e) => setEditData({...editData, is_perishable: e.target.checked})} />
+                    <input type="checkbox" checked={editData.is_perishable || false} onChange={(e) => setEditData({ ...editData, is_perishable: e.target.checked })} />
                     Yes
                   </label>
                 ) : (
@@ -402,7 +542,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Model Number:</label>
                 {editing ? (
-                  <input className="input" value={editData.model_number || ''} onChange={(e) => setEditData({...editData, model_number: e.target.value})} />
+                  <input className="input" value={editData.model_number || ''} onChange={(e) => setEditData({ ...editData, model_number: e.target.value })} />
                 ) : (
                   <div className="value">{item.model_number || '-'}</div>
                 )}
@@ -410,7 +550,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Batch Number:</label>
                 {editing ? (
-                  <input className="input" value={editData.batch_number || ''} onChange={(e) => setEditData({...editData, batch_number: e.target.value})} />
+                  <input className="input" value={editData.batch_number || ''} onChange={(e) => setEditData({ ...editData, batch_number: e.target.value })} />
                 ) : (
                   <div className="value">{item.batch_number || '-'}</div>
                 )}
@@ -418,7 +558,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Expiry Date:</label>
                 {editing ? (
-                  <input type="date" className="input" value={editData.expiry_date || ''} onChange={(e) => setEditData({...editData, expiry_date: e.target.value})} />
+                  <input type="date" className="input" value={editData.expiry_date || ''} onChange={(e) => setEditData({ ...editData, expiry_date: e.target.value })} />
                 ) : (
                   <div className="value">{item.expiry_date || '-'}</div>
                 )}
@@ -426,7 +566,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Shelf Life (Days):</label>
                 {editing ? (
-                  <input type="number" className="input" value={editData.shelf_life_days || ''} onChange={(e) => setEditData({...editData, shelf_life_days: e.target.value})} />
+                  <input type="number" className="input" value={editData.shelf_life_days || ''} onChange={(e) => setEditData({ ...editData, shelf_life_days: e.target.value })} />
                 ) : (
                   <div className="value">{item.shelf_life_days || '-'}</div>
                 )}
@@ -434,7 +574,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Min Stock Level:</label>
                 {editing ? (
-                  <input type="number" className="input" value={editData.min_stock_level || ''} onChange={(e) => setEditData({...editData, min_stock_level: e.target.value})} />
+                  <input type="number" className="input" value={editData.min_stock_level || ''} onChange={(e) => setEditData({ ...editData, min_stock_level: e.target.value })} />
                 ) : (
                   <div className="value">{item.min_stock_level || '-'}</div>
                 )}
@@ -442,7 +582,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Max Stock Level:</label>
                 {editing ? (
-                  <input type="number" className="input" value={editData.max_stock_level || ''} onChange={(e) => setEditData({...editData, max_stock_level: e.target.value})} />
+                  <input type="number" className="input" value={editData.max_stock_level || ''} onChange={(e) => setEditData({ ...editData, max_stock_level: e.target.value })} />
                 ) : (
                   <div className="value">{item.max_stock_level || '-'}</div>
                 )}
@@ -450,7 +590,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Reorder Level:</label>
                 {editing ? (
-                  <input type="number" className="input" value={editData.reorder_level || ''} onChange={(e) => setEditData({...editData, reorder_level: e.target.value})} />
+                  <input type="number" className="input" value={editData.reorder_level || ''} onChange={(e) => setEditData({ ...editData, reorder_level: e.target.value })} />
                 ) : (
                   <div className="value">{item.reorder_level || '-'}</div>
                 )}
@@ -458,7 +598,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field full-width">
                 <label>Storage Conditions:</label>
                 {editing ? (
-                  <input className="input" value={editData.storage_conditions || ''} onChange={(e) => setEditData({...editData, storage_conditions: e.target.value})} />
+                  <input className="input" value={editData.storage_conditions || ''} onChange={(e) => setEditData({ ...editData, storage_conditions: e.target.value })} />
                 ) : (
                   <div className="value">{item.storage_conditions || '-'}</div>
                 )}
@@ -510,15 +650,15 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
       <div className="item-details-container">
         <div className="progress-indicator">
           <div className="progress-bar">
-            <div 
-              className="progress-fill" 
+            <div
+              className="progress-fill"
               style={{ width: `${((currentStage - 1) / (totalStages - 1)) * 100}%` }}
             />
           </div>
           <div className="progress-steps">
             {['Basic Info', 'Item Code', 'Pricing', 'UOM & Dimensions', 'Additional Details'].map((step, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className={`progress-step ${currentStage === index + 1 ? 'active' : ''} ${currentStage > index + 1 ? 'completed' : ''}`}
               >
                 <div className="step-number">{index + 1}</div>
@@ -538,13 +678,13 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <button className="btn btn-secondary" onClick={handleCancel}>
                 Cancel
               </button>
-              
+
               {currentStage > 1 && (
                 <button className="btn btn-secondary" onClick={handlePrevious}>
                   ← Back
                 </button>
               )}
-              
+
               {currentStage < totalStages ? (
                 <button className="btn btn-primary" onClick={handleNext}>
                   Next →
@@ -560,13 +700,13 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <button className="btn btn-secondary" onClick={handleCancel}>
                 Back to Items
               </button>
-              
+
               {currentStage > 1 && (
                 <button className="btn btn-secondary" onClick={handlePrevious}>
                   ← Back
                 </button>
               )}
-              
+
               {currentStage < totalStages ? (
                 <button className="btn btn-primary" onClick={handleNext}>
                   Next →

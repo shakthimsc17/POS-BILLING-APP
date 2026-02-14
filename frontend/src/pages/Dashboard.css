@@ -99,10 +99,10 @@
   align-items: center;
   gap: 1.5rem;
   padding: 1rem;
-  background: white;
+  background: #f7f9fb;
+  /* Match item card mild background */
   border-radius: 10px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  /* Subtle shadow */
   border: 1px solid #e0e6ed;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;

@@ -141,7 +141,7 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
     try {
       const response = await fetch('/api/brands', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('pos_token')}`
         }
       });
       if (response.ok) {
@@ -157,7 +157,7 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
     try {
       const response = await fetch('/api/suppliers', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('pos_token')}`
         }
       });
       if (response.ok) {
@@ -248,7 +248,7 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
         alert('Please enter a valid selling price');
         return;
       }
-      
+
       // GST validation if mandatory
       if (gstMandatory) {
         if (!gstRate || parseFloat(gstRate) < 0) {

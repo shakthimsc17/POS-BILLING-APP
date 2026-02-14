@@ -1,11 +1,13 @@
 .item-card {
-  background: white;
+  background: #f7f9fb;
+  /* Mild background color */
   border-radius: 8px;
   padding: 0.75rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
   cursor: pointer;
-  border: 2px solid transparent;
+  border: 1px solid #e2e8f0;
+  /* Subtle border */
 }
 
 .item-card.compact {

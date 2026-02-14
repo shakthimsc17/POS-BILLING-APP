@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useInventoryStore } from '../store/inventoryStore';
 import { useCompanyStore } from '../store/companyStore';
-import { Category, ItemCodePrefix, UomMaster } from '../types';
+import { ItemCodePrefix, UomMaster } from '../types';
 import { storageService } from '../services/storage';
 import { uomService } from '../services/uomService';
 import './AddItemMultiStage.css';
@@ -19,6 +19,7 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
   // Basic Information - Stage 1
   const [name, setName] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [displayNameTamil, setDisplayNameTamil] = useState('');
   const [type, setType] = useState<'goods' | 'service'>('goods');
   const [categoryId, setCategoryId] = useState('');
   const [subcategory, setSubcategory] = useState('');
@@ -61,13 +62,15 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
   const [isPerishable, setIsPerishable] = useState(false);
   const [storageConditions, setStorageConditions] = useState('');
 
-  // Brand and Manufacturer
+  // Brand and Supplier
   const [brands, setBrands] = useState<any[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [brandId, setBrandId] = useState('');
   const [supplierId, setSupplierId] = useState('');
   const [brandSearchTerm, setBrandSearchTerm] = useState('');
-  const [manufacturerSearchTerm, setManufacturerSearchTerm] = useState('');
+  const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
+  const [showBrandDropdown, setShowBrandDropdown] = useState(false);
+  const [showSupplierDropdown, setShowSupplierDropdown] = useState(false);
 
   // Stock
   const [stock, setStock] = useState('0');
@@ -78,6 +81,9 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
   const [selectedPrefixId, setSelectedPrefixId] = useState('');
   const [productCodeSize, setProductCodeSize] = useState('');
   const [useManualCode, setUseManualCode] = useState(false);
+
+  // Display name modified flag
+  const [isDisplayNameModified, setIsDisplayNameModified] = useState(false);
 
   const { categories, addItem } = useInventoryStore();
   const { company } = useCompanyStore();
@@ -129,7 +135,7 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
     try {
       const response = await fetch('/api/brands', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('pos_token')}`
         }
       });
       if (response.ok) {
@@ -145,7 +151,7 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
     try {
       const response = await fetch('/api/suppliers', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('pos_token')}`
         }
       });
       if (response.ok) {
@@ -172,12 +178,23 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
 
   // Auto-populate display_name when name is typed
   useEffect(() => {
-    if (name && !displayName) {
+    if (name && !isDisplayNameModified) {
       setDisplayName(name);
     }
-  }, [name, displayName]);
+  }, [name, isDisplayNameModified]);
 
-  // Get unique subcategories for selected category
+  // Helper functions
+  // Get unique main category names (prefer category entries without subcategory)
+  const getUniqueMainCategories = () => {
+    if (!categories || categories.length === 0) return [];
+    const mainCategoryNames = [...new Set(categories.map(c => c.name))];
+    return mainCategoryNames.map(name => {
+      return categories.find(c => c.name === name && !c.subcategory) ||
+        categories.find(c => c.name === name);
+    }).filter((cat): cat is NonNullable<typeof cat> => !!cat);
+  };
+
+  // Get unique subcategories for the selected category
   const getSubcategories = () => {
     if (!categoryId) return [];
     const selectedCategory = categories.find(c => c.id === categoryId);
@@ -189,50 +206,49 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
     return [...new Set(subcats)];
   };
 
-  // Get unique main category names
-  const getUniqueMainCategories = () => {
-    if (!categories || categories.length === 0) {
-      return [];
-    }
-    const mainCategoryNames = [...new Set(categories.map(c => c.name))];
-    return mainCategoryNames.map(name => {
-      return categories.find(c => c.name === name && !c.subcategory) ||
-        categories.find(c => c.name === name);
-    }).filter((cat): cat is Category => !!cat);
-  };
-
-  const validateStage = (stage: number): boolean => {
+  const validateStage = (stage: number) => {
     switch (stage) {
       case 1:
-        return name.trim() !== '' && uomId !== '';
+        // Basic Info
+        if (!name.trim()) return false;
+        if (company.business_type !== 'cafe' && !code.trim()) return false;
+        if (!uomId) return false;
+        return true;
       case 2:
-        return code.trim() !== '';
+        // Item Code - optional or valid if entered
+        return true;
       case 3:
-        return cost !== '' && price !== '' && parseFloat(cost) >= 0 && parseFloat(price) >= 0;
+        // Pricing
+        if (!cost || Number(cost) < 0) return false;
+        if (!price || Number(price) < 0) return false;
+        if (gstMandatory) {
+          if (!gstRate || !hsnCode.trim()) return false;
+        }
+        return true;
       case 4:
-        return true; // UOM & Dimensions are mostly optional
+        // UOM - mostly optional
+        return true;
       case 5:
-        return true; // Additional details are optional
+        // Additional - optional
+        return true;
       default:
-        return false;
+        return true;
     }
   };
 
   const handleNext = () => {
     if (validateStage(currentStage)) {
-      if (currentStage < totalStages) {
-        setCurrentStage(currentStage + 1);
-      }
+      setCurrentStage(prev => Math.min(prev + 1, totalStages));
     } else {
-      alert('Please fill in all required fields before proceeding.');
+      alert('Please fill in all required fields marked with *');
     }
   };
 
   const handlePrevious = () => {
-    if (currentStage > 1) {
-      setCurrentStage(currentStage - 1);
-    }
+    setCurrentStage(prev => Math.max(prev - 1, 1));
   };
+
+  // ... (existing code omitted) ...
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -261,7 +277,7 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
       // Handle prefix logic for non-cafe businesses
       if (company.business_type !== 'cafe') {
         if (useManualCode && code.trim()) {
-          // Auto-create prefix if needed (similar logic from Items.tsx)
+          // Auto-create prefix if needed
           const matchingPrefix = prefixes.find(p => finalCode.startsWith(p.prefix));
 
           if (!matchingPrefix) {
@@ -287,7 +303,7 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
                       prefix: potentialPrefix,
                       description: 'Auto-created from item code',
                     });
-                    await loadPrefixes();
+                    await loadPrefixes(); // Reload prefixes
                   } catch (error: any) {
                     console.log('Prefix might already exist:', error);
                   }
@@ -302,6 +318,7 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
       const itemData: any = {
         name,
         display_name: displayName || undefined,
+        display_name_tamil: displayNameTamil || undefined,
         code: finalCode,
         barcode: barcode || undefined,
         mapping_code: mappingCode.trim() || undefined,
@@ -322,10 +339,12 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
         length_per_unit: lengthPerUnit ? Number(lengthPerUnit) : undefined,
         width_per_unit: widthPerUnit ? Number(widthPerUnit) : undefined,
         height_per_unit: heightPerUnit ? Number(heightPerUnit) : undefined,
-        // Brand and Manufacturer
+        // Brand and Supplier
         brand_id: brandId || undefined,
         supplier_id: supplierId || undefined,
-        manufacturer: supplierId ? suppliers.find(s => s.id === supplierId)?.name || manufacturerSearchTerm.trim() : (manufacturerSearchTerm.trim() || undefined),
+        supplier_code: supplierId ? suppliers.find(s => s.id === supplierId)?.code : undefined,
+        supplier_name: supplierId ? suppliers.find(s => s.id === supplierId)?.name || supplierSearchTerm.trim() : (supplierSearchTerm.trim() || undefined),
+        manufacturer: supplierId ? suppliers.find(s => s.id === supplierId)?.name || supplierSearchTerm.trim() : (supplierSearchTerm.trim() || undefined),
         model_number: modelNumber.trim() || undefined,
         batch_number: batchNumber.trim() || undefined,
         expiry_date: expiryDate || undefined,
@@ -485,10 +504,15 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
                       type="text"
                       className="input"
                       value={brandSearchTerm}
-                      onChange={(e) => setBrandSearchTerm(e.target.value)}
+                      onChange={(e) => {
+                        setBrandSearchTerm(e.target.value);
+                        if (!showBrandDropdown) setShowBrandDropdown(true);
+                      }}
+                      onFocus={() => setShowBrandDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowBrandDropdown(false), 200)}
                       placeholder="Search or select brand"
                     />
-                    {brandSearchTerm && (
+                    {showBrandDropdown && (brandSearchTerm || brands.length > 0) && (
                       <div className="dropdown-options">
                         {brands
                           .filter(brand => brand.name.toLowerCase().includes(brandSearchTerm.toLowerCase()))
@@ -504,6 +528,7 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
                               {brand.name}
                             </div>
                           ))}
+                        {brands.length === 0 && <div className="dropdown-option disabled">No brands found</div>}
                       </div>
                     )}
                   </div>
@@ -512,31 +537,37 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
 
               <div className="form-field">
                 <label>
-                  Manufacturer:
+                  Supplier:
                   <div className="searchable-dropdown">
                     <input
                       type="text"
                       className="input"
-                      value={manufacturerSearchTerm}
-                      onChange={(e) => setManufacturerSearchTerm(e.target.value)}
-                      placeholder="Search or select manufacturer"
+                      value={supplierSearchTerm}
+                      onChange={(e) => {
+                        setSupplierSearchTerm(e.target.value);
+                        if (!showSupplierDropdown) setShowSupplierDropdown(true);
+                      }}
+                      onFocus={() => setShowSupplierDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowSupplierDropdown(false), 200)}
+                      placeholder="Search or select supplier"
                     />
-                    {manufacturerSearchTerm && (
+                    {showSupplierDropdown && (supplierSearchTerm || suppliers.length > 0) && (
                       <div className="dropdown-options">
                         {suppliers
-                          .filter(supplier => supplier.name.toLowerCase().includes(manufacturerSearchTerm.toLowerCase()))
+                          .filter(supplier => supplier.name.toLowerCase().includes(supplierSearchTerm.toLowerCase()))
                           .map(supplier => (
                             <div
                               key={supplier.id}
                               className="dropdown-option"
                               onClick={() => {
                                 setSupplierId(supplier.id);
-                                setManufacturerSearchTerm(supplier.name);
+                                setSupplierSearchTerm(supplier.name);
                               }}
                             >
                               {supplier.name}
                             </div>
                           ))}
+                        {suppliers.length === 0 && <div className="dropdown-option disabled">No suppliers found</div>}
                       </div>
                     )}
                   </div>
@@ -563,8 +594,24 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
                     type="text"
                     className="input"
                     value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
+                    onChange={(e) => {
+                      setDisplayName(e.target.value);
+                      setIsDisplayNameModified(true);
+                    }}
                     placeholder="Display name"
+                  />
+                </label>
+              </div>
+
+              <div className="form-field">
+                <label>
+                  Display Name (Tamil):
+                  <input
+                    type="text"
+                    className="input"
+                    value={displayNameTamil}
+                    onChange={(e) => setDisplayNameTamil(e.target.value)}
+                    placeholder="Display name in Tamil"
                   />
                 </label>
               </div>
@@ -680,6 +727,20 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
                     step="0.01"
                     min="0"
                     placeholder="Maximum Retail Price"
+                  />
+                </label>
+              </div>
+
+              <div className="form-field">
+                <label>
+                  Opening Stock:
+                  <input
+                    type="number"
+                    className="input"
+                    value={openingStock}
+                    onChange={(e) => setOpeningStock(e.target.value)}
+                    placeholder="0"
+                    min="0"
                   />
                 </label>
               </div>
@@ -832,15 +893,15 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
         {/* Progress Indicator */}
         <div className="progress-indicator">
           <div className="progress-bar">
-            <div 
-              className="progress-fill" 
+            <div
+              className="progress-fill"
               style={{ width: `${((currentStage - 1) / (totalStages - 1)) * 100}%` }}
             />
           </div>
           <div className="progress-steps">
             {['Basic Info', 'Item Code', 'Pricing', 'UOM & Dimensions', 'Additional Details'].map((step, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className={`progress-step ${currentStage === index + 1 ? 'active' : ''} ${currentStage > index + 1 ? 'completed' : ''}`}
               >
                 <div className="step-number">{index + 1}</div>
@@ -857,36 +918,36 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
 
         {/* Navigation Buttons */}
         <div className="form-actions">
-          <button 
-            type="button" 
-            className="btn btn-secondary" 
+          <button
+            type="button"
+            className="btn btn-secondary"
             onClick={handleCancel}
           >
             Cancel
           </button>
-          
+
           <div className="navigation-buttons">
             {currentStage > 1 && (
-              <button 
-                type="button" 
-                className="btn btn-secondary" 
+              <button
+                type="button"
+                className="btn btn-secondary"
                 onClick={handlePrevious}
               >
                 ← Back
               </button>
             )}
-            
+
             {currentStage < totalStages ? (
-              <button 
-                type="button" 
-                className="btn btn-primary" 
+              <button
+                type="button"
+                className="btn btn-primary"
                 onClick={handleNext}
               >
                 Next →
               </button>
             ) : (
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="btn btn-primary"
                 disabled={loading}
               >

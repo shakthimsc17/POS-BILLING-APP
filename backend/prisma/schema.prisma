@@ -105,6 +105,8 @@ model Item {
   storageConditions String?         @map("storage_conditions") @db.VarChar(255)
   supplierCode      String?         @map("supplier_code") @db.VarChar(100)
   supplierId        String?         @map("supplier_id") @db.Uuid
+  supplierName      String?         @map("supplier_name") @db.VarChar(255)
+  displayNameTamil  String?         @map("display_name_tamil") @db.VarChar(255)
   uomId             String?         @map("uom_id") @db.Uuid
   volumePerUnit     Decimal?        @map("volume_per_unit") @db.Decimal(10, 3)
   weightPerUnit     Decimal?        @map("weight_per_unit") @db.Decimal(10, 3)
