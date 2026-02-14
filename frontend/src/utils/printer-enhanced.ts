@@ -49,7 +49,7 @@ export async function printMultiLanguageReceipt(options: PrintOptions) {
     <html>
       <head>
         <title>Receipt - ${transaction.id.slice(0, 8)}</title>
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
           @media print {
             @page {
@@ -72,7 +72,7 @@ export async function printMultiLanguageReceipt(options: PrintOptions) {
             box-sizing: border-box;
           }
           body {
-            font-family: ${isTamil ? "'Tamil Sangam MN', 'Noto Sans Tamil', 'Latha', sans-serif" : "'Montserrat', sans-serif"};
+            font-family: ${isTamil ? "'Tamil Sangam MN', 'Noto Sans Tamil', 'Latha', sans-serif" : "'Inter', system-ui, -apple-system, sans-serif"};
             font-size: ${isTamil ? '11px' : '12px'};
             font-weight: bold;
             line-height: 1.4;
@@ -136,6 +136,7 @@ export async function printMultiLanguageReceipt(options: PrintOptions) {
           .items-table .item-name {
             font-weight: bold;
             font-size: ${isTamil ? '9px' : '10px'};
+            text-transform: capitalize;
           }
           .totals-section {
             margin-top: 6px;
@@ -204,7 +205,7 @@ export async function printMultiLanguageReceipt(options: PrintOptions) {
               // Use display_name only when language is Tamil, otherwise use regular name
               const itemDisplayName = language === 'ta' 
                 ? (cartItem.item.display_name || cartItem.item.name)
-                : cartItem.item.name.toUpperCase();
+                : cartItem.item.name;
               
               return `
                 <tr>

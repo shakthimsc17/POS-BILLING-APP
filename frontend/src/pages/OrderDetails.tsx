@@ -368,6 +368,7 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
       <html>
         <head>
           <title>Tax Invoice - ${invoiceNumber}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
           <style>
             @media print {
               @page { 
@@ -391,7 +392,7 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
               box-sizing: border-box;
             }
             body { 
-              font-family: Arial, sans-serif; 
+              font-family: 'Inter', system-ui, -apple-system, sans-serif; 
               font-size: 11px; 
               color: #000;
               line-height: 1.4;
@@ -511,6 +512,12 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
             .items-table td {
               padding: 6px 5px;
               border: 1px solid #ddd;
+              text-transform: capitalize;
+            }
+            /* Reset capitalize for columns that shouldn't have it */
+            .items-table td.text-right,
+            .items-table td.text-center:not(.item-desc-cell) {
+              text-transform: none;
             }
             .items-table tbody tr:nth-child(even) {
               background: #f9f9f9;
@@ -704,7 +711,7 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
           return `
                     <tr>
                       <td class="text-center">${index + 1}</td>
-                      <td>${item.name || item.display_name || 'N/A'}</td>
+                      <td class="item-desc-cell">${item.name || item.display_name || 'N/A'}</td>
                       <td class="text-center">${quantity.toFixed(2)}</td>
                       <td class="text-center">Pcs.</td>
                       <td class="text-right">${formatCurrency(originalPrice)}</td>

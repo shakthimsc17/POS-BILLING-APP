@@ -119,9 +119,7 @@ export async function printReceipt(options: PrintOptions) {
     <html>
       <head>
         <title>Receipt - ${transaction.id.slice(0, 8)}</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <style>
           @media print {
             @page {
@@ -144,7 +142,7 @@ export async function printReceipt(options: PrintOptions) {
             box-sizing: border-box;
           }
           body {
-            font-family: 'Montserrat', sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             font-size: 12px;
             font-weight: bold;
             line-height: 1.4;
@@ -259,6 +257,7 @@ export async function printReceipt(options: PrintOptions) {
             font-size: 10px;
             max-width: 100%;
             word-wrap: break-word;
+            text-transform: capitalize;
           }
           .items-table .item-details {
             font-size: 11px;
@@ -376,7 +375,7 @@ export async function printReceipt(options: PrintOptions) {
           .barcode {
             margin-top: 4px;
             padding: 3px 0;
-            font-family: 'Montserrat', sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             font-size: 14px;
             font-weight: bold;
             letter-spacing: 2px;
@@ -443,7 +442,7 @@ export async function printReceipt(options: PrintOptions) {
                   // Use display_name only when language is Tamil, otherwise use regular name
                   const itemDisplayName = language === 'ta' 
                     ? (cartItem.item.display_name || cartItem.item.name)
-                    : cartItem.item.name.toUpperCase();
+                    : cartItem.item.name;
                   // Hide MRP for cafe business type
                   const showMrp = businessType !== 'cafe' && mrp;
                   return `
