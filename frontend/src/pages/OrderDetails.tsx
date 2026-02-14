@@ -924,219 +924,264 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
         </div>
       </div>
 
-      <div className="invoice-container">
-        <div className="invoice-header">
-          {company.logo && (
-            <div className="company-logo-container">
-              <img src={company.logo} alt={company.name || 'Company Logo'} className="company-logo" />
+      <div className="layout-container">
+        {/* Left Sidebar: Info Cards */}
+        <aside className="details-sidebar">
+          {/* Company Info Card */}
+          <div className="info-card">
+            <div className="company-mini-header">
+              {company.logo && (
+                <img src={company.logo} alt={company.name} className="company-mini-logo" />
+              )}
+              <div className="company-mini-name">{company.name || 'My Store'}</div>
             </div>
-          )}
-          <div className="company-name">{company.name || 'My Store'}</div>
-          <div className="company-details">
-            {company.address && <div>{company.address}</div>}
-            {(company.city || company.state || company.pincode) && (
-              <div>{[company.city, company.state, company.pincode].filter(Boolean).join(', ')}</div>
-            )}
-            {company.phone && <div>Phone: {company.phone}</div>}
-            {company.email && <div>Email: {company.email}</div>}
-            {company.gstin && <div>GSTIN: {company.gstin}</div>}
+            <div className="info-grid">
+              <div className="info-item">
+                <span className="info-label">GSTIN</span>
+                <span className="info-value">{company.gstin || 'N/A'}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Contact</span>
+                <span className="info-value">{company.phone || company.email || 'N/A'}</span>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="invoice-info">
-          <div className="invoice-info-left">
-            <div className="info-label">Order ID:</div>
-            <div className="info-value">{transaction.id}</div>
-            <div className="info-label" style={{ marginTop: '15px' }}>Date:</div>
-            <div className="info-value">
-              {isEditMode ? (
-                <input
-                  type="datetime-local"
-                  value={editedTransaction?.created_at ? new Date(editedTransaction.created_at).toISOString().slice(0, 16) : ''}
-                  onChange={(e) => handleDateChange(e.target.value)}
-                  className="form-input"
-                  style={{ width: '200px', height: '32px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
-                />
+          {/* Order Info Card */}
+          <div className="info-card">
+            <h3>📦 Order Summary</h3>
+            <div className="info-grid">
+              <div className="info-item">
+                <span className="info-label">Order ID</span>
+                <span className="info-value" style={{ wordBreak: 'break-all', color: '#0f172a' }}>#{transaction.id.slice(0, 8).toUpperCase()}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Date & Time</span>
+                <span className="info-value">
+                  {isEditMode ? (
+                    <input
+                      type="datetime-local"
+                      value={editedTransaction?.created_at ? new Date(editedTransaction.created_at).toISOString().slice(0, 16) : ''}
+                      onChange={(e) => handleDateChange(e.target.value)}
+                      className="form-input"
+                      style={{ width: '100%', height: '32px', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+                    />
+                  ) : (
+                    <>
+                      <span style={{ display: 'block' }}>📅 {date.toLocaleDateString()}</span>
+                      <span style={{ display: 'block', fontSize: '13px', color: '#64748b' }}>⏰ {date.toLocaleTimeString()}</span>
+                    </>
+                  )}
+                </span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Payment Method</span>
+                <span className="info-value" style={{ marginTop: '0.25rem' }}>
+                  {isEditMode ? (
+                    <select
+                      value={editedTransaction?.payment_method || transaction.payment_method}
+                      onChange={(e) => handlePaymentMethodChange(e.target.value)}
+                      className="form-input"
+                      style={{ width: '100%', height: '32px', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+                    >
+                      <option value="cash">💵 Cash</option>
+                      <option value="card">💳 Card</option>
+                      <option value="upi">📱 UPI</option>
+                    </select>
+                  ) : (
+                    <span className="badge badge-primary">
+                      {transaction.payment_method === 'cash' ? '💵 ' : transaction.payment_method === 'card' ? '💳 ' : '📱 '}
+                      {transaction.payment_method.toUpperCase()}
+                    </span>
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Customer Info Card */}
+          <div className="info-card">
+            <h3>👤 Customer Details</h3>
+            <div className="info-grid">
+              {salesCustomer ? (
+                <>
+                  <div className="info-item">
+                    <span className="info-label">Name</span>
+                    <span className="info-value">{salesCustomer.name}</span>
+                  </div>
+                  {salesCustomer.mobile && (
+                    <div className="info-item">
+                      <span className="info-label">Mobile</span>
+                      <span className="info-value">{salesCustomer.mobile}</span>
+                    </div>
+                  )}
+                  {salesCustomer.place && (
+                    <div className="info-item">
+                      <span className="info-label">Place</span>
+                      <span className="info-value">{salesCustomer.place}</span>
+                    </div>
+                  )}
+                </>
+              ) : customer ? (
+                <>
+                  <div className="info-item">
+                    <span className="info-label">Name</span>
+                    <span className="info-value">{customer.name}</span>
+                  </div>
+                  {customer.phone && (
+                    <div className="info-item">
+                      <span className="info-label">Phone</span>
+                      <span className="info-value">{customer.phone}</span>
+                    </div>
+                  )}
+                  {customer.address && (
+                    <div className="info-item">
+                      <span className="info-label">Address</span>
+                      <span className="info-value" style={{ fontSize: '13px' }}>{customer.address}</span>
+                    </div>
+                  )}
+                </>
               ) : (
-                date.toLocaleDateString()
+                <div className="info-value">Walk-in Customer</div>
               )}
             </div>
           </div>
-          <div className="invoice-info-right">
-            <div className="info-label">Payment:</div>
-            <div className="info-value">
-              {isEditMode ? (
-                <select
-                  value={editedTransaction?.payment_method || transaction.payment_method}
-                  onChange={(e) => handlePaymentMethodChange(e.target.value)}
-                  className="form-input"
-                  style={{ width: '120px', height: '32px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
-                >
-                  <option value="cash">Cash</option>
-                  <option value="card">Card</option>
-                  <option value="upi">UPI</option>
-                </select>
-              ) : (
-                transaction.payment_method.toUpperCase()
-              )}
-            </div>
-            <div className="info-label" style={{ marginTop: '15px' }}>Time:</div>
-            <div className="info-value">{date.toLocaleTimeString()}</div>
-          </div>
-        </div>
+        </aside>
 
-        <div className="customer-section">
-          <h3>Customer Details</h3>
-          {salesCustomer ? (
-            <div className="customer-info">
-              <div><strong>Name:</strong> {salesCustomer.name}</div>
-              {salesCustomer.mobile && <div><strong>Mobile:</strong> {salesCustomer.mobile}</div>}
-              {salesCustomer.email && <div><strong>Email:</strong> {salesCustomer.email}</div>}
-              {salesCustomer.place && <div><strong>Place:</strong> {salesCustomer.place}</div>}
-            </div>
-          ) : customer ? (
-            <div className="customer-info">
-              <div><strong>Name:</strong> {customer.name}</div>
-              {customer.phone && <div><strong>Mobile:</strong> {customer.phone}</div>}
-              {customer.email && <div><strong>Email:</strong> {customer.email}</div>}
-              {customer.address && <div><strong>Address:</strong> {customer.address}</div>}
-            </div>
-          ) : (
-            <div className="customer-info">
-              <div><strong>Walk-in Customer</strong></div>
-            </div>
-          )}
-        </div>
+        {/* Main Content: Items Table */}
+        <main className="main-content-area">
+          <div className="items-section">
+            <table className="items-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '50px' }}>#</th>
+                  <th>Item Name</th>
+                  <th className="text-center">Quantity</th>
+                  <th className="text-right">Unit Price</th>
+                  <th className="text-right">Item Discount</th>
+                  <th className="text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(isEditMode ? editedItems : items).map((cartItem, index) => {
+                  const item = cartItem.item || cartItem;
+                  const quantity = cartItem.quantity || 1;
+                  const originalPrice = cartItem.originalPrice || (typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0);
+                  const sellingPrice = cartItem.customPrice !== undefined
+                    ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
+                    : originalPrice;
+                  const itemDiscount = calculateItemDiscount(cartItem);
+                  const amount = sellingPrice * quantity;
 
-        <div className="items-section">
-          <table className="items-table">
-            <thead>
-              <tr>
-                <th>S.No</th>
-                <th>Item Name</th>
-                <th className="text-center">Quantity</th>
-                <th className="text-right">Unit Price</th>
-                <th className="text-right">Item Discount</th>
-                <th className="text-right">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(isEditMode ? editedItems : items).map((cartItem, index) => {
-                const item = cartItem.item || cartItem;
-                const quantity = cartItem.quantity || 1;
-                const originalPrice = cartItem.originalPrice || (typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0);
-                const sellingPrice = cartItem.customPrice !== undefined
-                  ? (typeof cartItem.customPrice === 'string' ? parseFloat(cartItem.customPrice) : cartItem.customPrice)
-                  : originalPrice;
-                const itemDiscount = calculateItemDiscount(cartItem);
-                const amount = sellingPrice * quantity;
-
-                return (
-                  <tr key={index}>
-                    <td className="text-center">{index + 1}</td>
-                    <td>{item.name || item.display_name || 'N/A'}</td>
-                    <td className="text-center">
-                      {isEditMode ? (
-                        <div className="quantity-editor">
-                          <button
-                            className="btn btn-xs btn-secondary"
-                            onClick={() => handleQuantityChange(index, quantity - 1)}
-                            disabled={quantity <= 0}
-                          >
-                            -
-                          </button>
+                  return (
+                    <tr key={index}>
+                      <td className="text-center">{index + 1}</td>
+                      <td style={{ fontWeight: 500 }}>{item.name || item.display_name || 'N/A'}</td>
+                      <td className="text-center">
+                        {isEditMode ? (
+                          <div className="quantity-editor">
+                            <button
+                              className="btn btn-xs btn-secondary"
+                              onClick={() => handleQuantityChange(index, quantity - 1)}
+                              disabled={quantity <= 0}
+                              style={{ padding: '2px 8px', minHeight: 'auto' }}
+                            >
+                              -
+                            </button>
+                            <input
+                              type="number"
+                              value={quantity}
+                              onChange={(e) => handleQuantityChange(index, parseInt(e.target.value) || 0)}
+                              className="quantity-input"
+                              min="0"
+                            />
+                            <button
+                              className="btn btn-xs btn-secondary"
+                              onClick={() => handleQuantityChange(index, quantity + 1)}
+                              style={{ padding: '2px 8px', minHeight: 'auto' }}
+                            >
+                              +
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{ fontWeight: 600 }}>{quantity}</span>
+                        )}
+                      </td>
+                      <td className="text-right">
+                        {isEditMode ? (
                           <input
                             type="number"
-                            value={quantity}
-                            onChange={(e) => handleQuantityChange(index, parseInt(e.target.value) || 0)}
-                            className="quantity-input"
+                            value={sellingPrice}
+                            onChange={(e) => handlePriceChange(index, parseFloat(e.target.value) || 0)}
+                            className="price-input"
                             min="0"
-                            style={{ width: '80px', height: '32px', textAlign: 'center', margin: '0 5px', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
+                            step="0.01"
                           />
-                          <button
-                            className="btn btn-xs btn-secondary"
-                            onClick={() => handleQuantityChange(index, quantity + 1)}
-                          >
-                            +
-                          </button>
-                        </div>
-                      ) : (
-                        quantity
-                      )}
-                    </td>
-                    <td className="text-right">
-                      {isEditMode ? (
-                        <input
-                          type="number"
-                          value={sellingPrice}
-                          onChange={(e) => handlePriceChange(index, parseFloat(e.target.value) || 0)}
-                          className="price-input"
-                          min="0"
-                          step="0.01"
-                          style={{ width: '100px', height: '32px', textAlign: 'right', padding: '4px', border: '1px solid #ccc', borderRadius: '4px' }}
-                        />
-                      ) : (
-                        formatCurrency(sellingPrice)
-                      )}
-                    </td>
-                    <td className="text-right">{itemDiscount > 0 ? formatCurrency(itemDiscount) : '-'}</td>
-                    <td className="text-right">{formatCurrency(amount)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                        ) : (
+                          formatCurrency(sellingPrice)
+                        )}
+                      </td>
+                      <td className="text-right" style={{ color: itemDiscount > 0 ? '#d69e2e' : 'inherit' }}>
+                        {itemDiscount > 0 ? formatCurrency(itemDiscount) : '-'}
+                      </td>
+                      <td className="text-right" style={{ fontWeight: 700 }}>{formatCurrency(amount)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
-        <div className="totals-section">
-          <div className="total-row">
-            <span>Total Quantity:</span>
-            <span>{isEditMode ? calculateEditedTotals().totalQuantity : totals.totalQuantity}</span>
-          </div>
-          <div className="total-row">
-            <span>Subtotal:</span>
-            <span>{formatCurrency(isEditMode ? calculateEditedTotals().subtotal : totals.subtotal)}</span>
-          </div>
-          {(isEditMode ? calculateEditedTotals().discount : totals.discount) > 0 && (
-            <div className="total-row">
-              <span>Discount:</span>
-              <span>{formatCurrency(isEditMode ? calculateEditedTotals().discount : totals.discount)}</span>
+          <div className="summary-tray">
+            <div className="profit-stats">
+              <div className="stat-card">
+                <span className="stat-label">Gross Profit</span>
+                <span className="stat-value profit">{formatCurrency(totals.grossProfit)}</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-label">Loss</span>
+                <span className="stat-value loss">{formatCurrency(totals.grossLoss)}</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-label">Bill Discount</span>
+                <span className="stat-value discount">{formatCurrency(totals.discount || 0)}</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-label">Net Profit</span>
+                <span className="stat-value profit" style={{ color: totals.netProfit >= 0 ? '#38a169' : '#e53e3e' }}>
+                  {formatCurrency(totals.netProfit)}
+                </span>
+              </div>
             </div>
-          )}
-          {(isEditMode ? calculateEditedTotals().tax : totals.tax) > 0 && (
-            <div className="total-row">
-              <span>Tax:</span>
-              <span>{formatCurrency(isEditMode ? calculateEditedTotals().tax : totals.tax)}</span>
-            </div>
-          )}
-          <div className="total-row grand-total">
-            <span>Grand Total:</span>
-            <span>{formatCurrency(isEditMode ? calculateEditedTotals().grandTotal : totals.grandTotal)}</span>
-          </div>
-        </div>
 
-        <div className="profit-discount-box">
-          <div className="profit-discount-item">
-            <span className="label">Gross Profit:</span>
-            <span className="value profit">{formatCurrency(totals.grossProfit)}</span>
+            <div className="totals-panel">
+              <div className="total-row">
+                <span>Total Items:</span>
+                <span style={{ fontWeight: 600 }}>{isEditMode ? calculateEditedTotals().totalQuantity : totals.totalQuantity}</span>
+              </div>
+              <div className="total-row">
+                <span>Subtotal:</span>
+                <span>{formatCurrency(isEditMode ? calculateEditedTotals().subtotal : totals.subtotal)}</span>
+              </div>
+              {(isEditMode ? calculateEditedTotals().discount : totals.discount) > 0 && (
+                <div className="total-row" style={{ color: '#d69e2e' }}>
+                  <span>Extra Discount:</span>
+                  <span>-{formatCurrency(isEditMode ? calculateEditedTotals().discount : totals.discount)}</span>
+                </div>
+              )}
+              {(isEditMode ? calculateEditedTotals().tax : totals.tax) > 0 && (
+                <div className="total-row">
+                  <span>Tax:</span>
+                  <span>{formatCurrency(isEditMode ? calculateEditedTotals().tax : totals.tax)}</span>
+                </div>
+              )}
+              <div className="total-row grand-total">
+                <span>Total</span>
+                <span>{formatCurrency(isEditMode ? calculateEditedTotals().grandTotal : totals.grandTotal)}</span>
+              </div>
+            </div>
           </div>
-          <div className="profit-discount-item">
-            <span className="label">Loss:</span>
-            <span className="value discount">{formatCurrency(totals.grossLoss)}</span>
-          </div>
-          <div className="profit-discount-item">
-            <span className="label">Bill Discount:</span>
-            <span className="value discount">{formatCurrency(totals.discount || 0)}</span>
-          </div>
-          <div className="profit-discount-item">
-            <span className="label">Net Profit (grossProfit - loss - billDiscount):</span>
-            <span className="value profit">{formatCurrency(totals.netProfit)}</span>
-          </div>
-          <div className="profit-discount-item">
-            <span className="label">Total Discount:</span>
-            <span className="value discount">{formatCurrency(totals.totalDiscount)}</span>
-          </div>
-        </div>
+        </main>
       </div>
 
       <ReturnModal
