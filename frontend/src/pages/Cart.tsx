@@ -21,7 +21,6 @@ export default function Cart({ onNavigate }: CartProps) {
   const cartStore = useCartStore();
   const {
     items,
-    addItem,
     updateQuantity,
     removeItem,
     clearCart,
@@ -319,13 +318,6 @@ export default function Cart({ onNavigate }: CartProps) {
   const discountAmount = change < 0 ? Math.abs(change) : 0;
   const actualChange = change > 0 ? change : 0;
 
-  console.log('🛒 Cart Component: Render state', {
-    itemsLength: items.length,
-    items: items.map(ci => ({ name: ci.item.name, quantity: ci.quantity })),
-    total,
-    isLoading
-  });
-
   if (items.length === 0) {
     return (
       <div className="cart-empty">
@@ -394,14 +386,17 @@ export default function Cart({ onNavigate }: CartProps) {
 
                 return (
                   <div key={cartItem.item.id} className="cart-item">
+                    <div className="cart-item-icon">
+                      {isQuickSaleItem ? '⚡' : '📦'}
+                    </div>
                     <div className="cart-item-name-section">
                       <div className="item-name-row">
                         <h3>{cartItem.item.name}</h3>
                         {isQuickSaleItem && (
-                          <span className="quick-sale-badge" title="Quick Sale Item">⚡ Quick Sale</span>
+                          <span className="quick-sale-badge" title="Quick Sale Item">Quick Sale</span>
                         )}
                       </div>
-                      <p className="item-code">Code: {cartItem.item.code}</p>
+                      <p className="item-code">{cartItem.item.code}</p>
                     </div>
                     <div className="cart-item-price-section">
                       <div className="price-input-wrapper-inline">
@@ -413,7 +408,7 @@ export default function Cart({ onNavigate }: CartProps) {
                           onBlur={() => handlePriceBlur(cartItem.item.id)}
                           min="0"
                           step="0.01"
-                          placeholder="Price"
+                          placeholder="0.00"
                         />
                         {isCustomPrice && (
                           <span className="custom-price-badge" title="Custom price">*</span>
@@ -431,7 +426,7 @@ export default function Cart({ onNavigate }: CartProps) {
                         −
                       </button>
                       <span className="qty-value">
-                        {cartItem.quantity} <span style={{ fontSize: '0.7em', color: '#666' }}>{cartItem.item.uom_name || ''}</span>
+                        {cartItem.quantity} <span style={{ fontSize: '0.7em', color: '#718096' }}>{cartItem.item.uom_name || ''}</span>
                       </span>
                       <button
                         className="qty-btn"
@@ -444,10 +439,11 @@ export default function Cart({ onNavigate }: CartProps) {
                       {formatCurrency(cartItem.quantity * itemPrice)}
                     </div>
                     <button
-                      className="btn btn-danger"
+                      className="btn-remove"
                       onClick={() => removeItem(cartItem.item.id)}
+                      title="Remove Item"
                     >
-                      🗑️
+                      ×
                     </button>
                   </div>
                 );
@@ -458,13 +454,10 @@ export default function Cart({ onNavigate }: CartProps) {
 
         <div className="cart-checkout-summary">
           <div className="cart-summary-content">
-            {/* Customer Selection - Moved to top */}
-
-
-            <div className="card">
-              <h3>Sales Summary</h3>
+            <div className="summary-card">
+              <h3>Order Summary</h3>
               <div className="summary-row">
-                <label>Customer: <span className="function-key-hint">F4</span></label>
+                <span>Customer <span className="function-key-hint">F4</span></span>
                 <div className="summary-value">
                   {selectedSalesCustomer ? (
                     <div className="selected-customer-inline" onClick={() => setShowCustomerModal(true)}>
@@ -487,22 +480,22 @@ export default function Cart({ onNavigate }: CartProps) {
                       className="btn btn-secondary btn-sm"
                       onClick={() => setShowCustomerModal(true)}
                     >
-                      Select
+                      Select Customer
                     </button>
                   )}
                 </div>
               </div>
               <div className="summary-row">
-                <span>Subtotal:</span>
+                <span>Subtotal</span>
                 <span>{formatCurrency(getActualSubtotal())}</span>
               </div>
               <div className="summary-row">
                 <div className="summary-label-with-input">
-                  <label>Tax (%): <span className="function-key-hint">F6</span></label>
+                  <label>Tax Rate (%) <span className="function-key-hint">F6</span></label>
                   <input
                     ref={taxInputRef}
                     type="text"
-                    className="input input-sm"
+                    className="input-sm"
                     value={taxRate}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -512,15 +505,15 @@ export default function Cart({ onNavigate }: CartProps) {
                     }}
                   />
                 </div>
-                <span className="summary-value">{formatCurrency(getTax())}</span>
+                <span className="summary-value-text">{formatCurrency(getTax())}</span>
               </div>
               {(() => {
                 const gstInfo = getGST();
                 if (gstInfo.gstBreakdown.length > 0) {
                   return gstInfo.gstBreakdown.map(gst => (
-                    <div key={gst.rate} className="summary-row" style={{ fontSize: '11px', color: '#666' }}>
-                      <span>GST @ {gst.rate}%:</span>
-                      <span>{formatCurrency(gst.amount)}</span>
+                    <div key={gst.rate} className="summary-row secondary">
+                      <span style={{ fontSize: '0.8rem' }}>GST @ {gst.rate}%</span>
+                      <span className="summary-value-text" style={{ fontSize: '0.8rem' }}>{formatCurrency(gst.amount)}</span>
                     </div>
                   ));
                 }
@@ -528,11 +521,11 @@ export default function Cart({ onNavigate }: CartProps) {
               })()}
               <div className="summary-row">
                 <div className="summary-label-with-input">
-                  <label>Discount (₹): <span className="function-key-hint">F2</span></label>
+                  <label>Extra Discount (₹) <span className="function-key-hint">F2</span></label>
                   <input
                     ref={discountInputRef}
                     type="text"
-                    className="input input-sm"
+                    className="input-sm"
                     value={discount}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -542,21 +535,21 @@ export default function Cart({ onNavigate }: CartProps) {
                     }}
                   />
                 </div>
-                <span className="summary-value">-{formatCurrency(getDiscount())}</span>
+                <span className="summary-value-text">{formatCurrency(getDiscount())}</span>
               </div>
               {getItemDiscounts() > 0 && (
-                <div className="summary-row item-discounts">
-                  <span className="discount-hint">(Incl. {formatCurrency(getItemDiscounts())} item-wise)</span>
+                <div className="summary-row-hint">
+                  <span>(Includes {formatCurrency(getItemDiscounts())} item discounts)</span>
                 </div>
               )}
-              <div className="summary-total compact">
-                <span>Total:</span>
+              <div className="summary-total">
+                <span>Total Amount</span>
                 <span className="total-amount">{formatCurrency(getTotal())}</span>
               </div>
             </div>
 
-            <div className="card payment-section">
-              <h3>Payment</h3>
+            <div className="card payment-section-compact">
+              <h3>Payment Method</h3>
               <div className="payment-options">
                 <button
                   className={`payment-option ${paymentMethod === 'cash' ? 'active' : ''}`}
@@ -578,15 +571,15 @@ export default function Cart({ onNavigate }: CartProps) {
                 </button>
               </div>
 
-              {paymentMethod === 'cash' && (
-                <div className="cash-payment-details">
-                  <label>Received Amount (₹):</label>
-                  <div className="cash-payment-row">
-                    <div className="cash-input-container">
+              <div className={`payment-footer-grid ${paymentMethod === 'cash' ? 'cash-active' : ''}`}>
+                {paymentMethod === 'cash' ? (
+                  <>
+                    <div className="payment-box cash-input-box">
+                      <label>Cash Received</label>
                       <input
                         ref={receivedAmountInputRef}
                         type="text"
-                        className="input"
+                        className="payment-input"
                         value={receivedAmount}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -599,46 +592,66 @@ export default function Cart({ onNavigate }: CartProps) {
                         }}
                         placeholder="0.00"
                       />
+                      <div className="quick-amounts">
+                        {[10, 20, 50, 100, 500].map(amt => (
+                          <button
+                            key={amt}
+                            className="btn-quick-amt"
+                            onClick={() => {
+                              const current = Number(receivedAmount) || 0;
+                              setReceivedAmount((current + amt).toString());
+                            }}
+                          >
+                            +{amt}
+                          </button>
+                        ))}
+                        <button
+                          className="btn-quick-amt exact"
+                          onClick={() => setReceivedAmount(getTotal().toString())}
+                        >
+                          Exact
+                        </button>
+                      </div>
                     </div>
-                    {receivedAmount && Number(receivedAmount) > 0 && (
+
+                    <div className={`payment-box change-box ${discountAmount > 0 ? 'discount' : ''}`}>
+                      <label>{discountAmount > 0 ? 'Extra Discount' : 'Change Due'}</label>
+                      <div className="change-value">
+                        {discountAmount > 0
+                          ? `-${formatCurrency(discountAmount)}`
+                          : formatCurrency(actualChange)}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="payment-box placeholder-box">
+                    <label>Selected Method</label>
+                    <div className="method-display">
+                      {paymentMethod === 'card' ? '💳 Card' : paymentMethod === 'upi' ? '📱 UPI' : 'Select Method'}
+                    </div>
+                  </div>
+                )}
+
+                <div className="payment-box action-box">
+                  <button
+                    className="btn-complete-order"
+                    onClick={handlePayment}
+                    disabled={processing || !paymentMethod}
+                  >
+                    {processing ? '...' : (
                       <>
-                        {discountAmount > 0 ? (
-                          <div className="change-display-boxed discount">
-                            <span className="change-label">Discount</span>
-                            <span className="change-value-large">-{formatCurrency(discountAmount)}</span>
-                          </div>
-                        ) : actualChange > 0 ? (
-                          <div className="change-display-boxed">
-                            <span className="change-label">Change</span>
-                            <span className="change-value-large">{formatCurrency(actualChange)}</span>
-                          </div>
-                        ) : (
-                          <div className="change-display-boxed">
-                            <span className="change-label">Balance</span>
-                            <span className="change-value-large">Exact</span>
-                          </div>
-                        )}
+                        <span>Complete Order</span>
+                        <span className="kb-hint">F10</span>
                       </>
                     )}
-                  </div>
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-
-          <div className="cart-actions">
-            <button
-              className="btn btn-primary btn-large"
-              onClick={handlePayment}
-              disabled={processing || !paymentMethod}
-            >
-              {processing ? 'Processing...' : 'Complete Payment'} <span className="function-key-hint">F10</span>
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Modals */}
       <QuickAddItemModal
         isOpen={showQuickAddModal}
         onClose={() => setShowQuickAddModal(false)}
@@ -653,4 +666,3 @@ export default function Cart({ onNavigate }: CartProps) {
     </div>
   );
 }
-
