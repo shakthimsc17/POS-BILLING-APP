@@ -33,7 +33,7 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
 
   // Debug logging for cart state
   useEffect(() => {
-    console.log('🛒 Dashboard: Cart items changed', { 
+    console.log('🛒 Dashboard: Cart items changed', {
       cartItemsCount: cartItems.length,
       cartItems: cartItems.map(ci => ({ name: ci.item.name, quantity: ci.quantity })),
       getTotal: getTotal(),
@@ -254,8 +254,8 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
       </div>
 
       {/* Search & Filters */}
-      <div className="search-and-filter-container">
-        <div className="card search-container">
+      <div className="card controls-section">
+        <div className="search-wrapper">
           <div className="search-inputs-row">
             {useQuickSearch ? (
               <QuickItemSearch
@@ -292,7 +292,8 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
         </div>
 
         {categories.length > 0 && (
-          <div className="card category-filter-container">
+          <div className="category-wrapper">
+            <div className="divider-vertical"></div>
             <CategoryFilter
               categories={categories}
               selectedCategories={selectedCategories}
@@ -323,11 +324,13 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
       )}
 
       {/* Items */}
-      <div className="card">
-        <h2>Items ({displayItems.length})</h2>
+      <div className="card items-section">
+        <div className="items-header">
+          <h2>Items <span className="item-count">({displayItems.length})</span></h2>
+        </div>
 
         {displayItems.length > 0 ? (
-          <div className="grid grid-small">
+          <div className="items-grid">
             {displayItems.map((item) => (
               <ItemCard
                 key={item.id}

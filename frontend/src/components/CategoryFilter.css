@@ -1,114 +1,107 @@
 .category-filter {
-  margin-bottom: 0;
+  margin: 0;
   width: 100%;
-  height: 100%;
   display: flex;
-  flex-direction: column;
+  align-items: center;
 }
 
 .category-filter-scroll {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.5rem;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 0.5rem 0;
+  padding: 0.25rem 0.25rem 0.75rem 0.25rem;
+  /* Bottom padding for scrollbar */
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   width: 100%;
-  min-height: 100px;
+  align-items: center;
 }
 
+/* Scrollbar styling */
 .category-filter-scroll::-webkit-scrollbar {
-  height: 6px;
+  height: 4px;
+  /* Thinner scrollbar */
 }
 
 .category-filter-scroll::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
+  background: transparent;
 }
 
 .category-filter-scroll::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 3px;
+  background: #cbd5e1;
+  border-radius: 4px;
 }
 
 .category-filter-scroll::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #94a3b8;
 }
 
+/* Chip Style Buttons */
 .category-icon-btn {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  /* Horizontal layout */
   align-items: center;
-  justify-content: center;
   gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  min-width: 80px;
-  max-width: 120px;
+  padding: 0.5rem 1rem;
   background: #ffffff;
-  border: 2px solid #e0e6ed;
-  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 50px;
+  /* Pill shape */
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
   flex-shrink: 0;
-  height: fit-content;
+  height: 40px;
+  min-width: auto;
 }
 
 .category-icon-btn:hover {
   border-color: #3498db;
-  background: #f8f9fa;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.2);
+  background: #f8fafc;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .category-icon-btn.selected {
   border-color: #3498db;
-  background: #e3f2fd;
-  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+  background: #eff6ff;
+  color: #1d4ed8;
+  box-shadow: 0 0 0 1px #3498db;
 }
 
 .category-icon {
-  width: 61px !important;
-  height: 26px;
-  border-radius: 50%;
-  display: flex !important;
+  font-size: 1.1rem !important;
+  width: auto !important;
+  height: auto !important;
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem !important;
-  margin-bottom: 0.5rem;
-  background: #f8f9fa;
+  background: transparent !important;
+  margin: 0 !important;
   line-height: 1;
 }
 
 .category-name {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 500;
-  color: #1a1a1a;
-  text-align: center;
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: #475569;
 }
 
 .category-icon-btn.selected .category-name {
-  color: #3498db;
+  color: #1e40af;
   font-weight: 600;
 }
 
+/* Responsive */
 @media (max-width: 768px) {
   .category-icon-btn {
-    min-width: 70px;
-    padding: 0.6rem 0.8rem;
-  }
-
-  .category-icon {
-    font-size: 1.5rem;
+    padding: 0.4rem 0.8rem;
+    height: 36px;
   }
 
   .category-name {
-    font-size: 0.75rem;
-    max-width: 80px;
+    font-size: 0.85rem;
   }
 }
-

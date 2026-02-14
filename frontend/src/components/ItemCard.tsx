@@ -8,6 +8,8 @@ interface ItemCardProps {
   isCompact?: boolean;
 }
 
+import { Plus } from 'lucide-react';
+
 export default function ItemCard({ item, onPress, isCompact }: ItemCardProps) {
   return (
     <div className={`item-card ${isCompact ? 'compact' : ''}`} onClick={() => onPress(item)}>
@@ -18,38 +20,47 @@ export default function ItemCard({ item, onPress, isCompact }: ItemCardProps) {
           {!isCompact && <p className="item-code">Code: {item.code}</p>}
         </div>
       </div>
-      <div className="item-card-body">
-        <div className="item-price">
-          {(() => {
-            // Convert to numbers (Prisma Decimal returns as string)
-            const mrp = item.mrp ? (typeof item.mrp === 'string' ? parseFloat(item.mrp) : item.mrp) : null;
-            const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
 
-            if (mrp && mrp > price) {
-              return (
-                <>
+      <div className="item-card-footer">
+        <div className="item-price-stock">
+          <div className="item-price">
+            {(() => {
+              // Convert to numbers (Prisma Decimal returns as string)
+              const mrp = item.mrp ? (typeof item.mrp === 'string' ? parseFloat(item.mrp) : item.mrp) : null;
+              const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
+
+              if (mrp && mrp > price) {
+                return (
                   <div className="price-row">
                     <span className="mrp-price">{formatCurrency(mrp)}</span>
                     <span className="sale-price">{formatCurrency(price)}</span>
+                    <div className="discount-badge">
+                      Save {formatCurrency(mrp - price)}
+                    </div>
                   </div>
-                  <div className="discount-badge">
-                    Save {formatCurrency(mrp - price)}
-                  </div>
-                </>
-              );
-            }
-            return <span className="price-value">{formatCurrency(price)}</span>;
-          })()}
+                );
+              }
+              return <span className="price-value">{formatCurrency(price)}</span>;
+            })()}
+          </div>
+          {!isCompact && (
+            item.stock > 0 ? (
+              <div className="item-stock">Stock: {item.stock}</div>
+            ) : (
+              <div className="item-stock out-of-stock">Out of Stock</div>
+            )
+          )}
         </div>
+
         {!isCompact && (
-          item.stock > 0 ? (
-            <div className="item-stock">Stock: {item.stock}</div>
-          ) : (
-            <div className="item-stock out-of-stock">Out of Stock</div>
-          )
+          <button
+            className="item-add-btn"
+            title="Add to Cart"
+          >
+            <Plus size={20} strokeWidth={2.5} />
+          </button>
         )}
       </div>
-      {!isCompact && <button className="item-add-btn">+ Add to Cart</button>}
     </div>
   );
 }

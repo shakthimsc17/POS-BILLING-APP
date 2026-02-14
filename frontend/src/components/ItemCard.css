@@ -76,10 +76,10 @@
   min-width: 0;
 }
 
-.item-info h3 {
+.item-card .item-info h3 {
   margin: 0;
-  font-size: 0.9rem;
-  color: #333;
+  font-size: 1.05rem;
+  color: #1a1a1a;
   font-weight: 600;
   line-height: 1.3;
   overflow: hidden;
@@ -88,90 +88,109 @@
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
+  text-transform: capitalize;
 }
 
 .item-code {
-  margin: 0.15rem 0 0 0;
-  color: #666;
-  font-size: 0.7rem;
+  margin: 0.2rem 0 0 0;
+  color: #64748b;
+  font-size: 0.75rem;
 }
 
-.item-card-body {
-  margin-bottom: 0.5rem;
+/* Footer Layout for Price + Button */
+.item-card-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: auto;
+  /* Push to bottom */
+}
+
+.item-price-stock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .item-price {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  gap: 0.25rem;
+  margin: 0;
 }
 
 .price-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .mrp-price {
   font-size: 0.75rem;
-  color: #999;
+  color: #94a3b8;
   text-decoration: line-through;
 }
 
 .sale-price {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #0f172a;
 }
 
 .price-value {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #0f172a;
 }
 
 .discount-badge {
   display: inline-block;
-  padding: 0.25rem 0.5rem;
-  background: #e74c3c;
+  padding: 0.15rem 0.4rem;
+  background: #ef4444;
   color: white;
   border-radius: 4px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   width: fit-content;
 }
 
 .item-stock {
-  color: #27ae60;
+  color: #22c55e;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .item-stock.out-of-stock {
-  color: #e74c3c;
+  color: #ef4444;
 }
 
+/* Icon-only Add Button */
 .item-add-btn {
-  width: 100%;
-  padding: 0.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  background: #3b82f6;
+  /* Beautiful blue */
   color: white;
   border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.8rem;
+  border-radius: 12px;
+  /* Smooth corners */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
 }
 
 .item-add-btn:hover {
-  transform: scale(1.02);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.3);
+}
+
+.item-add-btn:active {
+  transform: scale(0.95);
 }
