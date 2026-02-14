@@ -677,7 +677,9 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                       <td className="item-name">
                         <span className="name-text">{item.name}</span>
                       </td>
-                      <td className="item-code">{item.code}</td>
+                      <td className="item-code">
+                        <span className="code-badge">{item.code}</span>
+                      </td>
                       {company?.business_type === 'cafe' && (
                         <td className="item-mapping-code">
                           {editingMappingCode === item.id ? (
@@ -733,16 +735,22 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                       <td className="item-category">
                         <span className="category-badge">{categoryName}</span>
                       </td>
-                      <td className="item-hsn">{item.hsn_code || '-'}</td>
-                      <td className="item-gst-rate">{item.gst_rate ? `${item.gst_rate}%` : '-'}</td>
+                      <td className="item-hsn">
+                        <span className="hsn-text">{item.hsn_code || '-'}</span>
+                      </td>
+                      <td className="item-gst-rate">
+                        <span className="gst-text">{item.gst_rate ? `${item.gst_rate}%` : '-'}</span>
+                      </td>
                       {isAdmin && (
                         <td className="item-cost">
-                          {item.cost ? formatCurrency(item.cost) : '-'}
+                          {item.cost ? <span className="cost-text">{formatCurrency(item.cost)}</span> : '-'}
                         </td>
                       )}
-                      <td className="item-price">{formatCurrency(item.price)}</td>
+                      <td className="item-price">
+                        <span className="price-text">{formatCurrency(item.price)}</span>
+                      </td>
                       <td className="item-mrp">
-                        {item.mrp ? formatCurrency(item.mrp) : '-'}
+                        {item.mrp ? <span className="mrp-text">{formatCurrency(item.mrp)}</span> : '-'}
                       </td>
                       {isAdmin && (
                         <td className="item-gm">

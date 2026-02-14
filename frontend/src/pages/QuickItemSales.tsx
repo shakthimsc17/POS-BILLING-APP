@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useInventoryStore } from '../store/inventoryStore';
 import { useCompanyStore } from '../store/companyStore';
 import { Item, Category } from '../types';
@@ -11,10 +11,9 @@ interface ItemWithMappingCode extends Item {
   editingMappingCode?: string;
 }
 
-export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: string) => void }) {
+export default function QuickItemSales() {
   const [items, setItems] = useState<ItemWithMappingCode[]>([]);
   const [displayItems, setDisplayItems] = useState<ItemWithMappingCode[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
 
   // Filters
@@ -79,11 +78,9 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
       const data = await storageService.getCategories();
       const categoriesArray: Category[] = Array.isArray(data) ? data : [];
       setAllCategories(categoriesArray);
-      setCategories(categoriesArray);
     } catch (error) {
       console.error('Error loading categories:', error);
       setAllCategories([]);
-      setCategories([]);
     }
   };
 
@@ -95,7 +92,7 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
       const itemsArray = Array.isArray(response) ? response : [];
       const itemsWithMappingCode = itemsArray.map(item => ({
         ...item,
-        mapping_code: item.mapping_code || null,
+        mapping_code: item.mapping_code || undefined,
       }));
       setItems(itemsWithMappingCode.slice(0, ITEMS_PER_PAGE));
       setHasMore(itemsArray.length > ITEMS_PER_PAGE);
@@ -118,7 +115,7 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
       const itemsArray = Array.isArray(response) ? response : [];
       const itemsWithMappingCode = itemsArray.map(item => ({
         ...item,
-        mapping_code: item.mapping_code || null,
+        mapping_code: item.mapping_code || undefined,
       }));
       const nextPage = page + 1;
       const startIndex = 0;
@@ -348,26 +345,26 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
         )}
         <div className="header-content">
           <h1>{company.logo ? '' : '⚡ '}Quick Item Sales</h1>
-          <p>Manage quick sales items and mapping codes</p>
+          <p>Optimize your inventory with rapid mapping and price management</p>
         </div>
       </div>
 
       {/* Filter Section */}
       <div className="filters-card">
         <div className="filters-row">
-          <div className="filter-group" style={{ flex: 2, minWidth: '300px' }}>
-            <label>Search Items:</label>
+          <div className="filter-group">
+            <label>Search Inventory</label>
             <input
               type="text"
               className="filter-input"
-              placeholder="🔍 Search by Item Name or Code..."
+              placeholder="🔍 Name or Item Code"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
           <div className="filter-group">
-            <label>Price Range:</label>
+            <label>Price Range</label>
             <div className="price-range-group">
               <input
                 type="number"
@@ -375,22 +372,20 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
                 placeholder="Min"
                 value={minPrice}
                 onChange={(e) => setMinPrice(e.target.value)}
-                min="0"
               />
-              <span style={{ color: '#aaa' }}>-</span>
+              <span style={{ color: '#94a3b8', fontWeight: 700 }}>→</span>
               <input
                 type="number"
                 className="filter-input"
                 placeholder="Max"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
-                min="0"
               />
             </div>
           </div>
 
           <div className="filter-group">
-            <label>Main Category:</label>
+            <label>Category</label>
             <select
               className="filter-select"
               value={selectedMainCategory}
@@ -399,7 +394,7 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
                 setSelectedSubcategory('');
               }}
             >
-              <option value="">All Categories</option>
+              <option value="">All Regions / Categories</option>
               {mainCategories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name}
@@ -410,13 +405,13 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
 
           {selectedMainCategory && subcategories.length > 0 && (
             <div className="filter-group">
-              <label>Subcategory:</label>
+              <label>Sub-section</label>
               <select
                 className="filter-select"
                 value={selectedSubcategory}
                 onChange={(e) => setSelectedSubcategory(e.target.value)}
               >
-                <option value="">All</option>
+                <option value="">All Sub-items</option>
                 {subcategories.map((subcat, idx) => (
                   <option key={idx} value={subcat}>
                     {subcat}
@@ -428,144 +423,204 @@ export default function QuickItemSales({ onNavigate }: { onNavigate?: (page: str
         </div>
       </div>
 
-      {/* Items Table */}
+      {/* Items List */}
       <div className="card">
         <div className="table-header-actions">
-          <h2>Items ({displayItems.length})</h2>
-          {!isGlobalEditMode && !editingId ? (
-            <button
-              className="btn btn-primary"
-              onClick={handleGlobalEdit}
-              title="Edit all mapping codes"
-            >
-              ✏️ Edit All Mapping Codes
-            </button>
-          ) : isGlobalEditMode ? (
-            <div className="edit-mode-actions">
+          <div className="header-titles">
+            <h2>Tracked Items ({displayItems.length})</h2>
+          </div>
+          <div className="header-actions">
+            {!isGlobalEditMode && !editingId ? (
               <button
-                className="btn btn-success"
-                onClick={handleGlobalSave}
-                disabled={saving}
+                className="btn btn-primary"
+                onClick={handleGlobalEdit}
               >
-                {saving ? '💾 Saving...' : '💾 Save All'}
+                ✏️ Bulk Edit Mapping
               </button>
-              <button
-                className="btn btn-secondary"
-                onClick={handleCancelGlobalEdit}
-                disabled={saving}
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            // Single edit active, hide global button (optional, or just disable)
-            <span style={{ color: '#64748b', fontSize: '0.9rem' }}>Editing Item...</span>
-          )}
+            ) : isGlobalEditMode ? (
+              <div className="edit-mode-actions">
+                <button
+                  className="btn btn-success"
+                  onClick={handleGlobalSave}
+                  disabled={saving}
+                >
+                  {saving ? 'Saving...' : '💾 Apply All'}
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  onClick={handleCancelGlobalEdit}
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <span className="single-edit-notice">
+                <span className="pulse-dot"></span>
+                Editing Active Record
+              </span>
+            )}
+          </div>
         </div>
 
         {displayItems.length === 0 ? (
           <div className="empty-state">
-            <p>📭 No items found matching criteria</p>
+            <div className="empty-icon">📂</div>
+            <p>No matches found in your current inventory</p>
           </div>
         ) : (
-          <>
-            <div className="quick-item-sales-table-container">
-              <table className="quick-item-sales-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: '30%' }}>Item Name</th>
-                    <th style={{ width: '15%' }}>Code</th>
-                    <th style={{ width: '15%' }}>Price</th>
-                    <th style={{ width: '25%' }}>Mapping Code</th>
-                    <th style={{ width: '15%' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayItems.map((item) => {
-                    const isSingleEditing = editingId === item.id;
-                    return (
-                      <tr key={item.id} style={isSingleEditing ? { background: '#fffbeb' } : {}}>
-                        <td className="item-name">{item.display_name || item.name}</td>
-                        <td>
-                          <span className="item-code">{item.code}</span>
-                        </td>
-                        <td className="item-price">
-                          {formatCurrency(Number(item.price) || 0)}
-                        </td>
-                        <td className="mapping-code-cell">
-                          {isGlobalEditMode ? (
+          <div className="modern-grid-container">
+            <div className="modern-grid">
+              <div className="grid-row grid-header">
+                <div className="grid-col">PRODUCT DETAILS</div>
+                <div className="grid-col">ITEM CODE</div>
+                <div className="grid-col" style={{ textAlign: 'right' }}>PRICE</div>
+                <div className="grid-col">MAPPING CODE</div>
+                <div className="grid-col" style={{ textAlign: 'right' }}>OPTIONS</div>
+              </div>
+
+              <div className="grid-body">
+                {displayItems.map((item) => {
+                  const isSingleEditing = editingId === item.id;
+                  return (
+                    <div
+                      key={item.id}
+                      className={`grid-row grid-body-row ${isSingleEditing ? 'editing' : ''}`}
+                    >
+                      <div className="grid-col item-name-col">
+                        <span className="main-name">{item.display_name || item.name}</span>
+                        <span className="sub-info">{item.subcategory || 'General'}</span>
+                      </div>
+
+                      <div className="grid-col">
+                        <span className="item-code-badge">{item.code}</span>
+                      </div>
+
+                      <div className="grid-col col-price">
+                        {formatCurrency(Number(item.price) || 0)}
+                      </div>
+
+                      <div className="grid-col">
+                        {isGlobalEditMode ? (
+                          <div className="mapping-input-wrapper">
                             <input
                               type="text"
-                              className="mapping-code-input"
+                              className="modern-mapping-input"
                               value={item.editingMappingCode || ''}
                               onChange={(e) => handleGlobalMappingCodeChange(item.id, e.target.value)}
-                              placeholder="Code"
+                              placeholder="Set mapping..."
                             />
-                          ) : isSingleEditing ? (
+                          </div>
+                        ) : isSingleEditing ? (
+                          <div className="mapping-input-wrapper">
                             <input
                               type="text"
-                              className="mapping-code-input"
+                              className="modern-mapping-input"
                               value={singleEditCode}
                               onChange={(e) => setSingleEditCode(e.target.value)}
-                              placeholder="Code"
+                              placeholder="Set mapping..."
                               autoFocus
                             />
-                          ) : (
-                            <span className={item.mapping_code ? 'mapping-code-value' : 'mapping-code-empty'}>
-                              {item.mapping_code || '-'}
-                            </span>
-                          )}
-                        </td>
-                        <td className="item-actions">
-                          {isGlobalEditMode ? (
-                            <span style={{ color: '#ccc' }}>-</span>
-                          ) : isSingleEditing ? (
-                            <div className="edit-mode-actions" style={{ gap: '0.5rem' }}>
-                              <button
-                                className="btn btn-sm btn-success"
-                                onClick={() => handleSaveSingleItem(item.id)}
-                                disabled={saving}
-                                title="Save"
-                              >
-                                {saving ? '...' : 'Save'}
-                              </button>
-                              <button
-                                className="btn btn-sm btn-secondary"
-                                onClick={handleCancelSingleEdit}
-                                disabled={saving}
-                                title="Cancel"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          ) : (
+                          </div>
+                        ) : (
+                          <div className="mapping-display">
+                            {item.mapping_code ? (
+                              <span className="mapping-value-pill">
+                                {item.mapping_code}
+                              </span>
+                            ) : (
+                              <span className="mapping-empty">Unmapped</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="grid-col item-actions">
+                        {isGlobalEditMode ? (
+                          <span className="lock-icon">🔒</span>
+                        ) : isSingleEditing ? (
+                          <div className="edit-mode-actions">
                             <button
-                              className="btn btn-sm btn-secondary"
-                              onClick={() => handleEditSingleItem(item)}
-                              title="Edit Mapping Code"
+                              className="btn-ghost btn-success"
+                              onClick={() => handleSaveSingleItem(item.id)}
+                              disabled={saving}
+                              title="Save"
                             >
-                              Edit
+                              ✅
                             </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            {hasMore && (
-              <div ref={observerTarget} className="load-more-indicator">
-                {loadingMore ? (
-                  <p>Loading more items...</p>
-                ) : (
-                  <p>Scroll to load more</p>
-                )}
+                            <button
+                              className="btn-ghost btn-secondary"
+                              onClick={handleCancelSingleEdit}
+                              disabled={saving}
+                              title="Cancel"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={() => handleEditSingleItem(item)}
+                          >
+                            Edit
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+            </div>
+          </div>
+        )}
+
+        {hasMore && (
+          <div ref={observerTarget} className="load-more-indicator">
+            {loadingMore ? (
+              <p>Fetching more inventory...</p>
+            ) : (
+              <p>Scroll for more records</p>
             )}
-          </>
+          </div>
         )}
       </div>
+
+      <style>{`
+        .pulse-dot {
+          display: inline-block;
+          width: 8px;
+          height: 8px;
+          background-color: #f59e0b;
+          border-radius: 50%;
+          margin-right: 8px;
+          box-shadow: 0 0 0 rgba(245, 158, 11, 0.4);
+          animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+          0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+          70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+          100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+        .single-edit-notice {
+          display: flex;
+          align-items: center;
+          color: #92400e;
+          font-weight: 600;
+          font-size: 0.9rem;
+          background: #fef3c7;
+          padding: 0.5rem 1rem;
+          border-radius: 99px;
+        }
+        .lock-icon {
+          opacity: 0.3;
+          font-size: 1.2rem;
+        }
+        .empty-icon {
+          font-size: 3rem;
+          margin-bottom: 1rem;
+          opacity: 0.2;
+        }
+      `}</style>
     </div>
   );
 }

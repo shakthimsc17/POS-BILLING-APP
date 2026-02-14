@@ -274,7 +274,7 @@
   line-height: 1.4;
 }
 
-.item-code {
+.item-code .code-badge {
   font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
   color: #6366f1;
   font-size: 0.8rem;
@@ -283,6 +283,7 @@
   padding: 0.2rem 0.5rem;
   border-radius: 6px;
   display: inline-block;
+  vertical-align: middle;
 }
 
 .category-badge {
@@ -300,27 +301,36 @@
   max-width: 160px;
 }
 
-.item-hsn,
-.item-gst-rate {
+.item-hsn .hsn-text,
+.item-gst-rate .gst-text {
   color: #64748b;
   font-size: 0.825rem;
+  display: inline-block;
+  vertical-align: middle;
 }
 
-.item-cost {
+.item-cost .cost-text {
   color: #dc2626;
   font-weight: 600;
   font-size: 0.85rem;
+  display: inline-block;
+  vertical-align: middle;
 }
 
-.item-price {
+.item-price .price-text {
   color: #059669;
   font-weight: 700;
   font-size: 0.9rem;
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 1.4;
 }
 
-.item-mrp {
+.item-mrp .mrp-text {
   color: #94a3b8;
   font-size: 0.85rem;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 /* ── GM Pills ── */
