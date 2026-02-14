@@ -162,7 +162,7 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
 
     editedItems.forEach((cartItem) => {
       const item = cartItem.item || cartItem;
-      const quantity = cartItem.quantity || 1;
+      const quantity = cartItem.quantity || 0;
       totalQuantity += quantity;
 
       const originalPrice = cartItem.originalPrice || (typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0);
@@ -186,17 +186,38 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
       }
     });
 
-    const totalAmount = typeof editedTransaction?.total_amount === 'string'
-      ? parseFloat(editedTransaction.total_amount)
-      : (editedTransaction?.total_amount || 0);
+    // During edit mode, we want the grand total to reflect the changes in items.
+    // If there was a bill-level tax or discount previously, we handle it by comparing
+    // the original subtotal with the original total.
 
-    // Overall discount = subtotal - totalAmount
-    const overallDiscount = Math.max(0, subtotal - totalAmount);
+    const originalTxTotal = typeof transaction?.total_amount === 'string'
+      ? parseFloat(transaction.total_amount)
+      : (transaction?.total_amount || 0);
+
+    // We derive the original subtotal recorded in the transaction
+    const initialItems = JSON.parse(transaction?.items_json || '[]');
+    const originalTxSubtotal = initialItems.reduce((acc: number, ci: any) => {
+      const item = ci.item || ci;
+      const sp = ci.customPrice !== undefined
+        ? (typeof ci.customPrice === 'string' ? parseFloat(ci.customPrice) : ci.customPrice)
+        : (typeof item.price === 'string' ? parseFloat(item.price) : item.price || 0);
+      return acc + (sp * (ci.quantity || 0));
+    }, 0);
+
+    // Calculate the 'adjustment' (Tax if > 0, Discount if < 0)
+    const adjustment = originalTxTotal - originalTxSubtotal;
+
+    // New grand total should apply the same adjustment OR we can choose to reset it.
+    // Given the user report, we should probably let the total strictly follow the items for now,
+    // OR preserve the adjustment. Let's preserve the fixed adjustment amount for consistency.
+    const grandTotal = subtotal + adjustment;
+
+    // If grandTotal < subtotal, the difference is the overall discount
+    const overallDiscount = grandTotal < subtotal ? Math.abs(subtotal - grandTotal) : 0;
     const totalDiscount = totalItemDiscount + overallDiscount;
 
-    // Tax calculation: if totalAmount < subtotal, there's a discount; if > subtotal, there's tax
-    const tax = totalAmount > subtotal ? totalAmount - subtotal : 0;
-    const grandTotal = totalAmount;
+    // If grandTotal > subtotal, the difference is tax
+    const tax = grandTotal > subtotal ? grandTotal - subtotal : 0;
 
     // Net Profit = grossProfit - grossLoss - overallDiscount
     const netProfit = grossProfit - grossLoss - overallDiscount;
@@ -964,7 +985,6 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
                       value={editedTransaction?.created_at ? new Date(editedTransaction.created_at).toISOString().slice(0, 16) : ''}
                       onChange={(e) => handleDateChange(e.target.value)}
                       className="form-input"
-                      style={{ width: '100%', height: '32px', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
                     />
                   ) : (
                     <>
@@ -982,7 +1002,6 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
                       value={editedTransaction?.payment_method || transaction.payment_method}
                       onChange={(e) => handlePaymentMethodChange(e.target.value)}
                       className="form-input"
-                      style={{ width: '100%', height: '32px', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
                     >
                       <option value="cash">💵 Cash</option>
                       <option value="card">💳 Card</option>

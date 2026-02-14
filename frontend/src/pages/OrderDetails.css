@@ -1,7 +1,6 @@
 .order-details {
   animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   height: calc(100vh - 160px);
-  /* Adjusting for padding and footer more accurately */
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -110,6 +109,78 @@
   font-size: 14px;
   color: #334155;
   font-weight: 600;
+}
+
+/* Internal components */
+.quantity-editor {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  background: #f1f5f9;
+  padding: 2px;
+  border-radius: 8px;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.quantity-input,
+.price-input,
+.form-input {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  transition: all 0.2s ease;
+  background: white;
+  outline: none;
+}
+
+.quantity-input:focus,
+.price-input:focus,
+.form-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: white;
+}
+
+.quantity-input {
+  width: 50px;
+  text-align: center;
+  padding: 4px;
+  border: none !important;
+  background: transparent !important;
+}
+
+.quantity-input:focus {
+  background: white !important;
+  box-shadow: none !important;
+  border: 1px solid #3b82f6 !important;
+}
+
+.price-input {
+  width: 100px;
+  text-align: right;
+}
+
+.form-input {
+  width: 100%;
+  font-size: 13px;
+}
+
+/* Remove arrows/spinners */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .company-mini-header {
