@@ -64,14 +64,6 @@ export interface CartItem {
   quickSaleItemId?: string;
 }
 
-export interface ItemCodePrefix {
-  id: string;
-  prefix: string;
-  description?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface Customer {
   id: string;
   name: string;
@@ -140,6 +132,8 @@ export interface Company {
   website?: string;
   logo?: string;
   business_type?: 'clothing' | 'cafe' | 'electrical' | null;
+  default_language?: string;
+  receipt_language?: string;
   created_at: string;
   updated_at: string;
 }

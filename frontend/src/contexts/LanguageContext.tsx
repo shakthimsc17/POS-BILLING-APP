@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { storageService } from '../services/storage';
+import { Company } from '../types';
 
 type Language = 'en' | 'ta';
 
@@ -132,26 +134,55 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   const [language, setLanguageState] = useState<Language>('en');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load saved language preference from localStorage
+  // Load saved language preference from localStorage and company settings
   useEffect(() => {
-    try {
-      const savedLanguage = localStorage.getItem('pos-language') as Language;
-      if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'ta')) {
-        setLanguageState(savedLanguage);
+    const loadLanguage = async () => {
+      try {
+        // First try localStorage for immediate response
+        const savedLanguage = localStorage.getItem('pos-language') as Language;
+        if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'ta')) {
+          setLanguageState(savedLanguage);
+        }
+
+        // Then load from company settings
+        try {
+          const company: Company = await storageService.getCompany();
+          if (company.receipt_language) {
+            const dbLanguage = company.receipt_language;
+            if (dbLanguage === 'en' || dbLanguage === 'ta') {
+              setLanguageState(dbLanguage);
+              localStorage.setItem('pos-language', dbLanguage);
+            }
+          }
+        } catch (companyError) {
+          console.warn('Failed to load language from company settings:', companyError);
+        }
+      } catch (error) {
+        console.warn('Failed to load language preference:', error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.warn('Failed to load language preference:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    };
+
+    loadLanguage();
   }, []);
 
-  const setLanguage = (lang: Language) => {
+  const setLanguage = async (lang: Language) => {
     setLanguageState(lang);
+    
+    // Save to localStorage for immediate persistence
     try {
       localStorage.setItem('pos-language', lang);
     } catch (error) {
-      console.warn('Failed to save language preference:', error);
+      console.warn('Failed to save language preference to localStorage:', error);
+    }
+
+    // Save to company settings
+    try {
+      const company: Company = await storageService.getCompany();
+      await storageService.saveCompany({ receipt_language: lang });
+    } catch (error) {
+      console.warn('Failed to save language preference to company settings:', error);
     }
   };
 

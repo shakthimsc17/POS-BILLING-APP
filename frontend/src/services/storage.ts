@@ -1,4 +1,4 @@
-import { Category, Item, Transaction, Customer, Company, ItemCodePrefix, ActivityLog, Settings, SalesCustomer, QuickSaleItem, CashFlowEntry, CashFlowSummary, Permission, PagePermission, Cart, Table, TableOrder, ReturnRecord } from '../types';
+import { Category, Item, Transaction, Customer, Company, ActivityLog, Settings, SalesCustomer, QuickSaleItem, CashFlowEntry, CashFlowSummary, Permission, PagePermission, Cart, Table, TableOrder, ReturnRecord } from '../types';
 import apiClient from '../lib/apiClient';
 
 export const storageService = {
@@ -146,23 +146,6 @@ export const storageService = {
 
   saveCompany: async (company: Partial<Company>): Promise<Company> => {
     return apiClient.post<Company>('/company', company);
-  },
-
-  // Item Code Prefixes
-  getItemCodePrefixes: async (): Promise<ItemCodePrefix[]> => {
-    return apiClient.get<ItemCodePrefix[]>('/item-code-prefixes');
-  },
-
-  addItemCodePrefix: async (prefix: Omit<ItemCodePrefix, 'id' | 'created_at' | 'updated_at'>): Promise<ItemCodePrefix> => {
-    return apiClient.post<ItemCodePrefix>('/item-code-prefixes', prefix);
-  },
-
-  updateItemCodePrefix: async (id: string, updates: Partial<ItemCodePrefix>): Promise<void> => {
-    await apiClient.put(`/item-code-prefixes/${id}`, updates);
-  },
-
-  deleteItemCodePrefix: async (id: string): Promise<void> => {
-    await apiClient.delete(`/item-code-prefixes/${id}`);
   },
 
   // Activity Logs

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useCompanyStore } from '../store/companyStore';
 import { storageService } from '../services/storage';
-import { ItemCodePrefix, Settings as SettingsType } from '../types';
-import TamilLanguageSettings from '../components/TamilLanguageSettings';
+import { Settings as SettingsType } from '../types';
+import ReceiptLanguageSettings from '../components/ReceiptLanguageSettings';
 import './Settings.css';
 
 export default function Settings() {
@@ -12,14 +12,6 @@ export default function Settings() {
   const [settings, setSettings] = useState<SettingsType | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
-  // Prefix management
-  const [prefixes, setPrefixes] = useState<ItemCodePrefix[]>([]);
-  const [showPrefixForm, setShowPrefixForm] = useState(false);
-  const [prefixPrefix, setPrefixPrefix] = useState('');
-  const [prefixDescription, setPrefixDescription] = useState('');
-  const [editingPrefix, setEditingPrefix] = useState<ItemCodePrefix | null>(null);
-  const [loadingPrefixes, setLoadingPrefixes] = useState(false);
 
   // Cloud Backup state
   const [backupConfigured, setBackupConfigured] = useState(false);
@@ -34,7 +26,6 @@ export default function Settings() {
   useEffect(() => {
     loadCompany();
     loadSettings();
-    loadPrefixes();
     loadBackupStatus();
   }, [loadCompany]);
 
@@ -87,64 +78,6 @@ export default function Settings() {
     // Clear receipt settings cache
     const { receiptSettings } = await import('../utils/receiptSettings');
     receiptSettings.clearCache();
-  };
-
-  const loadPrefixes = async () => {
-    try {
-      setLoadingPrefixes(true);
-      const data = await storageService.getItemCodePrefixes();
-      setPrefixes(data);
-    } catch (error) {
-      console.error('Error loading prefixes:', error);
-    } finally {
-      setLoadingPrefixes(false);
-    }
-  };
-
-  const handleSavePrefix = async () => {
-    if (!prefixPrefix.trim()) {
-      alert('Prefix is required');
-      return;
-    }
-
-    try {
-      if (editingPrefix) {
-        await storageService.updateItemCodePrefix(editingPrefix.id, {
-          prefix: prefixPrefix.trim(),
-          description: prefixDescription.trim() || undefined,
-        });
-      } else {
-        await storageService.addItemCodePrefix({
-          prefix: prefixPrefix.trim(),
-          description: prefixDescription.trim() || undefined,
-        });
-      }
-      await loadPrefixes();
-      setShowPrefixForm(false);
-      setPrefixPrefix('');
-      setPrefixDescription('');
-      setEditingPrefix(null);
-    } catch (error: any) {
-      alert(`Failed to save prefix: ${error.message || 'Unknown error'}`);
-    }
-  };
-
-  const handleEditPrefix = (prefix: ItemCodePrefix) => {
-    setEditingPrefix(prefix);
-    setPrefixPrefix(prefix.prefix);
-    setPrefixDescription(prefix.description || '');
-    setShowPrefixForm(true);
-  };
-
-  const handleDeletePrefix = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this prefix?')) return;
-
-    try {
-      await storageService.deleteItemCodePrefix(id);
-      await loadPrefixes();
-    } catch (error: any) {
-      alert(`Failed to delete prefix: ${error.message || 'Unknown error'}`);
-    }
   };
 
   // Cloud Backup functions
@@ -258,11 +191,6 @@ export default function Settings() {
       </div>
 
       <div className="settings-content">
-        {/* Tamil Language Settings */}
-        <div className="card settings-card">
-          <TamilLanguageSettings />
-        </div>
-
         {/* Activity Log Settings */}
         <div className="card settings-card">
           <h2>📋 Activity Log Settings</h2>
@@ -330,6 +258,7 @@ export default function Settings() {
                 </tr>
               </thead>
               <tbody>
+                <ReceiptLanguageSettings />
                 <tr>
                   <td className="setting-label">Receipt Header Display</td>
                   <td>
@@ -401,99 +330,6 @@ export default function Settings() {
               </tbody>
             </table>
           </div>
-        </div>
-
-        {/* Item Code Prefix Management */}
-        <div className="card settings-card">
-          <h2>🏷️ Item Code Prefixes</h2>
-          <div className="prefix-section-header">
-            <p className="section-description">Manage prefixes used for generating item codes</p>
-            <button
-              className="btn btn-primary"
-              onClick={() => {
-                setShowPrefixForm(!showPrefixForm);
-                if (showPrefixForm) {
-                  setEditingPrefix(null);
-                  setPrefixPrefix('');
-                  setPrefixDescription('');
-                }
-              }}
-            >
-              {showPrefixForm ? 'Cancel' : '+ Add Prefix'}
-            </button>
-          </div>
-
-          {showPrefixForm && (
-            <div className="prefix-form-container">
-              <h3>{editingPrefix ? 'Edit' : 'Add'} Item Code Prefix</h3>
-              <label>
-                Prefix * (e.g., "shopname-place-"):
-                <input
-                  type="text"
-                  className="input"
-                  value={prefixPrefix}
-                  onChange={(e) => setPrefixPrefix(e.target.value)}
-                  placeholder="shopname-place-"
-                />
-              </label>
-              <label>
-                Description (optional):
-                <input
-                  type="text"
-                  className="input"
-                  value={prefixDescription}
-                  onChange={(e) => setPrefixDescription(e.target.value)}
-                  placeholder="Description for this prefix"
-                />
-              </label>
-              <button className="btn btn-primary" onClick={handleSavePrefix}>
-                {editingPrefix ? 'Update' : 'Save'} Prefix
-              </button>
-            </div>
-          )}
-
-          {loadingPrefixes ? (
-            <p>Loading prefixes...</p>
-          ) : prefixes.length === 0 ? (
-            <div className="empty-state">
-              <p>📭 No item code prefixes yet</p>
-              <p className="empty-subtext">Add a prefix to get started</p>
-            </div>
-          ) : (
-            <div className="settings-table">
-              <table className="prefix-table">
-                <thead>
-                  <tr>
-                    <th>Prefix</th>
-                    <th>Description</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {prefixes.map((prefix) => (
-                    <tr key={prefix.id}>
-                      <td className="prefix-value">{prefix.prefix}</td>
-                      <td>{prefix.description || '-'}</td>
-                      <td className="prefix-actions">
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => handleEditPrefix(prefix)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => handleDeletePrefix(prefix.id)}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
 
         {/* Cloud Backup Settings */}

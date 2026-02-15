@@ -400,3 +400,38 @@
   gap: 0.75rem;
   margin-top: 1rem;
 }
+
+/* Language Settings Styles */
+.language-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.language-btn {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border: 2px solid #e0e6ed;
+  border-radius: 6px;
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 100px;
+}
+
+.language-btn:hover {
+  border-color: #3498db;
+  background: #f8f9fa;
+}
+
+.language-btn.active {
+  border-color: #3498db;
+  background: #3498db;
+  color: white;
+}
+
+.language-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
