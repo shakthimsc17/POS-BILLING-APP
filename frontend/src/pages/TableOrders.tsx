@@ -4,6 +4,7 @@ import { TableOrder } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { printReceipt } from '../utils/printer';
 import { toast } from '../utils/toast';
+import { useLanguage } from '../contexts/LanguageContext';
 import './TableOrders.css';
 
 interface TableOrdersProps {
@@ -11,6 +12,7 @@ interface TableOrdersProps {
 }
 
 export default function TableOrders({ onNavigate }: TableOrdersProps = {}) {
+  const { language } = useLanguage();
   const { tableOrders, loadTableOrders, completeTableOrder, cancelTableOrder, loading } = useTableStore();
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'completed' | 'cancelled'>('all');
   const [filterDateType, setFilterDateType] = useState<'all' | 'date' | 'week' | 'month' | 'year'>('date');
@@ -89,6 +91,7 @@ export default function TableOrders({ onNavigate }: TableOrdersProps = {}) {
           items,
           transaction: result.transaction,
           autoPrint,
+          language,
         });
       } catch (printError) {
         console.error('Print error:', printError);
@@ -130,7 +133,7 @@ export default function TableOrders({ onNavigate }: TableOrdersProps = {}) {
         items_json: order.items_json,
         created_at: order.created_at,
       };
-      await printReceipt({ items, transaction });
+      await printReceipt({ items, transaction, language });
       toast.success('Receipt printed successfully!');
     } catch (error: any) {
       toast.error('Failed to print receipt');

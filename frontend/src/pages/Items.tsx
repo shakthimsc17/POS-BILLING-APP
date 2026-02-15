@@ -20,6 +20,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [name, setName] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [displayNameTamil, setDisplayNameTamil] = useState('');
   const [code, setCode] = useState('');
   const [barcode, setBarcode] = useState('');
   const [mappingCode, setMappingCode] = useState('');
@@ -162,6 +163,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
     setEditingItem(item);
     setName(item.name);
     setDisplayName(item.display_name || '');
+    setDisplayNameTamil(item.display_name_tamil || '');
     setCode(item.code);
     setBarcode(item.barcode || '');
     setMappingCode(item.mapping_code || '');
@@ -280,6 +282,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
         await updateItem(editingItem.id, {
           name,
           display_name: displayName || undefined,
+          display_name_tamil: displayNameTamil || undefined,
           code: finalCode,
           barcode: (barcode || undefined),
           mapping_code: mappingCode.trim() || undefined,
@@ -301,6 +304,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
         await addItem({
           name,
           display_name: displayName || undefined,
+          display_name_tamil: displayNameTamil || undefined,
           code: finalCode,
           barcode: (barcode || undefined),
           mapping_code: mappingCode.trim() || undefined,
@@ -399,6 +403,7 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
   const resetForm = () => {
     setName('');
     setDisplayName('');
+    setDisplayNameTamil('');
     setCode('');
     setBarcode('');
     setMappingCode('');
@@ -867,6 +872,22 @@ export default function Items({ onNavigate }: ItemsProps = {}) {
                     />
                     <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
                       for receipts
+                    </small>
+                  </label>
+                </div>
+
+                <div className="form-field">
+                  <label>
+                    Display Name (Tamil):
+                    <input
+                      type="text"
+                      className="input"
+                      value={displayNameTamil}
+                      onChange={(e) => setDisplayNameTamil(e.target.value)}
+                      placeholder="Display name in Tamil"
+                    />
+                    <small style={{ fontSize: '11px', color: '#666', display: 'block', marginTop: '4px' }}>
+                      for Tamil receipts
                     </small>
                   </label>
                 </div>

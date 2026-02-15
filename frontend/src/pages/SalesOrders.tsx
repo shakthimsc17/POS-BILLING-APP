@@ -6,6 +6,7 @@ import { printReceipt } from '../utils/printer';
 import { useCompanyStore } from '../store/companyStore';
 import { useAuthStore } from '../store/authStore';
 import { usePermissions } from '../hooks/usePermissions';
+import { useLanguage } from '../contexts/LanguageContext';
 import './SalesOrders.css';
 
 type FilterPeriod = 'today' | 'week' | 'month' | 'year' | 'all' | 'custom';
@@ -15,6 +16,7 @@ interface SalesOrdersProps {
 }
 
 export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavigate: undefined }) {
+  const { language } = useLanguage();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -296,6 +298,7 @@ export default function SalesOrders({ onNavigate }: SalesOrdersProps = { onNavig
         customer: customer as SalesCustomer, // Cast for compatibility
         taxAmount,
         discountAmount: totalDiscount,
+        language,
       });
     } catch (error) {
       console.error('Error printing receipt:', error);

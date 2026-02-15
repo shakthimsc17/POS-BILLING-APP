@@ -18,6 +18,7 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
   // Basic Information
   const [name, setName] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [displayNameTamil, setDisplayNameTamil] = useState('');
   const [type, setType] = useState<'goods' | 'service'>('goods');
   const [categoryId, setCategoryId] = useState('');
   const [subcategory, setSubcategory] = useState('');
@@ -307,6 +308,7 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
       const itemData: any = {
         name,
         display_name: displayName || undefined,
+        display_name_tamil: displayNameTamil || undefined,
         code: finalCode,
         barcode: barcode || undefined,
         mapping_code: mappingCode.trim() || undefined,
@@ -579,6 +581,19 @@ export default function AddItem({ onNavigate, onBack }: AddItemProps = {}) {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Display name"
+                />
+              </label>
+            </div>
+
+            <div className="form-field">
+              <label>
+                Display Name (Tamil):
+                <input
+                  type="text"
+                  className="input"
+                  value={displayNameTamil}
+                  onChange={(e) => setDisplayNameTamil(e.target.value)}
+                  placeholder="Display name in Tamil"
                 />
               </label>
             </div>

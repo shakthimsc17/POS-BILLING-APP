@@ -29,6 +29,7 @@ interface BulkItemRow {
   subcategory: string;
   name: string;
   displayName: string;
+  displayNameTamil: string;
   code: string;
   barcode: string;
   selectedPrefixId: string;
@@ -315,6 +316,7 @@ export default function BulkOperations() {
       subcategory: selectedSubcategoryForItem || '',
       name: '',
       displayName: '',
+      displayNameTamil: '',
       code: '',
       barcode: '',
       selectedPrefixId: '',
@@ -487,6 +489,7 @@ export default function BulkOperations() {
         return storageService.addItem({
           name: row.name.trim(),
           display_name: row.displayName && row.displayName.trim() ? row.displayName.trim() : undefined,
+          display_name_tamil: row.displayNameTamil && row.displayNameTamil.trim() ? row.displayNameTamil.trim() : undefined,
           code: row.finalCode,
           barcode: row.finalBarcode || undefined,
           category_id: row.categoryId,
@@ -818,6 +821,7 @@ export default function BulkOperations() {
                       <tr>
                         <th>Name *</th>
                         <th>Display Name</th>
+                        <th>Display Name (Tamil)</th>
                         <th>Prefix</th>
                         <th>Product Code</th>
                         <th>Code *</th>
@@ -852,6 +856,15 @@ export default function BulkOperations() {
                               value={row.displayName}
                               onChange={(e) => updateItemRow(row.id, 'displayName', e.target.value)}
                               placeholder="Display name (optional)"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              className="input"
+                              value={row.displayNameTamil}
+                              onChange={(e) => updateItemRow(row.id, 'displayNameTamil', e.target.value)}
+                              placeholder="Tamil display name (optional)"
                             />
                           </td>
                           <td>

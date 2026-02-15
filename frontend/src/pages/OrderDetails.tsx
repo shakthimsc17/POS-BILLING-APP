@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/authStore';
 import { Transaction, Customer, SalesCustomer, Item } from '../types';
 import { formatCurrency, formatOrderId, numberToWords } from '../utils/formatters';
 import { printReceipt } from '../utils/printer';
+import { useLanguage } from '../contexts/LanguageContext';
 import ReturnModal, { ReturnFormData } from '../components/ReturnModal';
 import './OrderDetails.css';
 
@@ -22,6 +23,7 @@ interface CartItem {
 }
 
 export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
+  const { language } = useLanguage();
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [salesCustomer, setSalesCustomer] = useState<SalesCustomer | null>(null);
@@ -868,6 +870,7 @@ export default function OrderDetails({ orderId, onBack }: OrderDetailsProps) {
       customer: salesCustomer || (customer ? { ...customer, mobile: customer.phone || '' } : null) as any,
       taxAmount: totals.tax,
       discountAmount: totals.totalDiscount,
+      language,
     });
   };
 

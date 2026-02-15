@@ -13,6 +13,7 @@ export interface Item {
   customer_id: string;
   name: string;
   display_name?: string;
+  display_name_tamil?: string;
   code: string;
   barcode?: string;
   mapping_code?: string;

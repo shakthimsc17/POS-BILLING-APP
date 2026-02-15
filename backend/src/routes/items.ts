@@ -41,6 +41,7 @@ router.get('/', [
       customer_id: item.customerId,
       name: item.name,
       display_name: item.displayName,
+      display_name_tamil: item.displayNameTamil,
       code: item.code,
       barcode: item.barcode,
       mapping_code: item.mappingCode,
@@ -123,6 +124,7 @@ router.get('/search', [query('q').notEmpty()], async (req: AuthRequest, res: Res
       customer_id: item.customerId,
       name: item.name,
       display_name: item.displayName,
+      display_name_tamil: item.displayNameTamil,
       code: item.code,
       barcode: item.barcode,
       mapping_code: item.mappingCode,
@@ -197,6 +199,7 @@ router.get('/by-categories', [query('categoryIds').notEmpty()], async (req: Auth
       customer_id: item.customerId,
       name: item.name,
       display_name: item.displayName,
+      display_name_tamil: item.displayNameTamil,
       code: item.code,
       barcode: item.barcode,
       mapping_code: item.mappingCode,
@@ -262,6 +265,7 @@ router.get('/barcode/:barcode', async (req: AuthRequest, res) => {
       customer_id: item.customerId,
       name: item.name,
       display_name: item.displayName,
+      display_name_tamil: item.displayNameTamil,
       code: item.code,
       barcode: item.barcode,
       mapping_code: item.mappingCode,
@@ -327,6 +331,7 @@ router.get('/search-by-mapping-code/:mappingCode', async (req: AuthRequest, res)
       customer_id: item.customerId,
       name: item.name,
       display_name: item.displayName,
+      display_name_tamil: item.displayNameTamil,
       code: item.code,
       barcode: item.barcode,
       mapping_code: item.mappingCode,
@@ -408,6 +413,7 @@ router.get('/search-by-barcode/:barcode', async (req: AuthRequest, res) => {
       customer_id: item.customerId,
       name: item.name,
       display_name: item.displayName,
+      display_name_tamil: item.displayNameTamil,
       code: item.code,
       barcode: item.barcode,
       mapping_code: item.mappingCode,
@@ -490,6 +496,8 @@ router.post(
         imageUrl,
         displayName,
         display_name, // Accept snake_case from frontend
+        displayNameTamil,
+        display_name_tamil, // Accept snake_case from frontend
         hsnCode,
         hsn_code, // Accept snake_case from frontend
         gstRate,
@@ -522,6 +530,9 @@ router.post(
       
       // Use displayName (camelCase) or display_name (snake_case), whichever is provided
       const finalDisplayName = displayName !== undefined ? displayName : display_name;
+      
+      // Use displayNameTamil (camelCase) or display_name_tamil (snake_case), whichever is provided
+      const finalDisplayNameTamil = displayNameTamil !== undefined ? displayNameTamil : display_name_tamil;
       
       // Use mappingCode (camelCase) or mapping_code (snake_case), whichever is provided
       const finalMappingCode = mappingCode !== undefined ? (mappingCode === '' ? null : mappingCode) : (mapping_code !== undefined ? (mapping_code === '' ? null : mapping_code) : undefined);
@@ -572,6 +583,7 @@ router.post(
           customerId: req.customerId!,
           name,
           displayName: finalDisplayName || null,
+          displayNameTamil: finalDisplayNameTamil || null,
           code,
           barcode,
           mappingCode: finalMappingCode === '' || finalMappingCode === null ? null : (finalMappingCode || null),
@@ -698,6 +710,8 @@ router.put(
         name,
         displayName,
         display_name, // Accept snake_case from frontend
+        displayNameTamil,
+        display_name_tamil, // Accept snake_case from frontend
         code,
         barcode,
         mappingCode,
@@ -741,6 +755,8 @@ router.put(
       const finalCategoryId = categoryId !== undefined ? categoryId : category_id;
       // Use displayName (camelCase) or display_name (snake_case), whichever is provided
       const finalDisplayName = displayName !== undefined ? displayName : display_name;
+      // Use displayNameTamil (camelCase) or display_name_tamil (snake_case), whichever is provided
+      const finalDisplayNameTamil = displayNameTamil !== undefined ? displayNameTamil : display_name_tamil;
       // Use mappingCode (camelCase) or mapping_code (snake_case), whichever is provided
       const finalMappingCode = mappingCode !== undefined ? (mappingCode === '' ? null : mappingCode) : (mapping_code !== undefined ? (mapping_code === '' ? null : mapping_code) : undefined);
       // Use hsnCode (camelCase) or hsn_code (snake_case), whichever is provided
@@ -809,6 +825,7 @@ router.put(
       const updateData: any = {};
       if (name) updateData.name = name;
       if (finalDisplayName !== undefined) updateData.displayName = finalDisplayName || null;
+      if (finalDisplayNameTamil !== undefined) updateData.displayNameTamil = finalDisplayNameTamil || null;
       if (code) updateData.code = code;
       if (barcode !== undefined) updateData.barcode = barcode;
       if (finalMappingCode !== undefined) {

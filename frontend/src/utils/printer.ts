@@ -34,34 +34,33 @@ export async function printReceipt(options: PrintOptions) {
   const getTranslation = (key: string, fallback?: string): string => {
     const translations = language === 'ta' ? {
       // Receipt headers
-      'receipt.receipt': 'ரசீது',
-      'receipt.date': 'தேதி',
-      'receipt.time': 'நேரம்',
-      'receipt.customer': 'வாடிக்கையாளர்',
-      'receipt.bill': 'பில்',
+       'receipt.receipt': 'Receipt',
+      'receipt.date': 'Date',
+      'receipt.time': 'Time',
+      'receipt.customer': 'Customer',
+      'receipt.bill': 'Bill',
       
       // Items table
-      'items.sno': 'எண்',
-      'items.item': 'பொருள்',
-      'items.rate': 'விலை',
-      'items.qty': 'எண்ணிக்கை',
-      'items.amount': 'தொகை',
-      'items.mrp': 'அதிகபட்ச விலை',
+       'items.sno': '#',
+      'items.item': 'Item',
+      'items.rate': 'Rate',
+      'items.qty': 'Qty',
+      'items.amount': 'Amt',
+      'items.mrp': 'MRP',
       
       // Totals
-      'totals.subtotal': 'கூட்டுத்தொகை',
-      'totals.discount': 'தள்ளுபடி',
-      'totals.tax': 'GST/வரி',
-      'totals.grandTotal': 'மொத்தத் தொகை',
+      'totals.subtotal': 'Subtotal',
+      'totals.discount': 'Discount',
+      'totals.grandTotal': 'GRAND TOTAL',
       
       // Footer
-      'footer.thankYou': 'உங்கள் வணிகத்திற்கு நன்றி!',
-      'footer.visitAgain': 'மீண்டும் வருகைத் தொடர்க',
+      'footer.thankYou': 'உங்கள் வருகைக்கு நன்றி!',
+      'footer.visitAgain': 'மீண்டும் வருக!!',
       
       // Payment
-      'payment.cashReceived': 'பெறப்பட்ட பணம்',
-      'payment.change': 'மாற்றம்',
-      'payment.method': 'கட்டண முறை',
+     'payment.cashReceived': 'Cash Received',
+      'payment.change': 'Change',
+      'payment.method': 'Payment Method',
     } : {
       // English translations
       'receipt.receipt': 'Receipt',
@@ -79,7 +78,6 @@ export async function printReceipt(options: PrintOptions) {
       
       'totals.subtotal': 'Subtotal',
       'totals.discount': 'Discount',
-      'totals.tax': 'GST/Tax',
       'totals.grandTotal': 'GRAND TOTAL',
       
       'footer.thankYou': 'Thank You for Your Business!',
@@ -439,9 +437,9 @@ export async function printReceipt(options: PrintOptions) {
                 (cartItem, index) => {
                   const mrp = cartItem.item.mrp ? (typeof cartItem.item.mrp === 'string' ? parseFloat(cartItem.item.mrp) : cartItem.item.mrp) : null;
                   const price = typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price;
-                  // Use display_name only when language is Tamil, otherwise use regular name
+                  // Use display_name_tamil when language is Tamil, otherwise use regular name
                   const itemDisplayName = language === 'ta' 
-                    ? (cartItem.item.display_name || cartItem.item.name)
+                    ? (cartItem.item.display_name_tamil || cartItem.item.name)
                     : cartItem.item.name;
                   // Hide MRP for cafe business type
                   const showMrp = businessType !== 'cafe' && mrp;
