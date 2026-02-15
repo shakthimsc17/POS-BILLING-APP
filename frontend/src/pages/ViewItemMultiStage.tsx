@@ -26,6 +26,8 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
   const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
   const [showBrandDropdown, setShowBrandDropdown] = useState(false);
   const [showSupplierDropdown, setShowSupplierDropdown] = useState(false);
+  const [showCodeDropdown, setShowCodeDropdown] = useState(false);
+  const [gstMandatory, setGstMandatory] = useState(false);
 
   const { items, categories, updateItem } = useInventoryStore();
   const totalStages = 5;
@@ -87,6 +89,18 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
     }
   }, [itemId]);
 
+
+
+  useEffect(() => {
+    if (editing && editData.code) {
+      setEditData((prev: any) => ({
+        ...prev,
+        barcode: prev.barcode === prev.code || !prev.barcode ? editData.code : prev.barcode,
+        sku: editData.code
+      }));
+    }
+  }, [editData.code, editing]);
+
   const loadItem = () => {
     setLoading(true);
     try {
@@ -126,6 +140,7 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
     setBrandSearchTerm(item.brand?.name || '');
     const supplier = suppliers.find(s => s.id === item.supplier_id);
     setSupplierSearchTerm(supplier?.name || item.supplier_name || item.manufacturer || '');
+    setGstMandatory(!!(item.gst_rate || item.hsn_code)); // Estimate or keep as boolean state
     setCurrentStage(1);
   };
 
@@ -143,6 +158,22 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
     try {
       setLoading(true);
       if (!itemId) return;
+
+      // Validation
+      if (gstMandatory) {
+        if (!editData.gst_rate || !editData.hsn_code) {
+          alert('GST Rate and HSN Code are required when GST is mandatory');
+          setLoading(false);
+          return;
+        }
+      } else {
+        if (!editData.name?.trim() || !editData.code?.trim() || !editData.price || !editData.cost) {
+          alert('Please fill in all required fields (Name, Code, Price, Cost)');
+          setLoading(false);
+          return;
+        }
+      }
+
       await updateItem(itemId, editData);
       setItem({ ...item, ...editData });
       setEditing(false);
@@ -191,7 +222,43 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
               <div className="form-field">
                 <label>Item Code{editing && <span className="required-asterisk">*</span>}:</label>
                 {editing ? (
-                  <input className="input" value={editData.code || ''} onChange={(e) => setEditData({ ...editData, code: e.target.value })} />
+                  <div className="searchable-dropdown">
+                    <input
+                      className="input"
+                      value={editData.code || ''}
+                      onChange={(e) => {
+                        setEditData({ ...editData, code: e.target.value });
+                        if (!showCodeDropdown) setShowCodeDropdown(true);
+                      }}
+                      onFocus={() => setShowCodeDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowCodeDropdown(false), 200)}
+                      placeholder="Search supplier codes or enter manually"
+                    />
+                    {showCodeDropdown && (
+                      <div className="dropdown-options">
+                        {suppliers
+                          .filter(s => s.code && s.code.toLowerCase().includes((editData.code || '').toLowerCase()))
+                          .map(s => (
+                            <div
+                              key={s.id}
+                              className="dropdown-option"
+                              onClick={() => {
+                                setEditData({
+                                  ...editData,
+                                  code: s.code,
+                                  supplier_id: s.id,
+                                  supplier_name: s.name,
+                                  supplier_code: s.code
+                                });
+                                setSupplierSearchTerm(s.name);
+                              }}
+                            >
+                              <strong>{s.code}</strong> - {s.name}
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div className="value">{item.code}</div>
                 )}
@@ -440,6 +507,17 @@ export default function ViewItemMultiStage({ itemId: propItemId, onNavigate, onB
                 ) : (
                   <div className="value">{item.stock || 0}</div>
                 )}
+              </div>
+              <div className="form-field">
+                <label style={{ flexDirection: 'row', gap: '10px', alignItems: 'center' }}>
+                  <input
+                    type="checkbox"
+                    checked={gstMandatory}
+                    onChange={(e) => setGstMandatory(e.target.checked)}
+                    disabled={!editing}
+                  />
+                  GST Mandatory
+                </label>
               </div>
             </div>
           </div>

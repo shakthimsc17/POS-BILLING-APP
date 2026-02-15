@@ -71,6 +71,7 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
   const [supplierSearchTerm, setSupplierSearchTerm] = useState('');
   const [showBrandDropdown, setShowBrandDropdown] = useState(false);
   const [showSupplierDropdown, setShowSupplierDropdown] = useState(false);
+  const [showCodeDropdown, setShowCodeDropdown] = useState(false);
 
   // Stock
   const [stock, setStock] = useState('0');
@@ -183,6 +184,14 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
     }
   }, [name, isDisplayNameModified]);
 
+  // Pre-populate barcode when item code changes
+  useEffect(() => {
+    if (code) {
+      setBarcode(code);
+      setSku(code);
+    }
+  }, [code]);
+
   // Helper functions
   // Get unique main category names (prefer category entries without subcategory)
   const getUniqueMainCategories = () => {
@@ -210,6 +219,7 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
     switch (stage) {
       case 1:
         // Basic Info
+        if (gstMandatory) return true; // Skip other validations if GST mandatory
         if (!name.trim()) return false;
         if (company.business_type !== 'cafe' && !code.trim()) return false;
         if (!uomId) return false;
@@ -219,11 +229,12 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
         return true;
       case 3:
         // Pricing
-        if (!cost || Number(cost) < 0) return false;
-        if (!price || Number(price) < 0) return false;
         if (gstMandatory) {
           if (!gstRate || !hsnCode.trim()) return false;
+          return true; // Only validate GST if mandatory
         }
+        if (!cost || Number(cost) < 0) return false;
+        if (!price || Number(price) < 0) return false;
         return true;
       case 4:
         // UOM - mostly optional
@@ -413,14 +424,43 @@ export default function AddItemMultiStage({ onNavigate, onBack }: AddItemMultiSt
               <div className="form-field">
                 <label>
                   Item Code<span className="required-asterisk">*</span>:
-                  <input
-                    type="text"
-                    className="input"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    placeholder="Enter item code"
-                    required
-                  />
+                  <div className="searchable-dropdown">
+                    <input
+                      type="text"
+                      className="input"
+                      value={code}
+                      onChange={(e) => {
+                        setCode(e.target.value);
+                        if (!showCodeDropdown) setShowCodeDropdown(true);
+                      }}
+                      onFocus={() => setShowCodeDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowCodeDropdown(false), 200)}
+                      placeholder="Search supplier codes or enter manually"
+                      required
+                    />
+                    {showCodeDropdown && (
+                      <div className="dropdown-options">
+                        {suppliers
+                          .filter(s => s.code && s.code.toLowerCase().includes(code.toLowerCase()))
+                          .map(s => (
+                            <div
+                              key={s.id}
+                              className="dropdown-option"
+                              onClick={() => {
+                                setCode(s.code);
+                                setSupplierId(s.id);
+                                setSupplierSearchTerm(s.name);
+                              }}
+                            >
+                              <strong>{s.code}</strong> - {s.name}
+                            </div>
+                          ))}
+                        {suppliers.filter(s => s.code && s.code.toLowerCase().includes(code.toLowerCase())).length === 0 && code && (
+                          <div className="dropdown-option disabled">Manual entry: {code}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </label>
               </div>
 
