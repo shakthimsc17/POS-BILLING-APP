@@ -375,6 +375,15 @@ export default function Cart({ onNavigate }: CartProps) {
                 </button>
               </div>
             </div>
+
+            <div className="cart-list-header">
+              <div className="header-item">Product</div>
+              <div className="header-price">Price</div>
+              <div className="header-qty">Quantity</div>
+              <div className="header-total">Total</div>
+              <div className="header-action"></div>
+            </div>
+
             <div className="cart-items-list">
               {items.map((cartItem) => {
                 const itemPrice = getItemPrice(cartItem.item.id);
@@ -386,20 +395,24 @@ export default function Cart({ onNavigate }: CartProps) {
 
                 return (
                   <div key={cartItem.item.id} className="cart-item">
-                    <div className="cart-item-icon">
-                      {isQuickSaleItem ? '⚡' : '📦'}
-                    </div>
-                    <div className="cart-item-name-section">
-                      <div className="item-name-row">
-                        <h3>{cartItem.item.name}</h3>
-                        {isQuickSaleItem && (
-                          <span className="quick-sale-badge" title="Quick Sale Item">Quick Sale</span>
-                        )}
+                    <div className="cart-item-info">
+                      <div className="cart-item-icon">
+                        {isQuickSaleItem ? '⚡' : '📦'}
                       </div>
-                      <p className="item-code">{cartItem.item.code}</p>
+                      <div className="cart-item-name-section">
+                        <div className="item-name-row">
+                          <h3>{cartItem.item.name}</h3>
+                          {isQuickSaleItem && (
+                            <span className="quick-sale-badge" title="Quick Sale Item">Quick Sale</span>
+                          )}
+                        </div>
+                        <p className="item-code">{cartItem.item.code}</p>
+                      </div>
                     </div>
+
                     <div className="cart-item-price-section">
                       <div className="price-input-wrapper-inline">
+                        <span className="currency-symbol">₹</span>
                         <input
                           type="number"
                           className={`price-input-inline ${isCustomPrice ? 'custom-price' : ''}`}
@@ -418,33 +431,41 @@ export default function Cart({ onNavigate }: CartProps) {
                         <p className="original-price-hint-inline">Orig: {formatCurrency(originalPrice)}</p>
                       )}
                     </div>
-                    <div className="cart-item-controls">
-                      <button
-                        className="qty-btn"
-                        onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity - 1)}
-                      >
-                        −
-                      </button>
-                      <span className="qty-value">
-                        {cartItem.quantity} <span style={{ fontSize: '0.7em', color: '#718096' }}>{cartItem.item.uom_name || ''}</span>
-                      </span>
-                      <button
-                        className="qty-btn"
-                        onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity + 1)}
-                      >
-                        +
-                      </button>
+
+                    <div className="cart-item-controls-wrapper">
+                      <div className="cart-item-controls">
+                        <button
+                          className="qty-btn"
+                          onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity - 1)}
+                        >
+                          −
+                        </button>
+                        <span className="qty-value">
+                          {cartItem.quantity}
+                        </span>
+                        <button
+                          className="qty-btn"
+                          onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity + 1)}
+                        >
+                          +
+                        </button>
+                      </div>
+                      <span className="uom-label">{cartItem.item.uom_name || ''}</span>
                     </div>
+
                     <div className="cart-item-total">
                       {formatCurrency(cartItem.quantity * itemPrice)}
                     </div>
-                    <button
-                      className="btn-remove"
-                      onClick={() => removeItem(cartItem.item.id)}
-                      title="Remove Item"
-                    >
-                      ×
-                    </button>
+
+                    <div className="cart-item-action">
+                      <button
+                        className="btn-remove"
+                        onClick={() => removeItem(cartItem.item.id)}
+                        title="Remove Item"
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
                 );
               })}
