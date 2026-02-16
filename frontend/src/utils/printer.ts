@@ -396,19 +396,36 @@ export async function printReceipt(options: PrintOptions) {
               headerContent += `<div class="company-logo-container"><img src="${company.logo}" alt="Logo" class="company-logo" /></div>`;
             }
             if (showName) {
-              headerContent += `<div class="company-name">${company.name || 'My Store'}</div>`;
+              const companyName = language === 'ta' && company.nameTamil 
+                ? company.nameTamil 
+                : (company.name || 'My Store');
+              headerContent += `<div class="company-name">${companyName}</div>`;
             }
             return headerContent;
           })()}
           <div class="company-details">
-            ${company.address ? `<p>${company.address}</p>` : ''}
-            ${company.city || company.state || company.pincode
-              ? `<p>${[company.city, company.state, company.pincode].filter(Boolean).join(', ')}</p>`
-              : ''}
-            ${company.phone ? `<p>Phone: ${company.phone}</p>` : ''}
-            ${company.email ? `<p>Email: ${company.email}</p>` : ''}
-            ${company.website ? `<p>${company.website}</p>` : ''}
-            ${company.gstin ? `<p>GSTIN: ${company.gstin}</p>` : ''}
+            ${(() => {
+              const address = language === 'ta' && company.addressTamil 
+                ? company.addressTamil 
+                : company.address;
+              const city = language === 'ta' && company.cityTamil 
+                ? company.cityTamil 
+                : company.city;
+              const state = language === 'ta' && company.stateTamil 
+                ? company.stateTamil 
+                : company.state;
+              
+              return `
+                ${address ? `<p>${address}</p>` : ''}
+                ${city || state || company.pincode
+                  ? `<p>${[city, state, company.pincode].filter(Boolean).join(', ')}</p>`
+                  : ''}
+                ${company.phone ? `<p>Phone: ${company.phone}</p>` : ''}
+                ${company.email ? `<p>Email: ${company.email}</p>` : ''}
+                ${company.website ? `<p>${company.website}</p>` : ''}
+                ${company.gstin ? `<p>GSTIN: ${company.gstin}</p>` : ''}
+              `;
+            })()}
           </div>
         </div>
 

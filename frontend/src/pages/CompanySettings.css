@@ -260,6 +260,50 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* Language Tabs */
+.language-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 2px solid #e0e6ed;
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6c757d;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  margin-bottom: -2px;
+}
+
+.tab-button:hover {
+  color: #3498db;
+  background: rgba(52, 152, 219, 0.05);
+}
+
+.tab-button.active {
+  color: #3498db;
+  border-bottom-color: #3498db;
+  background: rgba(52, 152, 219, 0.05);
+}
+
+.name-input-group {
+  transition: all 0.2s ease;
+}
+
+.name-input-group.visible {
+  display: block;
+}
+
+.name-input-group.hidden {
+  display: none;
+}
+
 @media (max-width: 1024px) {
   .company-form-cards {
     grid-template-columns: 1fr;

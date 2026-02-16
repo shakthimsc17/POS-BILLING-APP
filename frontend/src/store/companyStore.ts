@@ -15,15 +15,22 @@ const defaultCompany: Company = {
   id: null,
   customer_id: '',
   name: 'My Store',
+  nameTamil: '',
   address: '',
+  addressTamil: '',
   city: '',
+  cityTamil: '',
   state: '',
+  stateTamil: '',
   pincode: '',
   phone: '',
   email: '',
   gstin: '',
   website: '',
   logo: '',
+  business_type: null,
+  default_language: 'en',
+  receipt_language: 'en',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
@@ -43,7 +50,13 @@ export const useCompanyStore = create<CompanyStore>((set, get) => ({
         id: companyData.id,
         customer_id: companyData.customer_id,
         name: companyData.name,
+        nameTamil: companyData.nameTamil,
         address: companyData.address,
+        addressTamil: companyData.addressTamil,
+        city: companyData.city,
+        cityTamil: companyData.cityTamil,
+        state: companyData.state,
+        stateTamil: companyData.stateTamil,
         phone: companyData.phone,
         email: companyData.email,
         hasLogo: !!companyData.logo,
@@ -83,7 +96,6 @@ export const useCompanyStore = create<CompanyStore>((set, get) => ({
         company: { ...updated }, 
         loading: false 
       });
-      return updated;
     } catch (error) {
       console.error('Error saving company:', error);
       set({ 

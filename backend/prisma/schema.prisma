@@ -175,9 +175,13 @@ model Company {
   id              String   @id @default(uuid()) @db.Uuid
   customerId      String   @unique @map("customer_id") @db.Uuid
   name            String   @db.VarChar(255)
+  nameTamil       String?  @map("name_tamil") @db.VarChar(255)
   address         String?
+  addressTamil    String?  @map("address_tamil") @db.VarChar(255)
   city            String?  @db.VarChar(100)
+  cityTamil       String?  @map("city_tamil") @db.VarChar(100)
   state           String?  @db.VarChar(100)
+  stateTamil      String?  @map("state_tamil") @db.VarChar(100)
   pincode         String?  @db.VarChar(20)
   phone           String?  @db.VarChar(20)
   email           String?  @db.VarChar(255)

@@ -122,9 +122,13 @@ export interface Company {
   id?: string | null;
   customer_id: string;
   name: string;
+  nameTamil?: string;
   address?: string;
+  addressTamil?: string;
   city?: string;
+  cityTamil?: string;
   state?: string;
+  stateTamil?: string;
   pincode?: string;
   phone?: string;
   email?: string;

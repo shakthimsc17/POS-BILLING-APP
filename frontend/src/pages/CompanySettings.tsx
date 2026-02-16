@@ -6,9 +6,13 @@ export default function CompanySettings() {
   const { company, loading, error, loadCompany, saveCompany } = useCompanyStore();
   const [formData, setFormData] = useState({
     name: 'My Store',
+    nameTamil: '',
     address: '',
+    addressTamil: '',
     city: '',
+    cityTamil: '',
     state: '',
+    stateTamil: '',
     pincode: '',
     phone: '',
     email: '',
@@ -40,9 +44,13 @@ export default function CompanySettings() {
       });
       setFormData({
         name: company.name || 'My Store',
+        nameTamil: (company as any).nameTamil || '',
         address: company.address || '',
+        addressTamil: (company as any).addressTamil || '',
         city: company.city || '',
+        cityTamil: (company as any).cityTamil || '',
         state: company.state || '',
+        stateTamil: (company as any).stateTamil || '',
         pincode: company.pincode || '',
         phone: company.phone || '',
         email: company.email || '',
@@ -65,9 +73,13 @@ export default function CompanySettings() {
       // Prepare data to save - exclude id, customer_id, created_at, updated_at
       const dataToSave = {
         name: formData.name || 'My Store',
+        nameTamil: formData.nameTamil || '',
         address: formData.address || '',
+        addressTamil: formData.addressTamil || '',
         city: formData.city || '',
+        cityTamil: formData.cityTamil || '',
         state: formData.state || '',
+        stateTamil: formData.stateTamil || '',
         pincode: formData.pincode || '',
         phone: formData.phone || '',
         email: formData.email || '',
@@ -94,9 +106,13 @@ export default function CompanySettings() {
   const handleReset = () => {
       setFormData({
         name: company.name || 'My Store',
+        nameTamil: (company as any).nameTamil || '',
         address: company.address || '',
+        addressTamil: (company as any).addressTamil || '',
         city: company.city || '',
+        cityTamil: (company as any).cityTamil || '',
         state: company.state || '',
+        stateTamil: (company as any).stateTamil || '',
         pincode: company.pincode || '',
         phone: company.phone || '',
         email: company.email || '',
@@ -365,6 +381,64 @@ export default function CompanySettings() {
             </div>
           </div>
         </div>
+        </div>
+
+        {/* Card 4: Tamil Settings */}
+        <div className="card form-card">
+          <h2>தமிழ் அமைப்புகள் (Tamil Settings)</h2>
+          <div className="form-fields">
+            <div className="form-group">
+              <label>
+                நிறுவனத்தின் பெயர் (Company Name in Tamil)
+                <input
+                  type="text"
+                  className="input"
+                  value={formData.nameTamil}
+                  onChange={(e) => handleChange('nameTamil', e.target.value)}
+                  placeholder="நிறுவனத்தின் பெயரை தமிழில் உள்ளிடவும்"
+                />
+              </label>
+            </div>
+
+            <div className="form-group">
+              <label>
+                முகவரி (Address in Tamil)
+                <input
+                  type="text"
+                  className="input"
+                  value={formData.addressTamil}
+                  onChange={(e) => handleChange('addressTamil', e.target.value)}
+                  placeholder="முகவரியை தமிழில் உள்ளிடவும்"
+                />
+              </label>
+            </div>
+
+            <div className="form-group">
+              <label>
+                நகரம் (City in Tamil)
+                <input
+                  type="text"
+                  className="input"
+                  value={formData.cityTamil}
+                  onChange={(e) => handleChange('cityTamil', e.target.value)}
+                  placeholder="நகரத்தின் பெயரை தமிழில் உள்ளிடவும்"
+                />
+              </label>
+            </div>
+
+            <div className="form-group">
+              <label>
+                மாநிலம் (State in Tamil)
+                <input
+                  type="text"
+                  className="input"
+                  value={formData.stateTamil}
+                  onChange={(e) => handleChange('stateTamil', e.target.value)}
+                  placeholder="மாநிலத்தின் பெயரை தமிழில் உள்ளிடவும்"
+                />
+              </label>
+            </div>
+          </div>
         </div>
 
         {/* Form Actions */}

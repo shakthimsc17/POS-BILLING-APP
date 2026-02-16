@@ -5,6 +5,7 @@ import { useCompanyStore } from '../store/companyStore';
 import { Table, Item, CartItem } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { toast } from '../utils/toast';
+import { useLanguage } from '../contexts/LanguageContext';
 import SearchBarcodeInput from './SearchBarcodeInput';
 import QuickItemSearch from './QuickItemSearch';
 import ItemCard from './ItemCard';
@@ -23,6 +24,7 @@ export default function TableOrderModal({
   onClose,
   onOrderCreated,
 }: TableOrderModalProps) {
+  const { language } = useLanguage();
   const { createTableOrder, getActiveTableOrder, updateTableOrder, completeTableOrder } = useTableStore();
   const { items, loadItems } = useInventoryStore();
   const { company, loadCompany } = useCompanyStore();
@@ -267,6 +269,7 @@ export default function TableOrderModal({
           taxAmount: getTax(),
           discountAmount: getDiscountAmount(),
           autoPrint,
+          language,
         });
       } catch (printError) {
         console.error('Print error:', printError);
