@@ -29,8 +29,6 @@ const defaultCompany: Company = {
   website: '',
   logo: '',
   business_type: null,
-  default_language: 'en',
-  receipt_language: 'en',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };

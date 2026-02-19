@@ -28,39 +28,38 @@ export async function printReceipt(options: PrintOptions) {
     language = 'en' // Default to English
   } = options;
   
-  console.log('Print receipt called with autoPrint:', autoPrint);
-  
   // Get translation function based on language
   const getTranslation = (key: string, fallback?: string): string => {
     const translations = language === 'ta' ? {
       // Receipt headers
-       'receipt.receipt': 'Receipt',
-      'receipt.date': 'Date',
-      'receipt.time': 'Time',
-      'receipt.customer': 'Customer',
-      'receipt.bill': 'Bill',
+      'receipt.receipt': 'ரசீது',
+      'receipt.date': 'தேதி',
+      'receipt.time': 'நேரம்',
+      'receipt.customer': 'வாடிக்கையாளர்',
+      'receipt.bill': 'பில்',
       
       // Items table
-       'items.sno': '#',
-      'items.item': 'Item',
-      'items.rate': 'Rate',
-      'items.qty': 'Qty',
-      'items.amount': 'Amt',
+      'items.sno': '#',
+      'items.item': 'பொருள்',
+      'items.rate': 'விலை',
+      'items.qty': 'எண்.',
+      'items.amount': 'தொகை',
       'items.mrp': 'MRP',
       
       // Totals
-      'totals.subtotal': 'Subtotal',
-      'totals.discount': 'Discount',
-      'totals.grandTotal': 'GRAND TOTAL',
+      'totals.subtotal': 'உப மொத்தம்',
+      'totals.discount': 'தள்ளுபடி',
+      'totals.tax': 'வரி',
+      'totals.grandTotal': 'மொத்த தொகை',
       
       // Footer
       'footer.thankYou': 'உங்கள் வருகைக்கு நன்றி!',
-      'footer.visitAgain': 'மீண்டும் வருக!!',
+      'footer.visitAgain': 'மீண்டும் வருக!',
       
       // Payment
-     'payment.cashReceived': 'Cash Received',
-      'payment.change': 'Change',
-      'payment.method': 'Payment Method',
+      'payment.cashReceived': 'பெற்ற பணம்',
+      'payment.change': 'மீதம்',
+      'payment.method': 'பணம் செலுத்தும் முறை',
     } : {
       // English translations
       'receipt.receipt': 'Receipt',
@@ -78,6 +77,7 @@ export async function printReceipt(options: PrintOptions) {
       
       'totals.subtotal': 'Subtotal',
       'totals.discount': 'Discount',
+      'totals.tax': 'Tax',
       'totals.grandTotal': 'GRAND TOTAL',
       
       'footer.thankYou': 'Thank You for Your Business!',
@@ -387,45 +387,53 @@ export async function printReceipt(options: PrintOptions) {
             const showName = receiptHeaderOption === 'company_name' || receiptHeaderOption === 'both';
             
             // If logo only is selected but no logo exists, fallback to company name
-            if (receiptHeaderOption === 'logo' && !company.logo) {
-              return `<div class="company-name">${company.name || 'My Store'}</div>`;
-            }
-            
-            let headerContent = '';
-            if (showLogo) {
-              headerContent += `<div class="company-logo-container"><img src="${company.logo}" alt="Logo" class="company-logo" /></div>`;
-            }
-            if (showName) {
-              const companyName = language === 'ta' && company.nameTamil 
-                ? company.nameTamil 
-                : (company.name || 'My Store');
-              headerContent += `<div class="company-name">${companyName}</div>`;
-            }
-            return headerContent;
-          })()}
-          <div class="company-details">
-            ${(() => {
-              const address = language === 'ta' && company.addressTamil 
-                ? company.addressTamil 
-                : company.address;
-              const city = language === 'ta' && company.cityTamil 
-                ? company.cityTamil 
-                : company.city;
-              const state = language === 'ta' && company.stateTamil 
-                ? company.stateTamil 
-                : company.state;
-              
-              return `
-                ${address ? `<p>${address}</p>` : ''}
-                ${city || state || company.pincode
-                  ? `<p>${[city, state, company.pincode].filter(Boolean).join(', ')}</p>`
-                  : ''}
-                ${company.phone ? `<p>Phone: ${company.phone}</p>` : ''}
-                ${company.email ? `<p>Email: ${company.email}</p>` : ''}
-                ${company.website ? `<p>${company.website}</p>` : ''}
-                ${company.gstin ? `<p>GSTIN: ${company.gstin}</p>` : ''}
-              `;
-            })()}
+             if (receiptHeaderOption === 'logo' && !company.logo) {
+               const fallbackName = language === 'ta' 
+                 ? (company.nameTamil || company.name || 'My Store')
+                 : (company.name || 'My Store');
+               return `<div class="company-name">${fallbackName}</div>`;
+             }
+             
+             let headerContent = '';
+             if (showLogo) {
+               headerContent += `<div class="company-logo-container"><img src="${company.logo}" alt="Logo" class="company-logo" /></div>`;
+             }
+             if (showName) {
+               const companyName = language === 'ta' 
+                 ? (company.nameTamil || company.name || 'My Store')
+                 : (company.name || 'My Store');
+               headerContent += `<div class="company-name">${companyName}</div>`;
+             }
+             return headerContent;
+           })()}
+           <div class="company-details">
+             ${(() => {
+               const address = language === 'ta' 
+                 ? (company.addressTamil || company.address)
+                 : company.address;
+               const city = language === 'ta' 
+                 ? (company.cityTamil || company.city)
+                 : company.city;
+               const state = language === 'ta' 
+                 ? (company.stateTamil || company.state)
+                 : company.state;
+               
+               // Tamil labels
+               const phoneLabel = language === 'ta' ? 'தொலைபேசி:' : 'Phone:';
+               const emailLabel = language === 'ta' ? 'மின்னஞ்சல்:' : 'Email:';
+               const gstinLabel = language === 'ta' ? 'ஜிஎஸ்டிஐஎன்:' : 'GSTIN:';
+               
+               return `
+                 ${address ? `<p>${address}</p>` : ''}
+                 ${city || state || company.pincode
+                   ? `<p>${[city, state, company.pincode].filter(Boolean).join(', ')}</p>`
+                   : ''}
+                 ${company.phone ? `<p>${phoneLabel} ${company.phone}</p>` : ''}
+                 ${company.email ? `<p>${emailLabel} ${company.email}</p>` : ''}
+                 ${company.website ? `<p>${company.website}</p>` : ''}
+                 ${company.gstin ? `<p>${gstinLabel} ${company.gstin}</p>` : ''}
+               `;
+             })()}
           </div>
         </div>
 
@@ -454,10 +462,11 @@ export async function printReceipt(options: PrintOptions) {
                 (cartItem, index) => {
                   const mrp = cartItem.item.mrp ? (typeof cartItem.item.mrp === 'string' ? parseFloat(cartItem.item.mrp) : cartItem.item.mrp) : null;
                   const price = typeof cartItem.item.price === 'string' ? parseFloat(cartItem.item.price) : cartItem.item.price;
-                  // Use display_name_tamil when language is Tamil, otherwise use regular name
-                  const itemDisplayName = language === 'ta' 
-                    ? (cartItem.item.display_name_tamil || cartItem.item.name)
-                    : cartItem.item.name;
+                   // Tamil: display_name_tamil → display_name → name
+                   // English: display_name → name
+                   const itemDisplayName = language === 'ta' 
+                     ? (cartItem.item.display_name_tamil || cartItem.item.display_name || cartItem.item.name)
+                     : (cartItem.item.display_name || cartItem.item.name);
                   // Hide MRP for cafe business type
                   const showMrp = businessType !== 'cafe' && mrp;
                   return `
@@ -542,7 +551,7 @@ export async function printReceipt(options: PrintOptions) {
               case 'cafe':
                 return `
                   <p><strong>${getTranslation('footer.thankYou')}</strong></p>
-                  <p>We hope you enjoyed your experience</p>
+                  <p>${language === 'ta' ? 'உங்கள் அனுபவம் மகிழ்ச்சியாக இருந்திருக்கும் என நம்புகிறோம்' : 'We hope you enjoyed your experience'}</p>
                 `;
               case 'clothing':
                 return `
@@ -552,7 +561,7 @@ export async function printReceipt(options: PrintOptions) {
               case 'electrical':
                 return `
                   <p><strong>${getTranslation('footer.thankYou')}</strong></p>
-                  <p>Quality Products, Trusted Service</p>
+                  <p>${language === 'ta' ? 'தரமான பொருட்கள், நம்பகமான சேவை' : 'Quality Products, Trusted Service'}</p>
                 `;
               default:
                 return `

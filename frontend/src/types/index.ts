@@ -161,6 +161,7 @@ export interface Settings {
   item_log_actions: 'all' | 'update_delete';
   receipt_header_option: 'logo' | 'company_name' | 'both';
   receipt_auto_print: boolean;
+  receipt_language: 'en' | 'ta';
   created_at: string;
   updated_at: string;
 }

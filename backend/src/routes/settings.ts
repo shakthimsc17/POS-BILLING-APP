@@ -24,6 +24,7 @@ router.get('/', async (req: AuthRequest, res) => {
           itemLogActions: 'update_delete',
           receiptHeaderOption: 'both',
           receiptAutoPrint: true,
+          receiptLanguage: 'en',
         },
       });
     }
@@ -35,6 +36,7 @@ router.get('/', async (req: AuthRequest, res) => {
       item_log_actions: settings.itemLogActions,
       receipt_header_option: settings.receiptHeaderOption,
       receipt_auto_print: settings.receiptAutoPrint,
+      receipt_language: settings.receiptLanguage,
       created_at: settings.createdAt.toISOString(),
       updated_at: settings.updatedAt.toISOString(),
     });
@@ -52,6 +54,7 @@ router.post(
     body('item_log_actions').optional().isIn(['all', 'update_delete']),
     body('receipt_header_option').optional().isIn(['logo', 'company_name', 'both']),
     body('receipt_auto_print').optional().isBoolean(),
+    body('receipt_language').optional().isIn(['en', 'ta']),
   ],
   async (req: AuthRequest, res: Response) => {
     try {
@@ -65,6 +68,7 @@ router.post(
         item_log_actions,
         receipt_header_option,
         receipt_auto_print,
+        receipt_language,
       } = req.body;
 
       // Check if settings exist
@@ -82,6 +86,7 @@ router.post(
             itemLogActions: item_log_actions || existing.itemLogActions,
             receiptHeaderOption: receipt_header_option || existing.receiptHeaderOption,
             receiptAutoPrint: receipt_auto_print !== undefined ? receipt_auto_print : existing.receiptAutoPrint,
+            receiptLanguage: receipt_language || existing.receiptLanguage,
           },
         });
       } else {
@@ -93,6 +98,7 @@ router.post(
             itemLogActions: item_log_actions || 'update_delete',
             receiptHeaderOption: receipt_header_option || 'both',
             receiptAutoPrint: receipt_auto_print !== undefined ? receipt_auto_print : true,
+            receiptLanguage: receipt_language || 'en',
           },
         });
       }
@@ -104,6 +110,7 @@ router.post(
         item_log_actions: settings.itemLogActions,
         receipt_header_option: settings.receiptHeaderOption,
         receipt_auto_print: settings.receiptAutoPrint,
+        receipt_language: settings.receiptLanguage,
         created_at: settings.createdAt.toISOString(),
         updated_at: settings.updatedAt.toISOString(),
       });

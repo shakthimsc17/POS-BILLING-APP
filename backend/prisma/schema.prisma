@@ -191,8 +191,6 @@ model Company {
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
   businessType    String?  @map("business_type") @db.VarChar(50)
-  defaultLanguage String?  @default("en") @map("default_language") @db.VarChar(10)
-  receiptLanguage String?  @default("en") @map("receipt_language") @db.VarChar(10)
   customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([customerId])
@@ -206,7 +204,7 @@ model Settings {
   itemLogActions      String    @default("update_delete") @map("item_log_actions") @db.VarChar(20)
   receiptHeaderOption String    @default("both") @map("receipt_header_option") @db.VarChar(20)
   receiptAutoPrint    Boolean   @default(true) @map("receipt_auto_print")
-  languageSettings    Json?     @default("{}") @map("language_settings")
+  receiptLanguage     String    @default("en") @map("receipt_language") @db.VarChar(10)
   supabaseUrl         String?   @map("supabase_url")
   lastSyncAt          DateTime? @map("last_sync_at") @db.Timestamp(6)
   lastSyncStatus      String?   @map("last_sync_status") @db.VarChar(50)

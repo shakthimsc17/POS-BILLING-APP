@@ -33,7 +33,6 @@ router.get('/', async (req: AuthRequest, res) => {
         website: '',
         logo: '',
         business_type: null,
-        receipt_language: 'en',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
@@ -57,7 +56,6 @@ router.get('/', async (req: AuthRequest, res) => {
       website: company.website || '',
       logo: company.logo || '',
       business_type: company.businessType || null,
-      receipt_language: company.receiptLanguage || 'en',
       created_at: company.createdAt.toISOString(),
       updated_at: company.updatedAt.toISOString(),
     });
@@ -86,7 +84,6 @@ router.post(
     body('website').optional().isString(),
     body('logo').optional().isString(),
     body('business_type').optional().isIn(['clothing', 'cafe', 'electrical']),
-    body('receipt_language').optional().isIn(['en', 'ta']),
   ],
   async (req: AuthRequest, res: Response) => {
     try {
@@ -111,7 +108,6 @@ router.post(
         website,
         logo,
         business_type,
-        receipt_language,
       } = req.body;
 
       const existing = await prisma.company.findFirst();
@@ -146,7 +142,6 @@ router.post(
             website,
             logo,
             businessType: business_type || null,
-            receiptLanguage: receipt_language || null,
           },
         });
 
@@ -185,7 +180,6 @@ router.post(
             website,
             logo,
             businessType: business_type || null,
-            receiptLanguage: receipt_language || null,
           },
         });
 
@@ -221,7 +215,6 @@ router.post(
         website: company.website,
         logo: company.logo,
         business_type: company.businessType || null,
-        receipt_language: company.receiptLanguage || 'en',
         created_at: company.createdAt.toISOString(),
         updated_at: company.updatedAt.toISOString(),
       });

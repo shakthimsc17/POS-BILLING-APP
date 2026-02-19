@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { storageService } from '../services/storage';
-import { Company } from '../types';
+import { Settings } from '../types';
 
 type Language = 'en' | 'ta';
 
@@ -22,7 +22,7 @@ const englishTranslations: Record<string, string> = {
   'receipt.time': 'Time',
   'receipt.customer': 'Customer',
   'receipt.bill': 'Bill',
-  
+
   // Items table
   'items.sno': '#',
   'items.item': 'Item',
@@ -30,7 +30,7 @@ const englishTranslations: Record<string, string> = {
   'items.qty': 'Qty',
   'items.amount': 'Amt',
   'items.mrp': 'MRP',
-  
+
   // Totals
   'totals.subtotal': 'Subtotal',
   'totals.discount': 'Discount',
@@ -40,24 +40,24 @@ const englishTranslations: Record<string, string> = {
   'totals.sgst': 'SGST',
   'totals.igst': 'IGST',
   'totals.cess': 'CESS',
-  
+
   // Payment
   'payment.cashReceived': 'Cash Received',
   'payment.change': 'Change',
   'payment.method': 'Payment Method',
   'payment.paidBy': 'Paid By',
-  
+
   // Footer
   'footer.thankYou': 'Thank You for Your Business!',
   'footer.visitAgain': 'Please visit again',
   'footer.poweredBy': 'Powered by POS Billing System',
-  
+
   // GST
   'gst.gstin': 'GSTIN',
   'gst.hsn': 'HSN',
   'gst.taxable': 'Taxable Amount',
   'gst.placeOfSupply': 'Place of Supply',
-  
+
   // Common
   'common.yes': 'Yes',
   'common.no': 'No',
@@ -78,7 +78,7 @@ const tamilTranslations: Record<string, string> = {
   'receipt.time': 'நேரம்',
   'receipt.customer': 'வாடிக்கையாளர்',
   'receipt.bill': 'பில்',
-  
+
   // Items table
   'items.sno': 'எண்',
   'items.item': 'பொருள்',
@@ -86,7 +86,7 @@ const tamilTranslations: Record<string, string> = {
   'items.qty': 'எண்ணிக்கை',
   'items.amount': 'தொகை',
   'items.mrp': 'அதிகபட்ச விலை',
-  
+
   // Totals
   'totals.subtotal': 'கூட்டுத்தொகை',
   'totals.discount': 'தள்ளுபடி',
@@ -96,24 +96,24 @@ const tamilTranslations: Record<string, string> = {
   'totals.sgst': 'SGST',
   'totals.igst': 'IGST',
   'totals.cess': 'செஸ்',
-  
+
   // Payment
   'payment.cashReceived': 'பெறப்பட்ட பணம்',
   'payment.change': 'மாற்றம்',
   'payment.method': 'கட்டண முறை',
   'payment.paidBy': 'செலுத்தியவர்',
-  
+
   // Footer
   'footer.thankYou': 'உங்கள் வணிகத்திற்கு நன்றி!',
   'footer.visitAgain': 'மீண்டும் வருகைத்தொடர்க',
   'footer.poweredBy': 'POS பில்லிங் அமைப்பால் இயக்கப்படுகிறது',
-  
+
   // GST
   'gst.gstin': 'GSTIN',
   'gst.hsn': 'HSN',
   'gst.taxable': 'வரி விதிக்கப்படும் தொகை',
   'gst.placeOfSupply': 'வழங்குமிடம்',
-  
+
   // Common
   'common.yes': 'ஆம்',
   'common.no': 'இல்லை',
@@ -144,18 +144,18 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
           setLanguageState(savedLanguage);
         }
 
-        // Then load from company settings
+        // Then load from settings
         try {
-          const company: Company = await storageService.getCompany();
-          if (company.receipt_language) {
-            const dbLanguage = company.receipt_language;
+          const settings: Settings = await storageService.getSettings();
+          if (settings.receipt_language) {
+            const dbLanguage = settings.receipt_language;
             if (dbLanguage === 'en' || dbLanguage === 'ta') {
               setLanguageState(dbLanguage);
               localStorage.setItem('pos-language', dbLanguage);
             }
           }
-        } catch (companyError) {
-          console.warn('Failed to load language from company settings:', companyError);
+        } catch (settingsError) {
+          console.warn('Failed to load language from settings:', settingsError);
         }
       } catch (error) {
         console.warn('Failed to load language preference:', error);
@@ -169,7 +169,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
 
   const setLanguage = async (lang: Language) => {
     setLanguageState(lang);
-    
+
     // Save to localStorage for immediate persistence
     try {
       localStorage.setItem('pos-language', lang);
@@ -177,12 +177,14 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       console.warn('Failed to save language preference to localStorage:', error);
     }
 
-    // Save to company settings
+    // Save to settings table
     try {
-      const company: Company = await storageService.getCompany();
-      await storageService.saveCompany({ receipt_language: lang });
+      await storageService.saveSettings({ receipt_language: lang } as any);
+      // Clear receipt settings cache so the new language is picked up
+      const { receiptSettings } = await import('../utils/receiptSettings');
+      receiptSettings.clearCache();
     } catch (error) {
-      console.warn('Failed to save language preference to company settings:', error);
+      console.warn('Failed to save language preference to settings:', error);
     }
   };
 

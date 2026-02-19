@@ -1,21 +1,25 @@
--- AlterTable
-ALTER TABLE "categories" ADD COLUMN     "icon" VARCHAR(255);
+-- AlterTable (idempotent: skip if column exists)
+DO $$ BEGIN
+  ALTER TABLE "categories" ADD COLUMN "icon" VARCHAR(255);
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
--- AlterTable
-ALTER TABLE "companies" ADD COLUMN     "business_type" VARCHAR(50);
+DO $$ BEGIN
+  ALTER TABLE "customers" ADD COLUMN "customer_type" VARCHAR(50) DEFAULT 'sales person';
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
--- AlterTable
-ALTER TABLE "customers" ADD COLUMN     "customer_type" VARCHAR(50) DEFAULT 'sales person';
+DO $$ BEGIN
+  ALTER TABLE "items" ADD COLUMN "display_name" VARCHAR(255);
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE "items" ADD COLUMN "purchase_qty" INTEGER NOT NULL DEFAULT 0;
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
--- AlterTable
-ALTER TABLE "items" ADD COLUMN     "display_name" VARCHAR(255),
-ADD COLUMN     "purchase_qty" INTEGER NOT NULL DEFAULT 0;
-
--- AlterTable
-ALTER TABLE "transactions" ADD COLUMN     "sales_customer_id" UUID;
+DO $$ BEGIN
+  ALTER TABLE "transactions" ADD COLUMN "sales_customer_id" UUID;
+EXCEPTION WHEN duplicate_column THEN NULL; END $$;
 
 -- CreateTable
-CREATE TABLE "settings" (
+CREATE TABLE IF NOT EXISTS "settings" (
     "id" UUID NOT NULL,
     "customer_id" UUID NOT NULL,
     "activity_log_enabled" BOOLEAN NOT NULL DEFAULT true,
@@ -28,7 +32,7 @@ CREATE TABLE "settings" (
 );
 
 -- CreateTable
-CREATE TABLE "item_code_prefixes" (
+CREATE TABLE IF NOT EXISTS "item_code_prefixes" (
     "id" UUID NOT NULL,
     "prefix" VARCHAR(255) NOT NULL,
     "description" VARCHAR(500),
@@ -39,7 +43,7 @@ CREATE TABLE "item_code_prefixes" (
 );
 
 -- CreateTable
-CREATE TABLE "activity_logs" (
+CREATE TABLE IF NOT EXISTS "activity_logs" (
     "id" UUID NOT NULL,
     "entity_type" VARCHAR(50) NOT NULL,
     "entity_id" UUID NOT NULL,
@@ -52,7 +56,7 @@ CREATE TABLE "activity_logs" (
 );
 
 -- CreateTable
-CREATE TABLE "sales_customers" (
+CREATE TABLE IF NOT EXISTS "sales_customers" (
     "id" UUID NOT NULL,
     "name" VARCHAR(255) NOT NULL,
     "mobile" VARCHAR(20) NOT NULL,
@@ -65,7 +69,7 @@ CREATE TABLE "sales_customers" (
 );
 
 -- CreateTable
-CREATE TABLE "quick_sale_items" (
+CREATE TABLE IF NOT EXISTS "quick_sale_items" (
     "id" UUID NOT NULL,
     "name" VARCHAR(255) NOT NULL,
     "quantity" INTEGER NOT NULL,
@@ -81,7 +85,7 @@ CREATE TABLE "quick_sale_items" (
 );
 
 -- CreateTable
-CREATE TABLE "cash_flow_entries" (
+CREATE TABLE IF NOT EXISTS "cash_flow_entries" (
     "id" UUID NOT NULL,
     "customer_id" UUID NOT NULL,
     "type" VARCHAR(20) NOT NULL,
@@ -96,7 +100,7 @@ CREATE TABLE "cash_flow_entries" (
 );
 
 -- CreateTable
-CREATE TABLE "permissions" (
+CREATE TABLE IF NOT EXISTS "permissions" (
     "id" UUID NOT NULL,
     "customer_type" VARCHAR(50) NOT NULL,
     "page" VARCHAR(100) NOT NULL,
@@ -112,7 +116,7 @@ CREATE TABLE "permissions" (
 );
 
 -- CreateTable
-CREATE TABLE "carts" (
+CREATE TABLE IF NOT EXISTS "carts" (
     "id" UUID NOT NULL,
     "customer_id" UUID NOT NULL,
     "items_json" TEXT NOT NULL,
@@ -127,7 +131,7 @@ CREATE TABLE "carts" (
 );
 
 -- CreateTable
-CREATE TABLE "tables" (
+CREATE TABLE IF NOT EXISTS "tables" (
     "id" UUID NOT NULL,
     "customer_id" UUID NOT NULL,
     "table_number" VARCHAR(50) NOT NULL,
@@ -140,7 +144,7 @@ CREATE TABLE "tables" (
 );
 
 -- CreateTable
-CREATE TABLE "table_orders" (
+CREATE TABLE IF NOT EXISTS "table_orders" (
     "id" UUID NOT NULL,
     "customer_id" UUID NOT NULL,
     "table_id" UUID NOT NULL,
@@ -158,128 +162,70 @@ CREATE TABLE "table_orders" (
     CONSTRAINT "table_orders_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
-CREATE UNIQUE INDEX "settings_customer_id_key" ON "settings"("customer_id");
+-- CreateIndex (idempotent)
+CREATE UNIQUE INDEX IF NOT EXISTS "settings_customer_id_key" ON "settings"("customer_id");
+CREATE INDEX IF NOT EXISTS "settings_customer_id_idx" ON "settings"("customer_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "item_code_prefixes_prefix_key" ON "item_code_prefixes"("prefix");
+CREATE INDEX IF NOT EXISTS "item_code_prefixes_prefix_idx" ON "item_code_prefixes"("prefix");
+CREATE INDEX IF NOT EXISTS "activity_logs_entity_type_idx" ON "activity_logs"("entity_type");
+CREATE INDEX IF NOT EXISTS "activity_logs_entity_id_idx" ON "activity_logs"("entity_id");
+CREATE INDEX IF NOT EXISTS "activity_logs_changed_by_idx" ON "activity_logs"("changed_by");
+CREATE INDEX IF NOT EXISTS "activity_logs_created_at_idx" ON "activity_logs"("created_at");
+CREATE INDEX IF NOT EXISTS "sales_customers_mobile_idx" ON "sales_customers"("mobile");
+CREATE INDEX IF NOT EXISTS "quick_sale_items_added_to_inventory_idx" ON "quick_sale_items"("added_to_inventory");
+CREATE INDEX IF NOT EXISTS "quick_sale_items_inventory_item_id_idx" ON "quick_sale_items"("inventory_item_id");
+CREATE INDEX IF NOT EXISTS "quick_sale_items_sold_at_idx" ON "quick_sale_items"("sold_at");
+CREATE INDEX IF NOT EXISTS "cash_flow_entries_customer_id_idx" ON "cash_flow_entries"("customer_id");
+CREATE INDEX IF NOT EXISTS "cash_flow_entries_entry_date_idx" ON "cash_flow_entries"("entry_date");
+CREATE INDEX IF NOT EXISTS "cash_flow_entries_type_idx" ON "cash_flow_entries"("type");
+CREATE INDEX IF NOT EXISTS "cash_flow_entries_category_idx" ON "cash_flow_entries"("category");
+CREATE INDEX IF NOT EXISTS "permissions_customer_type_idx" ON "permissions"("customer_type");
+CREATE INDEX IF NOT EXISTS "permissions_page_idx" ON "permissions"("page");
+CREATE UNIQUE INDEX IF NOT EXISTS "permissions_customer_type_page_key" ON "permissions"("customer_type", "page");
+CREATE INDEX IF NOT EXISTS "carts_customer_id_idx" ON "carts"("customer_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "carts_customer_id_key" ON "carts"("customer_id");
+CREATE INDEX IF NOT EXISTS "tables_customer_id_idx" ON "tables"("customer_id");
+CREATE INDEX IF NOT EXISTS "tables_status_idx" ON "tables"("status");
+CREATE UNIQUE INDEX IF NOT EXISTS "tables_customer_id_table_number_key" ON "tables"("customer_id", "table_number");
+CREATE UNIQUE INDEX IF NOT EXISTS "table_orders_transaction_id_key" ON "table_orders"("transaction_id");
+CREATE INDEX IF NOT EXISTS "table_orders_customer_id_idx" ON "table_orders"("customer_id");
+CREATE INDEX IF NOT EXISTS "table_orders_table_id_idx" ON "table_orders"("table_id");
+CREATE INDEX IF NOT EXISTS "table_orders_status_idx" ON "table_orders"("status");
+CREATE INDEX IF NOT EXISTS "table_orders_created_at_idx" ON "table_orders"("created_at");
+CREATE INDEX IF NOT EXISTS "customers_customer_type_idx" ON "customers"("customer_type");
+CREATE INDEX IF NOT EXISTS "transactions_sales_customer_id_idx" ON "transactions"("sales_customer_id");
 
--- CreateIndex
-CREATE INDEX "settings_customer_id_idx" ON "settings"("customer_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "item_code_prefixes_prefix_key" ON "item_code_prefixes"("prefix");
-
--- CreateIndex
-CREATE INDEX "item_code_prefixes_prefix_idx" ON "item_code_prefixes"("prefix");
-
--- CreateIndex
-CREATE INDEX "activity_logs_entity_type_idx" ON "activity_logs"("entity_type");
-
--- CreateIndex
-CREATE INDEX "activity_logs_entity_id_idx" ON "activity_logs"("entity_id");
-
--- CreateIndex
-CREATE INDEX "activity_logs_changed_by_idx" ON "activity_logs"("changed_by");
-
--- CreateIndex
-CREATE INDEX "activity_logs_created_at_idx" ON "activity_logs"("created_at");
-
--- CreateIndex
-CREATE INDEX "sales_customers_mobile_idx" ON "sales_customers"("mobile");
-
--- CreateIndex
-CREATE INDEX "quick_sale_items_added_to_inventory_idx" ON "quick_sale_items"("added_to_inventory");
-
--- CreateIndex
-CREATE INDEX "quick_sale_items_inventory_item_id_idx" ON "quick_sale_items"("inventory_item_id");
-
--- CreateIndex
-CREATE INDEX "quick_sale_items_sold_at_idx" ON "quick_sale_items"("sold_at");
-
--- CreateIndex
-CREATE INDEX "cash_flow_entries_customer_id_idx" ON "cash_flow_entries"("customer_id");
-
--- CreateIndex
-CREATE INDEX "cash_flow_entries_entry_date_idx" ON "cash_flow_entries"("entry_date");
-
--- CreateIndex
-CREATE INDEX "cash_flow_entries_type_idx" ON "cash_flow_entries"("type");
-
--- CreateIndex
-CREATE INDEX "cash_flow_entries_category_idx" ON "cash_flow_entries"("category");
-
--- CreateIndex
-CREATE INDEX "permissions_customer_type_idx" ON "permissions"("customer_type");
-
--- CreateIndex
-CREATE INDEX "permissions_page_idx" ON "permissions"("page");
-
--- CreateIndex
-CREATE UNIQUE INDEX "permissions_customer_type_page_key" ON "permissions"("customer_type", "page");
-
--- CreateIndex
-CREATE INDEX "carts_customer_id_idx" ON "carts"("customer_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "carts_customer_id_key" ON "carts"("customer_id");
-
--- CreateIndex
-CREATE INDEX "tables_customer_id_idx" ON "tables"("customer_id");
-
--- CreateIndex
-CREATE INDEX "tables_status_idx" ON "tables"("status");
-
--- CreateIndex
-CREATE UNIQUE INDEX "tables_customer_id_table_number_key" ON "tables"("customer_id", "table_number");
-
--- CreateIndex
-CREATE UNIQUE INDEX "table_orders_transaction_id_key" ON "table_orders"("transaction_id");
-
--- CreateIndex
-CREATE INDEX "table_orders_customer_id_idx" ON "table_orders"("customer_id");
-
--- CreateIndex
-CREATE INDEX "table_orders_table_id_idx" ON "table_orders"("table_id");
-
--- CreateIndex
-CREATE INDEX "table_orders_status_idx" ON "table_orders"("status");
-
--- CreateIndex
-CREATE INDEX "table_orders_created_at_idx" ON "table_orders"("created_at");
-
--- CreateIndex
-CREATE INDEX "customers_customer_type_idx" ON "customers"("customer_type");
-
--- CreateIndex
-CREATE INDEX "transactions_sales_customer_id_idx" ON "transactions"("sales_customer_id");
-
--- AddForeignKey
-ALTER TABLE "transactions" ADD CONSTRAINT "transactions_sales_customer_id_fkey" FOREIGN KEY ("sales_customer_id") REFERENCES "sales_customers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "settings" ADD CONSTRAINT "settings_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "activity_logs" ADD CONSTRAINT "activity_logs_changed_by_fkey" FOREIGN KEY ("changed_by") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "quick_sale_items" ADD CONSTRAINT "quick_sale_items_inventory_item_id_fkey" FOREIGN KEY ("inventory_item_id") REFERENCES "items"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "cash_flow_entries" ADD CONSTRAINT "cash_flow_entries_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "carts" ADD CONSTRAINT "carts_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "carts" ADD CONSTRAINT "carts_sales_customer_id_fkey" FOREIGN KEY ("sales_customer_id") REFERENCES "sales_customers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "tables" ADD CONSTRAINT "tables_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "table_orders" ADD CONSTRAINT "table_orders_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "table_orders" ADD CONSTRAINT "table_orders_table_id_fkey" FOREIGN KEY ("table_id") REFERENCES "tables"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "table_orders" ADD CONSTRAINT "table_orders_transaction_id_fkey" FOREIGN KEY ("transaction_id") REFERENCES "transactions"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+-- AddForeignKey (idempotent)
+DO $$ BEGIN
+  ALTER TABLE "transactions" ADD CONSTRAINT "transactions_sales_customer_id_fkey" FOREIGN KEY ("sales_customer_id") REFERENCES "sales_customers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE "settings" ADD CONSTRAINT "settings_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE "activity_logs" ADD CONSTRAINT "activity_logs_changed_by_fkey" FOREIGN KEY ("changed_by") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE "quick_sale_items" ADD CONSTRAINT "quick_sale_items_inventory_item_id_fkey" FOREIGN KEY ("inventory_item_id") REFERENCES "items"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE "cash_flow_entries" ADD CONSTRAINT "cash_flow_entries_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE "carts" ADD CONSTRAINT "carts_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE "carts" ADD CONSTRAINT "carts_sales_customer_id_fkey" FOREIGN KEY ("sales_customer_id") REFERENCES "sales_customers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE "tables" ADD CONSTRAINT "tables_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE "table_orders" ADD CONSTRAINT "table_orders_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE "table_orders" ADD CONSTRAINT "table_orders_table_id_fkey" FOREIGN KEY ("table_id") REFERENCES "tables"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE "table_orders" ADD CONSTRAINT "table_orders_transaction_id_fkey" FOREIGN KEY ("transaction_id") REFERENCES "transactions"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;

@@ -104,23 +104,23 @@ export default function CompanySettings() {
   };
 
   const handleReset = () => {
-      setFormData({
-        name: company.name || 'My Store',
-        nameTamil: (company as any).nameTamil || '',
-        address: company.address || '',
-        addressTamil: (company as any).addressTamil || '',
-        city: company.city || '',
-        cityTamil: (company as any).cityTamil || '',
-        state: company.state || '',
-        stateTamil: (company as any).stateTamil || '',
-        pincode: company.pincode || '',
-        phone: company.phone || '',
-        email: company.email || '',
-        gstin: company.gstin || '',
-        website: company.website || '',
-        logo: company.logo || '',
-        business_type: (company.business_type as 'clothing' | 'cafe' | 'electrical') || '',
-      });
+    setFormData({
+      name: company.name || 'My Store',
+      nameTamil: (company as any).nameTamil || '',
+      address: company.address || '',
+      addressTamil: (company as any).addressTamil || '',
+      city: company.city || '',
+      cityTamil: (company as any).cityTamil || '',
+      state: company.state || '',
+      stateTamil: (company as any).stateTamil || '',
+      pincode: company.pincode || '',
+      phone: company.phone || '',
+      email: company.email || '',
+      gstin: company.gstin || '',
+      website: company.website || '',
+      logo: company.logo || '',
+      business_type: (company.business_type as 'clothing' | 'cafe' | 'electrical') || '',
+    });
     setSaved(false);
   };
 
@@ -184,203 +184,203 @@ export default function CompanySettings() {
         <div className="company-form-cards">
           {/* Card 1: Company Information */}
           <div className="card form-card">
-          <h2>Company Information</h2>
-          <div className="form-fields">
-            <div className="form-group">
-              <label>
-                Company Name *
-                <input
-                  type="text"
-                  className="input"
-                  value={formData.name}
-                  onChange={(e) => handleChange('name', e.target.value)}
-                  placeholder="Company name"
-                  required
-                />
-              </label>
-            </div>
+            <h2>Company Information</h2>
+            <div className="form-fields">
+              <div className="form-group">
+                <label>
+                  Company Name *
+                  <input
+                    type="text"
+                    className="input"
+                    value={formData.name}
+                    onChange={(e) => handleChange('name', e.target.value)}
+                    placeholder="Company name"
+                    required
+                  />
+                </label>
+              </div>
 
-            <div className="form-group">
-              <label>
-                Address
-                <input
-                  type="text"
-                  className="input"
-                  value={formData.address}
-                  onChange={(e) => handleChange('address', e.target.value)}
-                  placeholder="Street address"
-                />
-              </label>
-            </div>
+              <div className="form-group">
+                <label>
+                  Address
+                  <input
+                    type="text"
+                    className="input"
+                    value={formData.address}
+                    onChange={(e) => handleChange('address', e.target.value)}
+                    placeholder="Street address"
+                  />
+                </label>
+              </div>
 
-            <div className="form-group">
-              <label>
-                City
-                <input
-                  type="text"
-                  className="input"
-                  value={formData.city}
-                  onChange={(e) => handleChange('city', e.target.value)}
-                  placeholder="City"
-                />
-              </label>
-            </div>
+              <div className="form-group">
+                <label>
+                  City
+                  <input
+                    type="text"
+                    className="input"
+                    value={formData.city}
+                    onChange={(e) => handleChange('city', e.target.value)}
+                    placeholder="City"
+                  />
+                </label>
+              </div>
 
-            <div className="form-group">
-              <label>
-                State
-                <input
-                  type="text"
-                  className="input"
-                  value={formData.state}
-                  onChange={(e) => handleChange('state', e.target.value)}
-                  placeholder="State"
-                />
-              </label>
-            </div>
+              <div className="form-group">
+                <label>
+                  State
+                  <input
+                    type="text"
+                    className="input"
+                    value={formData.state}
+                    onChange={(e) => handleChange('state', e.target.value)}
+                    placeholder="State"
+                  />
+                </label>
+              </div>
 
-            <div className="form-group">
-              <label>
-                Pincode
-                <input
-                  type="text"
-                  className="input"
-                  value={formData.pincode}
-                  onChange={(e) => handleChange('pincode', e.target.value)}
-                  placeholder="Pincode"
-                />
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Contact Information */}
-        <div className="card form-card">
-          <h2>Contact Information</h2>
-          <div className="form-fields">
-            <div className="form-group">
-              <label>
-                Phone *
-                <input
-                  type="tel"
-                  className="input"
-                  value={formData.phone}
-                  onChange={(e) => handleChange('phone', e.target.value)}
-                  placeholder="Phone number"
-                  required
-                />
-              </label>
-            </div>
-
-            <div className="form-group">
-              <label>
-                Email
-                <input
-                  type="email"
-                  className="input"
-                  value={formData.email}
-                  onChange={(e) => handleChange('email', e.target.value)}
-                  placeholder="Email address"
-                />
-              </label>
-            </div>
-
-            <div className="form-group">
-              <label>
-                Website
-                <input
-                  type="url"
-                  className="input"
-                  value={formData.website}
-                  onChange={(e) => handleChange('website', e.target.value)}
-                  placeholder="https://example.com"
-                />
-              </label>
+              <div className="form-group">
+                <label>
+                  Pincode
+                  <input
+                    type="text"
+                    className="input"
+                    value={formData.pincode}
+                    onChange={(e) => handleChange('pincode', e.target.value)}
+                    placeholder="Pincode"
+                  />
+                </label>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Card 3: Tax Information & Logo */}
-        <div className="card form-card">
-          <h2>Tax Information & Logo</h2>
-          <div className="form-fields">
-            <div className="form-group">
-              <label>
-                GSTIN
-                <input
-                  type="text"
-                  className="input"
-                  value={formData.gstin}
-                  onChange={(e) => handleChange('gstin', e.target.value)}
-                  placeholder="GSTIN number"
-                />
-              </label>
+          {/* Card 2: Contact Information */}
+          <div className="card form-card">
+            <h2>Contact Information</h2>
+            <div className="form-fields">
+              <div className="form-group">
+                <label>
+                  Phone *
+                  <input
+                    type="tel"
+                    className="input"
+                    value={formData.phone}
+                    onChange={(e) => handleChange('phone', e.target.value)}
+                    placeholder="Phone number"
+                    required
+                  />
+                </label>
+              </div>
+
+              <div className="form-group">
+                <label>
+                  Email
+                  <input
+                    type="email"
+                    className="input"
+                    value={formData.email}
+                    onChange={(e) => handleChange('email', e.target.value)}
+                    placeholder="Email address"
+                  />
+                </label>
+              </div>
+
+              <div className="form-group">
+                <label>
+                  Website
+                  <input
+                    type="url"
+                    className="input"
+                    value={formData.website}
+                    onChange={(e) => handleChange('website', e.target.value)}
+                    placeholder="https://example.com"
+                  />
+                </label>
+              </div>
             </div>
+          </div>
 
-            <div className="form-group">
-              <label>
-                Business Type
-                <select
-                  className="input"
-                  value={formData.business_type}
-                  onChange={(e) => handleChange('business_type', e.target.value)}
-                >
-                  <option value="">Select Business Type</option>
-                  <option value="clothing">Clothing</option>
-                  <option value="cafe">Cafe</option>
-                  <option value="electrical">Electrical</option>
-                </select>
-              </label>
-            </div>
+          {/* Card 3: Tax Information & Logo */}
+          <div className="card form-card">
+            <h2>Tax Information & Logo</h2>
+            <div className="form-fields">
+              <div className="form-group">
+                <label>
+                  GSTIN
+                  <input
+                    type="text"
+                    className="input"
+                    value={formData.gstin}
+                    onChange={(e) => handleChange('gstin', e.target.value)}
+                    placeholder="GSTIN number"
+                  />
+                </label>
+              </div>
 
-            <div className="form-group">
-              <label>
-                Logo Image
-                <div className="logo-upload-section">
-                  {formData.logo ? (
-                    <div className="logo-preview-container">
-                      <img 
-                        src={formData.logo} 
-                        alt="Company Logo" 
-                        className="logo-preview"
-                      />
-                      <div className="logo-actions">
-                        <label className="btn btn-secondary btn-sm">
-                          Change Logo
+              <div className="form-group">
+                <label>
+                  Business Type
+                  <select
+                    className="input"
+                    value={formData.business_type}
+                    onChange={(e) => handleChange('business_type', e.target.value)}
+                  >
+                    <option value="">Select Business Type</option>
+                    <option value="clothing">Clothing</option>
+                    <option value="cafe">Cafe</option>
+                    <option value="electrical">Electrical</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="form-group">
+                <label>
+                  Logo Image
+                  <div className="logo-upload-section">
+                    {formData.logo ? (
+                      <div className="logo-preview-container">
+                        <img
+                          src={formData.logo}
+                          alt="Company Logo"
+                          className="logo-preview"
+                        />
+                        <div className="logo-actions">
+                          <label className="btn btn-secondary btn-sm">
+                            Change Logo
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleLogoUpload}
+                              style={{ display: 'none' }}
+                            />
+                          </label>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={handleRemoveLogo}
+                          >
+                            Remove Logo
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="logo-upload-placeholder">
+                        <label className="logo-upload-button">
                           <input
                             type="file"
                             accept="image/*"
                             onChange={handleLogoUpload}
                             style={{ display: 'none' }}
                           />
+                          <span>📷 Upload Logo</span>
+                          <small>Recommended: Square image, max 2MB</small>
                         </label>
-                        <button 
-                          className="btn btn-secondary btn-sm"
-                          onClick={handleRemoveLogo}
-                        >
-                          Remove Logo
-                        </button>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="logo-upload-placeholder">
-                      <label className="logo-upload-button">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleLogoUpload}
-                          style={{ display: 'none' }}
-                        />
-                        <span>📷 Upload Logo</span>
-                        <small>Recommended: Square image, max 2MB</small>
-                      </label>
-                    </div>
-                  )}
-                </div>
-              </label>
+                    )}
+                  </div>
+                </label>
+              </div>
             </div>
           </div>
-        </div>
         </div>
 
         {/* Card 4: Tamil Settings */}
@@ -461,29 +461,62 @@ export default function CompanySettings() {
         {/* Preview Section */}
         <div className="card preview-section">
           <h2>Preview</h2>
-          <div className="company-preview">
-            <div className="preview-header">
-              {formData.logo && (
-                <div className="preview-logo-container">
-                  <img 
-                    src={formData.logo} 
-                    alt="Company Logo" 
-                    className="preview-logo"
-                  />
-                </div>
-              )}
-              <h3>{formData.name || 'Company Name'}</h3>
-              {formData.address && <p>{formData.address}</p>}
-              <p>
-                {[formData.city, formData.state, formData.pincode]
-                  .filter(Boolean)
-                  .join(', ')}
-              </p>
-              {formData.phone && <p>Phone: {formData.phone}</p>}
-              {formData.email && <p>Email: {formData.email}</p>}
-              {formData.website && <p>Website: {formData.website}</p>}
-              {formData.gstin && <p>GSTIN: {formData.gstin}</p>}
+          <div className="company-preview" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+            {/* English Preview */}
+            <div style={{ flex: 1, minWidth: '250px' }}>
+              <h4 style={{ marginBottom: '0.5rem', color: '#555' }}>🇬🇧 English</h4>
+              <div className="preview-header">
+                {formData.logo && (
+                  <div className="preview-logo-container">
+                    <img
+                      src={formData.logo}
+                      alt="Company Logo"
+                      className="preview-logo"
+                    />
+                  </div>
+                )}
+                <h3>{formData.name || 'Company Name'}</h3>
+                {formData.address && <p>{formData.address}</p>}
+                <p>
+                  {[formData.city, formData.state, formData.pincode]
+                    .filter(Boolean)
+                    .join(', ')}
+                </p>
+                {formData.phone && <p>Phone: {formData.phone}</p>}
+                {formData.email && <p>Email: {formData.email}</p>}
+                {formData.website && <p>Website: {formData.website}</p>}
+                {formData.gstin && <p>GSTIN: {formData.gstin}</p>}
+              </div>
             </div>
+
+            {/* Tamil Preview */}
+            {(formData.nameTamil || formData.addressTamil || formData.cityTamil || formData.stateTamil) && (
+              <div style={{ flex: 1, minWidth: '250px' }}>
+                <h4 style={{ marginBottom: '0.5rem', color: '#555' }}>🇮🇳 தமிழ்</h4>
+                <div className="preview-header">
+                  {formData.logo && (
+                    <div className="preview-logo-container">
+                      <img
+                        src={formData.logo}
+                        alt="Company Logo"
+                        className="preview-logo"
+                      />
+                    </div>
+                  )}
+                  <h3>{formData.nameTamil || formData.name || 'நிறுவனத்தின் பெயர்'}</h3>
+                  {(formData.addressTamil || formData.address) && <p>{formData.addressTamil || formData.address}</p>}
+                  <p>
+                    {[formData.cityTamil || formData.city, formData.stateTamil || formData.state, formData.pincode]
+                      .filter(Boolean)
+                      .join(', ')}
+                  </p>
+                  {formData.phone && <p>Phone: {formData.phone}</p>}
+                  {formData.email && <p>Email: {formData.email}</p>}
+                  {formData.website && <p>Website: {formData.website}</p>}
+                  {formData.gstin && <p>GSTIN: {formData.gstin}</p>}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
