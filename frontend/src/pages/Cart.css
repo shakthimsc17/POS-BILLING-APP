@@ -7,6 +7,8 @@
   max-height: calc(100vh - 4rem);
   overflow: hidden;
   box-sizing: border-box;
+  /* Prevent layout shift during font loading */
+  contain: layout style;
 }
 
 .cart-header {
@@ -87,6 +89,9 @@
   overflow: hidden;
   flex: 1;
   min-height: 0;
+  /* Ensure consistent height regardless of content */
+  height: calc(100vh - 8rem);
+  max-height: calc(100vh - 8rem);
 }
 
 .cart-items {
@@ -103,7 +108,7 @@
   overflow: hidden;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-  background: var(--card-bg);
+  background: var(--card-bg, #f8fafc);
   border: 1px solid rgba(224, 230, 237, 0.8);
 }
 
@@ -397,7 +402,7 @@
 .cart-checkout-summary {
   display: flex;
   flex-direction: column;
-  background: var(--card-bg);
+  background: var(--card-bg, #f8fafc);
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   border: 1px solid rgba(226, 232, 240, 0.8);
@@ -488,7 +493,7 @@
 
 .summary-row .input-sm:focus {
   border-color: #3182ce;
-  background: var(--card-bg);
+  background: var(--card-bg, #f8fafc);
   outline: none;
 }
 
@@ -575,7 +580,7 @@
 }
 
 .payment-option {
-  background: var(--card-bg);
+  background: var(--card-bg, #f8fafc);
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 0.5rem 0.4rem;
@@ -961,6 +966,9 @@
     grid-template-rows: 1fr auto;
     gap: 0.75rem;
     overflow: hidden;
+    /* Ensure consistent height on responsive layouts */
+    height: calc(100vh - 6rem);
+    max-height: calc(100vh - 6rem);
   }
 
   .cart-items {

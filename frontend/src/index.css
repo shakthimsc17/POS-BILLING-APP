@@ -6,6 +6,15 @@
   --border-color: #e2e8f0;
 }
 
+/* Fallback font definitions to prevent layout shift */
+@font-face {
+  font-family: 'Inter-fallback';
+  src: local('Arial'), local('Helvetica'), local('system-ui');
+  ascent-override: 90%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -13,13 +22,15 @@
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter-fallback', 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: var(--bg-color);
   min-height: 100vh;
   overflow-x: hidden;
   color: var(--text-primary);
+  /* Prevent layout shift during font loading */
+  font-display: swap;
 }
 
 /* Prevent horizontal overflow globally */
