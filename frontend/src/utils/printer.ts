@@ -35,34 +35,34 @@ export async function printReceipt(options: PrintOptions) {
   const getTranslation = (key: string, fallback?: string): string => {
     const translations = language === 'ta' ? {
       // Receipt headers
-      'receipt.receipt': 'ரசீது',
-      'receipt.date': 'தேதி',
-      'receipt.time': 'நேரம்',
-      'receipt.customer': 'வாடிக்கையாளர்',
-      'receipt.bill': 'பில்',
+      'receipt.receipt': 'Receipt',
+      'receipt.date': 'Date',
+      'receipt.time': 'Time',
+      'receipt.customer': 'Customer',
+      'receipt.bill': 'Bill',
       
       // Items table
-      'items.sno': '#',
-      'items.item': 'பொருள்',
-      'items.rate': 'விலை',
-      'items.qty': 'எண்.',
-      'items.amount': 'தொகை',
+     'items.sno': '#',
+      'items.item': 'Item',
+      'items.rate': 'Rate',
+      'items.qty': 'Qty',
+      'items.amount': 'Amt',
       'items.mrp': 'MRP',
       
       // Totals
-      'totals.subtotal': 'உப மொத்தம்',
-      'totals.discount': 'தள்ளுபடி',
-      'totals.tax': 'வரி',
-      'totals.grandTotal': 'மொத்த தொகை',
+      'totals.subtotal': 'Subtotal',
+      'totals.discount': 'Discount',
+      'totals.tax': 'Tax',
+      'totals.grandTotal': 'GRAND TOTAL',
       
       // Footer
       'footer.thankYou': 'உங்கள் வருகைக்கு நன்றி!',
       'footer.visitAgain': 'மீண்டும் வருக!',
       
       // Payment
-      'payment.cashReceived': 'பெற்ற பணம்',
-      'payment.change': 'மீதம்',
-      'payment.method': 'பணம் செலுத்தும் முறை',
+      'payment.cashReceived': 'Cash Received',
+      'payment.change': 'Change',
+      'payment.method': 'Payment Method',
     } : {
       // English translations
       'receipt.receipt': 'Receipt',
@@ -422,17 +422,15 @@ export async function printReceipt(options: PrintOptions) {
                  : company.state;
                
                // Tamil labels
-               const phoneLabel = language === 'ta' ? 'தொலைபேசி:' : 'Phone:';
-               const emailLabel = language === 'ta' ? 'மின்னஞ்சல்:' : 'Email:';
-               const gstinLabel = language === 'ta' ? 'ஜிஎஸ்டிஐஎன்:' : 'GSTIN:';
+               const gstinLabel = language === 'ta' ? 'GSTIN:' : 'GSTIN:';
                
                return `
                  ${address ? `<p>${address}</p>` : ''}
                  ${city || state || company.pincode
                    ? `<p>${[city, state, company.pincode].filter(Boolean).join(', ')}</p>`
                    : ''}
-                 ${company.phone ? `<p>${phoneLabel} ${company.phone}</p>` : ''}
-                 ${company.email ? `<p>${emailLabel} ${company.email}</p>` : ''}
+                 ${company.phone ? `<p>${company.phone}</p>` : ''}
+                 ${company.email ? `<p>${company.email}</p>` : ''}
                  ${company.website ? `<p>${company.website}</p>` : ''}
                  ${company.gstin ? `<p>${gstinLabel} ${company.gstin}</p>` : ''}
                `;
