@@ -335,8 +335,9 @@ export default function Cart({ onNavigate }: CartProps) {
   return (
     <div className="cart">
       {cartSavedNotification && (
-        <div className="cart-saved-notification">
-          💾 Cart saved
+        <div className="cart-toast cart-toast-visible">
+          <span className="cart-toast-icon">💾</span>
+          <span>Cart saved</span>
         </div>
       )}
       <div className="cart-header">
@@ -479,21 +480,26 @@ export default function Cart({ onNavigate }: CartProps) {
               <h3>Order Summary</h3>
               <div className="summary-row">
                 <span>Customer <span className="function-key-hint">F4</span></span>
-                <div className="summary-value">
+                <div className="summary-value summary-value-customer">
                   {selectedSalesCustomer ? (
                     <div className="selected-customer-inline" onClick={() => setShowCustomerModal(true)}>
                       <div className="customer-info-mini">
-                        <span className="name">{selectedSalesCustomer.name}</span>
-                        {selectedSalesCustomer.mobile && <span className="mobile">{selectedSalesCustomer.mobile}</span>}
+                        <span className="customer-name">{selectedSalesCustomer.name}</span>
+                        {selectedSalesCustomer.mobile && (
+                          <span className="customer-mobile">{selectedSalesCustomer.mobile}</span>
+                        )}
                       </div>
                       <button
+                        type="button"
                         className="btn-clear-customer"
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedSalesCustomer(null);
                         }}
+                        title="Remove customer"
+                        aria-label="Remove customer"
                       >
-                        ×
+                        <span aria-hidden>×</span>
                       </button>
                     </div>
                   ) : (
