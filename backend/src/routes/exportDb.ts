@@ -48,7 +48,7 @@ async function fetchFullBackup() {
     prisma.customer.findMany(),
     prisma.category.findMany(),
     prisma.item.findMany(),
-    prisma.itemCodePrefix.findMany(),
+    prisma.item_code_prefixes.findMany(),
     prisma.company.findMany(),
     prisma.settings.findMany(),
     prisma.permission.findMany(),

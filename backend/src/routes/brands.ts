@@ -43,8 +43,8 @@ router.get('/', async (req: AuthRequest, res: Response) => {
 router.post(
   '/',
   [
-    body('name').notEmpty().trim(),
-    body('code').optional().trim(),
+    body('name').notEmpty().trim().withMessage('Brand name is required'),
+    body('code').notEmpty().trim().withMessage('Brand code is required'),
     body('description').optional().trim(),
     body('website').optional({ values: 'falsy' }).isURL(),
     body('contact_email').optional({ values: 'falsy' }).isEmail(),
