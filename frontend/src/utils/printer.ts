@@ -25,9 +25,12 @@ export async function printReceipt(options: PrintOptions) {
     taxAmount = 0, 
     discountAmount = 0, 
     autoPrint = false,
-    language = 'en' // Default to English
+    language: optionsLanguage,
   } = options;
-  
+
+  // Use receipt language from settings (so Tamil company name shows when setting is 'ta')
+  const language = optionsLanguage ?? (await receiptSettings.getLanguage()) ?? 'en';
+
   // Get translation function based on language
   const getTranslation = (key: string, fallback?: string): string => {
     const translations = language === 'ta' ? {

@@ -139,13 +139,27 @@ export const storageService = {
     await apiClient.delete(`/customers/${id}`);
   },
 
-  // Company
+  // Company – normalize API response so Tamil fields (snake_case) map to camelCase for UI
   getCompany: async (): Promise<Company> => {
-    return apiClient.get<Company>('/company');
+    const raw = await apiClient.get<Company & { name_tamil?: string; address_tamil?: string; city_tamil?: string; state_tamil?: string }>('/company');
+    return {
+      ...raw,
+      nameTamil: raw.nameTamil ?? raw.name_tamil ?? '',
+      addressTamil: raw.addressTamil ?? raw.address_tamil ?? '',
+      cityTamil: raw.cityTamil ?? raw.city_tamil ?? '',
+      stateTamil: raw.stateTamil ?? raw.state_tamil ?? '',
+    } as Company;
   },
 
   saveCompany: async (company: Partial<Company>): Promise<Company> => {
-    return apiClient.post<Company>('/company', company);
+    const res = await apiClient.post<Company & { name_tamil?: string; address_tamil?: string; city_tamil?: string; state_tamil?: string }>('/company', company);
+    return {
+      ...res,
+      nameTamil: res.nameTamil ?? res.name_tamil ?? '',
+      addressTamil: res.addressTamil ?? res.address_tamil ?? '',
+      cityTamil: res.cityTamil ?? res.city_tamil ?? '',
+      stateTamil: res.stateTamil ?? res.state_tamil ?? '',
+    } as Company;
   },
 
   // Activity Logs
